@@ -1,0 +1,177 @@
+<script>
+// ========== DATA BRIDGE: Client ↔ Google Apps Script ==========
+// This file replaces localStorage with google.script.run calls.
+// It uses optimistic updates: update in-memory array first, re-render, then persist async.
+
+var bookings = [];
+var ALL_ROOMS = [];
+var ROOM_TYPE = {};
+var AGENTS = [];
+
+// ========== INIT APP ==========
+function initApp() {
+  showLoading(true);
+  google.script.run
+    .withSuccessHandler(function(data) {
+      bookings = data.bookings || [];
+      ALL_ROOMS = data.constants.ALL_ROOMS || [];
+      ROOM_TYPE = data.constants.ROOM_TYPE || {};
+      AGENTS = data.constants.AGENTS || [];
+      populateAgentDropdowns();
+      onDataReady();
+      showLoading(false);
+    })
+    .withFailureHandler(function(err) {
+      showLoading(false);
+      showToast('Failed to load data: ' + err.message, 'error');
+      onDataReady();
+    })
+    .getInitialData();
+
+  // Background refresh every 5 minutes
+  setInterval(refreshData, 5 * 60 * 1000);
+}
+
+function refreshData() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      bookings = data.bookings || [];
+      renderBookings();
+      updateDashboard();
+    })
+    .withFailureHandler(function() {
+      // Silent fail on background refresh
+    })
+    .getInitialData();
+}
+
+function showLoading(show) {
+  var overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.style.display = show ? 'flex' : 'none';
+}
+
+// ========== POPULATE AGENT DROPDOWNS ==========
+function populateAgentDropdowns() {
+  var selectors = ['filterAgent', 'ledgerAgent', 'sourceName'];
+  selectors.forEach(function(selId) {
+    var sel = document.getElementById(selId);
+    if (!sel) return;
+    // Keep the first option (All Agents / Select)
+    var firstOpt = sel.options[0];
+    sel.innerHTML = '';
+    sel.appendChild(firstOpt);
+    AGENTS.forEach(function(agent) {
+      var opt = document.createElement('option');
+      opt.value = agent;
+      opt.textContent = agent;
+      sel.appendChild(opt);
+    });
+    // Add "Other" option to sourceName
+    if (selId === 'sourceName') {
+      var otherOpt = document.createElement('option');
+      otherOpt.value = 'Other';
+      otherOpt.textContent = 'Other (type below)';
+      sel.appendChild(otherOpt);
+    }
+  });
+}
+
+// ========== OPTIMISTIC SAVE ==========
+function persistBooking(bookingObj) {
+  google.script.run
+    .withSuccessHandler(function(saved) {
+      // Update local copy with any server-generated fields (e.g. id)
+      if (saved && saved.id) {
+        var idx = bookings.findIndex(function(b) { return b.id === saved.id; });
+        if (idx >= 0) bookings[idx] = saved;
+      }
+    })
+    .withFailureHandler(function(err) {
+      showToast('Save failed: ' + err.message, 'error');
+      // Trigger refresh to recover
+      refreshData();
+    })
+    .saveBooking(bookingObj);
+}
+
+// ========== OPTIMISTIC DELETE ==========
+function persistDelete(bookingId) {
+  google.script.run
+    .withFailureHandler(function(err) {
+      showToast('Delete failed: ' + err.message, 'error');
+      refreshData();
+    })
+    .deleteBooking(bookingId);
+}
+
+// ========== BILL GENERATION ==========
+function generateBill(id) {
+  showToast('Generating invoice...', 'success');
+  google.script.run
+    .withSuccessHandler(function(html) {
+      // Open bill in a new Blob-based window
+      var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    })
+    .withFailureHandler(function(err) {
+      showToast('Bill generation failed: ' + err.message, 'error');
+    })
+    .generateBillHtml(id);
+}
+
+// ========== EXPORT DOWNLOADS (Client-side via data: URI) ==========
+function downloadAsCSV(csvContent, fileName) {
+  var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadAsExcel(htmlContent, fileName) {
+  var blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function openPrintableHtml(htmlContent) {
+  var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+}
+
+// ========== ON DATA READY ==========
+function onDataReady() {
+  var now = new Date();
+  var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  document.getElementById('summaryStartDate').value = currentMonth + '-01';
+  document.getElementById('summaryEndDate').value = getToday();
+  document.getElementById('inventoryMonth').value = currentMonth;
+  document.getElementById('inventoryDate').value = getToday();
+  document.getElementById('reportMonth').value = currentMonth;
+
+  var firstDay = currentMonth + '-01';
+  var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  var lastDayStr = toLocalDateStr(lastDay);
+  document.getElementById('reportDateFrom').value = firstDay;
+  document.getElementById('reportDateTo').value = lastDayStr;
+  document.getElementById('payReportFrom').value = firstDay;
+  document.getElementById('payReportTo').value = lastDayStr;
+  document.getElementById('ledgerFrom').value = firstDay;
+  document.getElementById('ledgerTo').value = lastDayStr;
+
+  document.getElementById('filterDate').value = getToday();
+  document.getElementById('checkIn').value = getToday();
+  renderBookings();
+  updateDashboard();
+}
+</script>

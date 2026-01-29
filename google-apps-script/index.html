@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Neelkanth Grand - CRM</title>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <?!= include('Stylesheet') ?>
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Loading CRM data...</p>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-brand">
+        <span class="icon">&#127976;</span>
+        <div>
+          <h1>The Neelkanth Grand</h1>
+          <p>by Aks Hospitality &mdash; CRM</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openBookingModal()">
+          <span class="material-icons">add</span> New Booking
+        </button>
+        <button class="btn btn-secondary" onclick="exportData()">
+          <span class="material-icons">download</span> Export
+        </button>
+        <button class="btn btn-secondary" onclick="window.print()">
+          <span class="material-icons">print</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="active" onclick="switchTab('dashboard')">
+        <span class="material-icons">dashboard</span> Dashboard
+      </button>
+      <button onclick="switchTab('inventory')">
+        <span class="material-icons">meeting_room</span> Inventory
+      </button>
+      <button onclick="switchTab('ledger')">
+        <span class="material-icons">account_balance</span> Ledger
+      </button>
+      <button onclick="switchTab('reports')">
+        <span class="material-icons">assessment</span> Reports
+      </button>
+    </div>
+
+    <!-- ==================== DASHBOARD TAB ==================== -->
+    <div class="tab-content active" id="tab-dashboard">
+
+      <!-- Dashboard Guest Lists -->
+      <div class="guest-lists">
+        <div class="guest-list-section checkin-section">
+          <div class="section-title">
+            <span class="material-icons">login</span>
+            Today Check-in <span id="checkinCount" style="opacity:0.8;font-size:13px;margin-left:4px;">(0)</span>
+          </div>
+          <div id="checkinGuestList"></div>
+        </div>
+
+        <div class="guest-list-section inhouse-section">
+          <div class="section-title">
+            <span class="material-icons">hotel</span>
+            In-House Guests <span id="inhouseCount" style="opacity:0.8;font-size:13px;margin-left:4px;">(0)</span>
+          </div>
+          <div id="inhouseGuestList"></div>
+        </div>
+
+        <div class="guest-list-section checkout-section">
+          <div class="section-title">
+            <span class="material-icons">logout</span>
+            Today Check-out <span id="checkoutCount" style="opacity:0.8;font-size:13px;margin-left:4px;">(0)</span>
+          </div>
+          <div id="checkoutGuestList"></div>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="dashboard">
+        <div class="stat-card blue">
+          <div class="label">Today Collection</div>
+          <div class="value" id="todayCollection">&#8377;0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="label">Today Collected</div>
+          <div class="value" id="todayCollected">&#8377;0</div>
+        </div>
+        <div class="stat-card red">
+          <div class="label">Today Pending</div>
+          <div class="value" id="todayPending">&#8377;0</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="label">Ledger Due</div>
+          <div class="value" id="ledgerDue">&#8377;0</div>
+        </div>
+      </div>
+
+      <!-- Alert Box -->
+      <div class="alert-box" id="alertBox" style="display: none;">
+        <span class="material-icons">warning</span>
+        <div>
+          <h4>Attention Required</h4>
+          <p id="alertText"></p>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="monthly-summary">
+        <div class="section-header">
+          <h3><span class="material-icons">calendar_month</span> Summary</h3>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:13px;font-weight:600;color:#374151;">From</label>
+            <input type="date" id="summaryStartDate" onchange="updateMonthlySummary()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
+            <label style="font-size:13px;font-weight:600;color:#374151;">To</label>
+            <input type="date" id="summaryEndDate" onchange="updateMonthlySummary()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
+            <div style="display:flex;gap:6px;margin-left:8px;">
+              <button class="btn btn-secondary btn-small" onclick="downloadSummaryData('csv')" title="Download CSV">
+                <span class="material-icons" style="font-size:14px">download</span> CSV
+              </button>
+              <button class="btn btn-secondary btn-small" onclick="downloadSummaryData('excel')" title="Download Excel">
+                <span class="material-icons" style="font-size:14px">table_view</span> Excel
+              </button>
+              <button class="btn btn-secondary btn-small" onclick="downloadSummaryData('pdf')" title="Download PDF">
+                <span class="material-icons" style="font-size:14px">picture_as_pdf</span> PDF
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="monthly-grid" id="monthlyGrid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+          <div class="monthly-card"><div class="mc-label">Bookings</div><div class="mc-value blue" id="monthlyBookings">0</div></div>
+          <div class="monthly-card"><div class="mc-label">Room Charge</div><div class="mc-value blue" id="summaryRoomCharge">&#8377;0</div></div>
+          <div class="monthly-card"><div class="mc-label">KOT</div><div class="mc-value blue" id="summaryKot">&#8377;0</div></div>
+          <div class="monthly-card"><div class="mc-label">Add-On</div><div class="mc-value blue" id="summaryAddOn">&#8377;0</div></div>
+          <div class="monthly-card"><div class="mc-label">Total Collection</div><div class="mc-value blue" id="monthlyCollection">&#8377;0</div></div>
+          <div class="monthly-card"><div class="mc-label">Collected</div><div class="mc-value green" id="monthlyCollected">&#8377;0</div></div>
+          <div class="monthly-card"><div class="mc-label">Pending</div><div class="mc-value red" id="monthlyPending">&#8377;0</div></div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-card">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label>View By</label>
+            <select id="filterViewBy" onchange="applyFilters()">
+              <option value="checkout">Check-out</option>
+              <option value="checkin">Check-in</option>
+              <option value="sameday">Same Day</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Date</label>
+            <input type="date" id="filterDate" onchange="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label>Status</label>
+            <select id="filterStatus" onchange="applyFilters()">
+              <option value="">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="COLLECTED">Collected</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="RESCHEDULED">Rescheduled</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Payment Type</label>
+            <select id="filterPaymentType" onchange="applyFilters()">
+              <option value="">All Types</option>
+              <option value="Prepaid">Prepaid</option>
+              <option value="Pay at Check-in">Pay at Check-in</option>
+              <option value="Postpaid">Postpaid</option>
+              <option value="Ledger">Ledger</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Source</label>
+            <select id="filterSource" onchange="applyFilters()">
+              <option value="">All Sources</option>
+              <option value="Walk-in">Walk-in</option>
+              <option value="OTA">OTA</option>
+              <option value="Agent">Agent</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Agent</label>
+            <select id="filterAgent" onchange="applyFilters()">
+              <option value="">All Agents</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-secondary btn-small" onclick="clearFilters()">
+              <span class="material-icons">clear</span> Clear
+            </button>
+          </div>
+          <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-warning btn-small" onclick="showTodayPending()">
+              <span class="material-icons">today</span> Today's Pending
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookings Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h2>Bookings</h2>
+          <span class="record-count" id="recordCount">0 records</span>
+        </div>
+        <div class="table-wrapper" id="tableWrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Guest</th><th>Pax</th><th>Room</th><th>Source</th>
+                <th>Check-in</th><th>Checkout</th><th>Nights</th><th>Type</th>
+                <th>Room Rent</th><th>Collection</th><th>Received</th><th>Pending</th>
+                <th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTable"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <span class="material-icons">inbox</span>
+          <h3>No bookings found</h3>
+          <p>Add your first booking or adjust filters</p>
+        </div>
+      </div>
+
+    </div><!-- end tab-dashboard -->
+
+    <!-- ==================== INVENTORY TAB ==================== -->
+    <div class="tab-content" id="tab-inventory">
+      <div class="inventory-section">
+        <div class="section-header">
+          <h3><span class="material-icons">meeting_room</span> Room Inventory</h3>
+          <div class="report-filters">
+            <input type="date" id="inventoryDate" onchange="renderInventory()">
+            <input type="month" class="month-selector" id="inventoryMonth" onchange="renderInventory()">
+          </div>
+        </div>
+        <div class="inv-summary-row">
+          <div class="inv-chip"><span class="dot dot-vacant"></span> Vacant</div>
+          <div class="inv-chip"><span class="dot dot-occupied"></span> Occupied</div>
+          <div class="inv-chip" id="invTodaySummary" style="font-weight:700;color:#1e3a5f;"></div>
+        </div>
+        <div id="inventoryDayView" style="margin-bottom:24px;"></div>
+        <div class="inv-table-wrap" id="inventoryTableWrap"></div>
+      </div>
+      <div class="inventory-section">
+        <div class="section-header">
+          <h3><span class="material-icons">bar_chart</span> Occupancy Report</h3>
+          <div class="report-filters">
+            <select id="occViewType" onchange="toggleOccFilters();renderOccupancyReport()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
+              <option value="month">Monthly</option>
+              <option value="year">Yearly</option>
+              <option value="custom">Custom Dates</option>
+            </select>
+            <input type="month" id="occMonth" onchange="renderOccupancyReport()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
+            <select id="occYear" onchange="renderOccupancyReport()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;display:none;"></select>
+            <input type="date" id="occFrom" onchange="renderOccupancyReport()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;display:none;">
+            <span id="occToLabel" style="color:#6b7280;font-size:13px;display:none;">to</span>
+            <input type="date" id="occTo" onchange="renderOccupancyReport()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;display:none;">
+          </div>
+        </div>
+        <div id="occupancyReportContent"></div>
+      </div>
+    </div>
+
+    <!-- ==================== LEDGER TAB ==================== -->
+    <div class="tab-content" id="tab-ledger">
+      <div class="reports-section">
+        <div class="section-header">
+          <h3><span class="material-icons">account_balance</span> Agent Ledger Report</h3>
+          <div class="report-filters">
+            <select id="ledgerAgent" onchange="renderLedgerReport()">
+              <option value="">All Agents</option>
+            </select>
+            <input type="date" id="ledgerFrom" onchange="renderLedgerReport()">
+            <span style="color:#6b7280;font-size:13px;">to</span>
+            <input type="date" id="ledgerTo" onchange="renderLedgerReport()">
+            <button class="btn btn-secondary btn-small" onclick="exportLedgerCSV()">
+              <span class="material-icons" style="font-size:14px">download</span> Export
+            </button>
+          </div>
+        </div>
+        <div class="monthly-grid" id="ledgerSummaryCards" style="margin-bottom:20px;"></div>
+        <div id="ledgerReportContent"></div>
+      </div>
+    </div>
+
+    <!-- ==================== REPORTS TAB ==================== -->
+    <div class="tab-content" id="tab-reports">
+      <div class="reports-section">
+        <div class="section-header">
+          <h3><span class="material-icons">pie_chart</span> Source-wise Report</h3>
+          <div class="report-filters">
+            <input type="date" id="reportDateFrom" onchange="renderSourceReport()">
+            <span style="color:#6b7280;font-size:13px;">to</span>
+            <input type="date" id="reportDateTo" onchange="renderSourceReport()">
+          </div>
+        </div>
+        <div id="sourceReportContent"></div>
+      </div>
+      <div class="reports-section">
+        <div class="section-header">
+          <h3><span class="material-icons">payments</span> Day-wise Payment Collection (UPI + Cash)</h3>
+          <div class="report-filters">
+            <input type="date" id="payReportFrom" onchange="renderPaymentReport()">
+            <span style="color:#6b7280;font-size:13px;">to</span>
+            <input type="date" id="payReportTo" onchange="renderPaymentReport()">
+          </div>
+        </div>
+        <div id="paymentReportContent"></div>
+      </div>
+      <div class="reports-section">
+        <div class="section-header">
+          <h3><span class="material-icons">calendar_month</span> Monthly Report</h3>
+          <div class="report-filters">
+            <input type="month" id="reportMonth" onchange="renderMonthlyReport()">
+          </div>
+        </div>
+        <div id="monthlyReportContent"></div>
+      </div>
+    </div><!-- end tab-reports -->
+
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">New Booking</h3>
+        <button class="modal-close" onclick="closeBookingModal()"><span class="material-icons">close</span></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editBookingId">
+        <div class="form-row">
+          <div class="form-group"><label>Guest Name *</label><input type="text" id="guestName" placeholder="Enter guest name"></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="guestPhone" placeholder="Mobile number"></div>
+          <div class="form-group"><label>Pax</label><input type="number" id="pax" placeholder="No. of guests" min="1" value="1"></div>
+          <div class="form-group"><label>KOT</label><select id="kot"><option value="">None</option><option value="Yes">Yes</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>No. of Rooms</label><input type="number" id="noOfRooms" min="1" value="1" onchange="updateRoomSelects()"></div>
+          <div class="form-group"><label>Room Category</label>
+            <select id="roomCategory"><option value="">Select</option><option value="Non-Balcony">Non-Balcony</option><option value="Balcony">Balcony</option><option value="Royal Suite Duplex">Royal Suite Duplex</option><option value="Mini Duplex">Mini Duplex</option></select>
+          </div>
+          <div class="form-group" id="roomSelectGroup" style="grid-column: span 2; display:none;">
+            <label>Room Number(s)</label>
+            <div id="roomSelectContainer" style="display:flex;flex-wrap:wrap;gap:8px;"><select id="roomNo" style="min-width:160px;"><option value="">Not Assigned</option></select></div>
+            <div class="room-avail-hint" id="roomAvailHint"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Check-in *</label><input type="date" id="checkIn" onchange="updateRoomAvailability();updateNightsDisplay()"></div>
+          <div class="form-group"><label>Checkout *</label><input type="date" id="checkOut" onchange="updateRoomAvailability();updateNightsDisplay()"></div>
+          <div class="form-group"><label>Nights</label><div id="nightsDisplay" style="font-size:20px;font-weight:700;color:#1e3a5f;background:#e0e7ff;padding:10px 14px;border-radius:10px;text-align:center;">-</div></div>
+          <div class="form-group"><label>Plan</label>
+            <select id="mealPlan"><option value="">Select</option><option value="EP">EP (Room Only)</option><option value="CP">CP (Breakfast)</option><option value="MAP">MAP (Breakfast + Dinner)</option><option value="AP">AP (All Meals)</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Booking Source *</label>
+            <select id="bookingSource" onchange="toggleSourceName()"><option value="Walk-in">Walk-in</option><option value="OTA">OTA</option><option value="Agent">Agent</option></select>
+          </div>
+          <div class="form-group" id="sourceNameGroup" style="display: none;">
+            <label>Agent / Source Name *</label>
+            <select id="sourceName"><option value="">Select</option></select>
+            <input type="text" id="sourceNameOther" placeholder="Type name if Other..." style="display:none;margin-top:6px;">
+          </div>
+          <div class="form-group"><label>Add-On</label>
+            <select id="complimentary"><option value="">None</option><option value="HM">HM (Honeymoon)</option><option value="BF">BF (Birthday)</option><option value="BF+DJ">BF+DJ (Birthday + DJ)</option><option value="Only Cake">Only Cake</option><option value="Heater">Heater</option><option value="Bonfire">Bonfire</option><option value="BJ">BJ (Bonfire + Jalebi)</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Actual Room Rent</label><input type="number" id="actualRoomRent" placeholder="&#8377;" min="0"></div>
+          <div class="form-group"><label>Collection Amount *</label><input type="number" id="totalAmount" placeholder="&#8377;" min="0"></div>
+          <div class="form-group"><label>Payment Type *</label>
+            <select id="paymentType"><option value="Prepaid">Prepaid (Paid in advance)</option><option value="Pay at Check-in">Pay at Check-in</option><option value="Postpaid">Postpaid (Pay at checkout)</option><option value="Ledger">Ledger (Agent credit)</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Advance Received</label><input type="number" id="advanceReceived" placeholder="&#8377;" min="0" value="0"></div>
+          <div class="form-group"><label>Payment Mode</label>
+            <select id="paymentMode"><option value="">Select</option><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Remarks</label><input type="text" id="remarks" placeholder="Any notes..."></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveBooking()" id="saveBtn"><span class="material-icons">save</span> Save Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collect Payment Modal -->
+  <div class="modal-overlay" id="collectModal">
+    <div class="modal" style="max-width: 420px;">
+      <div class="modal-header"><h3>Collect Payment</h3><button class="modal-close" onclick="closeCollectModal()"><span class="material-icons">close</span></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="collectBookingId">
+        <p style="margin-bottom: 20px; font-size: 16px;">Pending Amount: <strong style="color: #ef4444;" id="collectPendingAmount">&#8377;0</strong></p>
+        <div class="form-group" style="margin-bottom: 16px;"><label>Amount Collecting *</label><input type="number" id="collectAmount" min="0" placeholder="&#8377;"></div>
+        <div class="form-group"><label>Payment Mode *</label>
+          <select id="collectPaymentMode"><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCollectModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="collectPayment()"><span class="material-icons">payments</span> Collect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel / Reschedule Modal -->
+  <div class="modal-overlay" id="cancelModal">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header"><h3>Cancel / Reschedule Booking</h3><button class="modal-close" onclick="closeCancelModal()"><span class="material-icons">close</span></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="cancelBookingId">
+        <p style="margin-bottom:8px;font-size:15px;">Booking: <strong id="cancelBookingName"></strong></p>
+        <p style="margin-bottom:20px;font-size:14px;color:#6b7280;">Current Checkout: <strong id="cancelBookingDate"></strong></p>
+        <div class="form-group" style="margin-bottom:16px;"><label>Action</label>
+          <select id="cancelAction" onchange="toggleRescheduleDate()"><option value="cancel">Cancel Booking</option><option value="reschedule">Reschedule (New Date)</option></select>
+        </div>
+        <div class="form-group" id="rescheduleDateGroup" style="display:none;"><label>New Checkout Date *</label><input type="date" id="rescheduleDate"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCancelModal()">Back</button>
+        <button class="btn btn-danger" id="cancelConfirmBtn" onclick="confirmCancelOrReschedule()"><span class="material-icons">cancel</span> Cancel Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in / Room Allotment Modal -->
+  <div class="modal-overlay" id="checkinModal">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header"><h3>Check-in &amp; Room Allotment</h3><button class="modal-close" onclick="closeCheckinModal()"><span class="material-icons">close</span></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="checkinBookingId">
+        <div id="checkinGuestInfo" style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;"></div>
+        <div class="form-row">
+          <div class="form-group"><label>No. of Rooms</label><input type="number" id="checkinNoOfRooms" min="1" value="1" onchange="updateCheckinRoomSelects()"></div>
+          <div class="form-group"><label>Room Category</label><div id="checkinRoomCategory" style="font-weight:600;padding:10px 0;"></div></div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Allot Room Number(s) *</label>
+          <div id="checkinRoomSelectContainer" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
+          <div class="room-avail-hint" id="checkinRoomHint" style="margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCheckinModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmCheckin()"><span class="material-icons">login</span> Check-in Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header"><h3>Guest Check-out</h3><button class="modal-close" onclick="closeCheckoutModal()"><span class="material-icons">close</span></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="checkoutBookingId">
+        <div id="checkoutGuestInfo" style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;"></div>
+        <div class="form-row">
+          <div class="form-group"><label>KOT Amount</label><input type="number" id="checkoutKotAmount" placeholder="&#8377;" min="0" value="0" oninput="updateCheckoutTotals()"></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:8px;">Add-On Charges</label>
+          <div id="addOnChargesContainer"></div>
+          <button class="btn btn-secondary btn-small" onclick="addAddOnRow()" style="margin-top:8px;"><span class="material-icons" style="font-size:14px">add</span> Add Item</button>
+        </div>
+        <div style="padding:16px;background:#f0f4f8;border-radius:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>Original Total:</span><strong id="checkoutOrigTotal">&#8377;0</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>+ KOT Amount:</span><strong id="checkoutKotDisplay">&#8377;0</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>+ Add-On Total:</span><strong id="checkoutAddOnDisplay">&#8377;0</strong></div>
+          <div style="display:flex;justify-content:space-between;border-top:2px solid #1e3a5f;padding-top:8px;font-size:16px;"><span>Grand Total:</span><strong style="color:#1e3a5f" id="checkoutGrandTotal">&#8377;0</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;"><span>Already Received:</span><strong style="color:#10b981" id="checkoutReceived">&#8377;0</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:16px;"><span>Balance Due:</span><strong style="color:#ef4444" id="checkoutBalance">&#8377;0</strong></div>
+        </div>
+        <div class="form-row" style="margin-top:16px;">
+          <div class="form-group"><label>Collect Balance - Payment Mode</label>
+            <select id="checkoutPayMode"><option value="">No Collection Now</option><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="processCheckout()"><span class="material-icons">logout</span> Check Out</button>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('DataBridge') ?>
+  <?!= include('JavaScript') ?>
+</body>
+</html>

@@ -1,0 +1,1333 @@
+<script>
+    // ========== INITIALIZE (called from DataBridge.initApp) ==========
+    document.addEventListener('DOMContentLoaded', function() {
+      initApp();
+    });
+
+    // ========== TABS ==========
+    function switchTab(tab) {
+      var btns = document.querySelectorAll('.nav-tabs button');
+      btns.forEach(function(btn) { btn.classList.remove('active'); });
+      event.currentTarget.classList.add('active');
+
+      document.querySelectorAll('.tab-content').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      document.getElementById('tab-' + tab).classList.add('active');
+
+      if (tab === 'inventory') renderInventory();
+      if (tab === 'ledger') renderLedgerReport();
+      if (tab === 'reports') {
+        renderSourceReport();
+        renderPaymentReport();
+        renderMonthlyReport();
+      }
+    }
+
+    // ========== HELPERS ==========
+    function toLocalDateStr(d) {
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function getToday() {
+      return toLocalDateStr(new Date());
+    }
+
+    function formatCurrency(amount) {
+      return '\u20B9' + Number(amount || 0).toLocaleString('en-IN');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      var date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    }
+
+    function generateBookingId() {
+      var maxNum = 0;
+      bookings.forEach(function(b) {
+        var parts = b.id.split('-');
+        if (parts.length === 2) {
+          var num = parseInt(parts[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      return 'NKH-' + String(maxNum + 1).padStart(4, '0');
+    }
+
+    function formatRoomDisplay(roomNo) {
+      if (!roomNo) return '<em style="color:#f59e0b;font-size:12px">Not assigned</em>';
+      var rooms = roomNo.split(',').map(function(r) { return r.trim(); });
+      var roomStr = '<strong>' + rooms.join(' / ') + '</strong>';
+      var types = rooms.map(function(r) { return ROOM_TYPE[r] || ''; }).filter(function(t) { return t; });
+      var uniqueTypes = types.filter(function(v, i, a) { return a.indexOf(v) === i; });
+      if (uniqueTypes.length > 0) roomStr += '<br><small style="color:#6b7280">' + uniqueTypes.join(', ') + '</small>';
+      return roomStr;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function calculateNights(checkIn, checkOut) {
+      if (!checkIn || !checkOut) return 1;
+      var d1 = new Date(checkIn);
+      var d2 = new Date(checkOut);
+      var diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 1;
+    }
+
+    function formatFullDate(dateStr) {
+      if (!dateStr) return '-';
+      var d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // ========== TOAST NOTIFICATION ==========
+    function showToast(message, type) {
+      type = type || 'success';
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      var icon = type === 'success' ? 'check_circle' : 'error';
+      toast.innerHTML = '<span class="material-icons">' + icon + '</span> ' + escapeHtml(message);
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, 3000);
+    }
+
+    // ========== FILTERS ==========
+    function applyFilters() { renderBookings(); }
+
+    function clearFilters() {
+      document.getElementById('filterViewBy').value = 'checkout';
+      document.getElementById('filterDate').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterPaymentType').value = '';
+      document.getElementById('filterSource').value = '';
+      document.getElementById('filterAgent').value = '';
+      renderBookings();
+    }
+
+    function showTodayPending() {
+      document.getElementById('filterDate').value = getToday();
+      document.getElementById('filterStatus').value = 'PENDING';
+      document.getElementById('filterPaymentType').value = '';
+      document.getElementById('filterSource').value = '';
+      renderBookings();
+    }
+
+    function getFilteredBookings() {
+      var filterViewBy = document.getElementById('filterViewBy').value;
+      var filterDate = document.getElementById('filterDate').value;
+      var filterStatus = document.getElementById('filterStatus').value;
+      var filterPaymentType = document.getElementById('filterPaymentType').value;
+      var filterSource = document.getElementById('filterSource').value;
+      var filterAgent = document.getElementById('filterAgent').value;
+
+      return bookings.filter(function(b) {
+        if (filterDate) {
+          if (filterViewBy === 'checkin' && b.checkIn !== filterDate) return false;
+          if (filterViewBy === 'checkout' && b.checkOut !== filterDate) return false;
+          if (filterViewBy === 'sameday' && !(b.checkIn === filterDate && b.checkOut === filterDate)) return false;
+        }
+        if (filterStatus && b.status !== filterStatus) return false;
+        if (filterPaymentType && b.paymentType !== filterPaymentType) return false;
+        if (filterSource && b.source !== filterSource) return false;
+        if (filterAgent && b.sourceName !== filterAgent) return false;
+        return true;
+      });
+    }
+
+    // ========== RENDER BOOKINGS TABLE ==========
+    function renderBookings() {
+      var filtered = getFilteredBookings();
+      var tbody = document.getElementById('bookingsTable');
+      var emptyState = document.getElementById('emptyState');
+      var tableWrapper = document.getElementById('tableWrapper');
+
+      document.getElementById('recordCount').textContent = filtered.length + ' records';
+
+      if (filtered.length === 0) {
+        tableWrapper.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      tableWrapper.style.display = 'block';
+      emptyState.style.display = 'none';
+
+      filtered.sort(function(a, b) {
+        return new Date(a.checkOut) - new Date(b.checkOut);
+      });
+
+      tbody.innerHTML = filtered.map(function(b) {
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+
+        var sourceClass = b.source === 'Walk-in' ? 'badge-walkin' :
+                          b.source === 'OTA' ? 'badge-ota' : 'badge-agent';
+
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
+                          b.status === 'PARTIAL' ? 'badge-partial' :
+                          b.status === 'CANCELLED' ? 'badge-cancelled' :
+                          b.status === 'RESCHEDULED' ? 'badge-rescheduled' : 'badge-pending';
+
+        var isCancelledOrRescheduled = (b.status === 'CANCELLED' || b.status === 'RESCHEDULED');
+
+        return '<tr' + (isCancelledOrRescheduled ? ' style="opacity:0.6"' : '') + '>' +
+          '<td><strong>' + escapeHtml(b.id) + '</strong></td>' +
+          '<td><div class="guest-info"><div class="name">' + escapeHtml(b.guestName) +
+            (b.kot === 'Yes' ? ' <span class="badge-kot">KOT</span>' : '') +
+          '</div>' +
+            (b.phone ? '<div class="phone">' + escapeHtml(b.phone) + '</div>' : '') +
+          '</div></td>' +
+          '<td>' + (b.pax || 1) + '</td>' +
+          '<td>' + formatRoomDisplay(b.roomNo) + '</td>' +
+          '<td><span class="badge ' + sourceClass + '">' + escapeHtml(b.source) + '</span>' +
+            (b.sourceName ? '<br><small style="color:#6b7280">' + escapeHtml(b.sourceName) + '</small>' : '') +
+          '</td>' +
+          '<td>' + formatDate(b.checkIn) + '</td>' +
+          '<td><strong>' + formatDate(b.checkOut) + '</strong>' +
+            (b.rescheduledFrom ? '<br><small style="color:#6b7280">was ' + formatDate(b.rescheduledFrom) + '</small>' : '') +
+          '</td>' +
+          '<td><strong>' + calculateNights(b.checkIn, b.checkOut) + '</strong></td>' +
+          '<td><span class="payment-type">' + escapeHtml(b.paymentType) + '</span></td>' +
+          '<td class="amount">' + formatCurrency(b.actualRoomRent) + '</td>' +
+          '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
+          '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
+          '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><div class="actions">' +
+            (!isCancelledOrRescheduled && pending > 0 ? '<button class="btn btn-primary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
+            (!isCancelledOrRescheduled ? '<button class="btn btn-warning btn-small" onclick="openCheckoutModal(\'' + b.id + '\')"><span class="material-icons" style="font-size:14px">logout</span> Checkout</button>' : '') +
+            '<button class="btn btn-secondary btn-small" onclick="generateBill(\'' + b.id + '\')" title="Generate Bill"><span class="material-icons" style="font-size:14px">receipt</span> Bill</button>' +
+            (!isCancelledOrRescheduled ? '<button class="btn btn-secondary btn-small" onclick="openEditModalById(\'' + b.id + '\')">Edit</button>' : '') +
+            (!isCancelledOrRescheduled ? '<button class="btn btn-danger btn-small" onclick="openCancelModal(\'' + b.id + '\')">Cancel</button>' : '') +
+          '</div></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    // ========== DASHBOARD ==========
+    function updateDashboard() {
+      var today = getToday();
+
+      var checkinGuests = [];
+      var inhouseGuests = [];
+      var checkoutGuests = [];
+
+      var todayCollectionAmt = 0;
+      var todayCollectedAmt = 0;
+      var todayPendingAmt = 0;
+      var ledgerDueAmt = 0;
+
+      bookings.forEach(function(b) {
+        if (b.status === 'CANCELLED') return;
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+
+        if (b.checkIn === today && !b.checkedIn) checkinGuests.push(b);
+        if (b.checkedIn && b.checkIn <= today && b.checkOut > today) inhouseGuests.push(b);
+        if (!b.checkedIn && b.checkIn < today && b.checkOut > today) inhouseGuests.push(b);
+        if (b.checkOut === today && !b.checkedOut) {
+          checkoutGuests.push(b);
+          todayCollectionAmt += (parseFloat(b.totalAmount) || 0);
+          todayCollectedAmt += totalReceived;
+          if (pending > 0) todayPendingAmt += pending;
+        }
+
+        if (pending > 0 && b.paymentType === 'Ledger') {
+          ledgerDueAmt += pending;
+        }
+      });
+
+      renderCheckinList('checkinGuestList', checkinGuests);
+      renderInhouseList('inhouseGuestList', inhouseGuests);
+      renderCheckoutList('checkoutGuestList', checkoutGuests);
+      document.getElementById('checkinCount').textContent = '(' + checkinGuests.length + ')';
+      document.getElementById('inhouseCount').textContent = '(' + inhouseGuests.length + ')';
+      document.getElementById('checkoutCount').textContent = '(' + checkoutGuests.length + ')';
+
+      document.getElementById('todayCollection').textContent = formatCurrency(todayCollectionAmt);
+      document.getElementById('todayCollected').textContent = formatCurrency(todayCollectedAmt);
+      document.getElementById('todayPending').textContent = formatCurrency(todayPendingAmt);
+      document.getElementById('ledgerDue').textContent = formatCurrency(ledgerDueAmt);
+
+      var alertBox = document.getElementById('alertBox');
+      if (todayPendingAmt > 0) {
+        alertBox.style.display = 'flex';
+        document.getElementById('alertText').textContent =
+          'Checkout today: ' + formatCurrency(todayPendingAmt) + ' pending collection';
+      } else {
+        alertBox.style.display = 'none';
+      }
+
+      updateMonthlySummary();
+    }
+
+    // === CHECK-IN LIST ===
+    function renderCheckinList(containerId, guests) {
+      var container = document.getElementById(containerId);
+      if (guests.length === 0) { container.innerHTML = '<div class="guest-list-empty">No check-ins today</div>'; return; }
+      var html = '<div style="overflow-x:auto;"><table class="guest-list-table"><thead><tr>' +
+        '<th>Guest</th><th>Pax</th><th>Room</th><th>Source</th><th>Checkout</th>' +
+        '<th>Collection</th><th>Pending</th><th>Status</th><th>Actions</th><th>Remarks</th>' +
+        '</tr></thead><tbody>';
+      guests.forEach(function(b) {
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
+        html += '<tr>' +
+          '<td><strong>' + escapeHtml(b.guestName) + '</strong>' + (b.phone ? '<br><small style="color:#6b7280">' + escapeHtml(b.phone) + '</small>' : '') + '</td>' +
+          '<td>' + (b.pax || 1) + '</td>' +
+          '<td>' + formatRoomDisplay(b.roomNo) + '</td>' +
+          '<td>' + escapeHtml(b.source) + (b.sourceName ? '<br><small>' + escapeHtml(b.sourceName) + '</small>' : '') + '</td>' +
+          '<td>' + formatDate(b.checkOut) + '</td>' +
+          '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
+          '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+            '<button class="btn btn-primary btn-small" onclick="markCheckedIn(\'' + b.id + '\')" title="Check-in &amp; Allot Room">' +
+              '<span class="material-icons" style="font-size:14px">login</span> Check-in &amp; Room</button>' +
+            (pending > 0 ? '<button class="btn btn-secondary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
+          '</div></td>' +
+          '<td><small style="color:#6b7280;font-style:italic;">' + escapeHtml(b.remarks || '-') + '</small></td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    // === IN-HOUSE LIST ===
+    function renderInhouseList(containerId, guests) {
+      var container = document.getElementById(containerId);
+      if (guests.length === 0) { container.innerHTML = '<div class="guest-list-empty">No in-house guests</div>'; return; }
+      var html = '<div style="overflow-x:auto;"><table class="guest-list-table"><thead><tr>' +
+        '<th>Guest</th><th>Pax</th><th>Room</th><th>Source</th><th>Check-in</th><th>Checkout</th>' +
+        '<th>Collection</th><th>Received</th><th>Pending</th><th>Status</th>' +
+        '</tr></thead><tbody>';
+      guests.forEach(function(b) {
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
+        html += '<tr>' +
+          '<td><strong>' + escapeHtml(b.guestName) + '</strong>' + (b.phone ? '<br><small style="color:#6b7280">' + escapeHtml(b.phone) + '</small>' : '') +
+            (b.kot === 'Yes' ? ' <span class="badge-kot">KOT</span>' : '') + '</td>' +
+          '<td>' + (b.pax || 1) + '</td>' +
+          '<td>' + formatRoomDisplay(b.roomNo) + '</td>' +
+          '<td>' + escapeHtml(b.source) + (b.sourceName ? '<br><small>' + escapeHtml(b.sourceName) + '</small>' : '') + '</td>' +
+          '<td>' + formatDate(b.checkIn) + '</td>' +
+          '<td>' + formatDate(b.checkOut) + '</td>' +
+          '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
+          '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
+          '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    // === CHECK-OUT LIST ===
+    function renderCheckoutList(containerId, guests) {
+      var container = document.getElementById(containerId);
+      if (guests.length === 0) { container.innerHTML = '<div class="guest-list-empty">No check-outs today</div>'; return; }
+      var html = '<div style="overflow-x:auto;"><table class="guest-list-table"><thead><tr>' +
+        '<th>Guest</th><th>Pax</th><th>Room</th><th>Source</th><th>Check-in</th><th>Nights</th>' +
+        '<th>Collection</th><th>Received</th><th>Pending</th><th>Status</th><th>Actions</th>' +
+        '</tr></thead><tbody>';
+      guests.forEach(function(b) {
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
+        var nights = calculateNights(b.checkIn, b.checkOut);
+        html += '<tr>' +
+          '<td><strong>' + escapeHtml(b.guestName) + '</strong>' + (b.phone ? '<br><small style="color:#6b7280">' + escapeHtml(b.phone) + '</small>' : '') +
+            (b.kot === 'Yes' ? ' <span class="badge-kot">KOT</span>' : '') + '</td>' +
+          '<td>' + (b.pax || 1) + '</td>' +
+          '<td>' + formatRoomDisplay(b.roomNo) + '</td>' +
+          '<td>' + escapeHtml(b.source) + (b.sourceName ? '<br><small>' + escapeHtml(b.sourceName) + '</small>' : '') + '</td>' +
+          '<td>' + formatDate(b.checkIn) + '</td>' +
+          '<td><strong>' + nights + '</strong></td>' +
+          '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
+          '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
+          '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+            '<button class="btn btn-warning btn-small" onclick="openCheckoutModal(\'' + b.id + '\')">' +
+              '<span class="material-icons" style="font-size:14px">logout</span> Checkout</button>' +
+            '<button class="btn btn-secondary btn-small" onclick="generateBill(\'' + b.id + '\')">' +
+              '<span class="material-icons" style="font-size:14px">receipt</span> Bill</button>' +
+            (pending > 0 ? '<button class="btn btn-primary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
+          '</div></td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    function updateMonthlySummary() {
+      var startInput = document.getElementById('summaryStartDate');
+      var endInput = document.getElementById('summaryEndDate');
+      if (!startInput.value) { var now = new Date(); startInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01'; }
+      if (!endInput.value) { endInput.value = getToday(); }
+      var startDate = startInput.value;
+      var endDate = endInput.value;
+      var mBookings = 0, mRoomCharge = 0, mKot = 0, mAddOn = 0, mCollection = 0, mCollected = 0, mPending = 0;
+
+      bookings.forEach(function(b) {
+        if (b.status === 'CANCELLED') return;
+        var match = b.checkOut && b.checkOut >= startDate && b.checkOut <= endDate;
+        if (match) {
+          mBookings++;
+          var roomCharge = parseFloat(b.totalAmount) || 0;
+          var kotAmt = parseFloat(b.kotAmount) || 0;
+          var addOnAmt = 0;
+          if (b.addOns && b.addOns.length > 0) b.addOns.forEach(function(a) { addOnAmt += parseFloat(a.amount) || 0; });
+          var baseRoom = roomCharge - kotAmt - addOnAmt;
+          if (baseRoom < 0) baseRoom = roomCharge;
+          mRoomCharge += baseRoom; mKot += kotAmt; mAddOn += addOnAmt; mCollection += roomCharge;
+          var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+          mCollected += totalReceived;
+          var pending = roomCharge - totalReceived;
+          if (pending > 0) mPending += pending;
+        }
+      });
+
+      document.getElementById('monthlyBookings').textContent = mBookings;
+      document.getElementById('summaryRoomCharge').textContent = formatCurrency(mRoomCharge);
+      document.getElementById('summaryKot').textContent = formatCurrency(mKot);
+      document.getElementById('summaryAddOn').textContent = formatCurrency(mAddOn);
+      document.getElementById('monthlyCollection').textContent = formatCurrency(mCollection);
+      document.getElementById('monthlyCollected').textContent = formatCurrency(mCollected);
+      document.getElementById('monthlyPending').textContent = formatCurrency(mPending);
+    }
+
+    // ========== SUMMARY DOWNLOAD ==========
+    function getSummaryFilteredBookings() {
+      var startDate = document.getElementById('summaryStartDate').value;
+      var endDate = document.getElementById('summaryEndDate').value;
+      if (!startDate || !endDate) return [];
+      return bookings.filter(function(b) {
+        if (b.status === 'CANCELLED') return false;
+        return b.checkOut && b.checkOut >= startDate && b.checkOut <= endDate;
+      }).sort(function(a, b) {
+        if (a.checkOut < b.checkOut) return -1; if (a.checkOut > b.checkOut) return 1;
+        if (a.source < b.source) return -1; if (a.source > b.source) return 1;
+        return 0;
+      });
+    }
+
+    function buildSummaryHeaders() {
+      return ['Checkout Date','Booking ID','Guest Name','Phone','Pax','Room No','Room Category','No of Rooms','Nights',
+        'Check-in','Checkout','Meal Plan','Source','Agent Name','Payment Type',
+        'Room Charge','KOT Amount','Add-On Details','Add-On Amount','Total Amount',
+        'Advance Received','Advance Date','Advance Mode','Balance Received','Balance Date','Balance Mode',
+        'Total Collected','Pending Amount','Status','Remarks'];
+    }
+
+    function buildSummaryRow(b) {
+      var kotAmt = parseFloat(b.kotAmount) || 0;
+      var addOnAmt = 0; var addOnDetails = '';
+      if (b.addOns && b.addOns.length > 0) {
+        b.addOns.forEach(function(a) { addOnAmt += parseFloat(a.amount) || 0; });
+        addOnDetails = b.addOns.map(function(a) { return a.type + ': ' + a.amount; }).join('; ');
+      }
+      var totalAmt = parseFloat(b.totalAmount) || 0;
+      var baseRoom = totalAmt - kotAmt - addOnAmt; if (baseRoom < 0) baseRoom = totalAmt;
+      var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+      var pending = totalAmt - totalReceived; if (pending < 0) pending = 0;
+      var nights = calculateNights(b.checkIn, b.checkOut);
+      return [b.checkOut, b.id, b.guestName, b.phone || '', b.pax || 1,
+        (b.roomNo || '').replace(/,/g, ' / '), b.roomCategory || '', b.noOfRooms || 1, nights,
+        b.checkIn, b.checkOut, b.mealPlan || '', b.source || '', b.sourceName || '', b.paymentType || '',
+        baseRoom, kotAmt, addOnDetails, addOnAmt, totalAmt,
+        parseFloat(b.advanceReceived) || 0, b.advanceDate || '', b.paymentMode || '',
+        parseFloat(b.balanceReceived) || 0, b.balanceDate || '', b.balancePaymentMode || '',
+        totalReceived, pending, b.status, b.remarks || ''];
+    }
+
+    function buildSummaryTotalsRow(filtered) {
+      var t = { room: 0, kot: 0, addOn: 0, total: 0, adv: 0, bal: 0, collected: 0, pending: 0 };
+      filtered.forEach(function(b) {
+        var kotAmt = parseFloat(b.kotAmount) || 0; var addOnAmt = 0;
+        if (b.addOns && b.addOns.length > 0) b.addOns.forEach(function(a) { addOnAmt += parseFloat(a.amount) || 0; });
+        var totalAmt = parseFloat(b.totalAmount) || 0;
+        var baseRoom = totalAmt - kotAmt - addOnAmt; if (baseRoom < 0) baseRoom = totalAmt;
+        t.room += baseRoom; t.kot += kotAmt; t.addOn += addOnAmt; t.total += totalAmt;
+        t.adv += parseFloat(b.advanceReceived) || 0; t.bal += parseFloat(b.balanceReceived) || 0;
+        t.collected += (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pend = totalAmt - ((parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0));
+        if (pend > 0) t.pending += pend;
+      });
+      return ['', '', 'TOTAL (' + filtered.length + ' bookings)', '', '', '', '', '', '',
+        '', '', '', '', '', '', t.room, t.kot, '', t.addOn, t.total, t.adv, '', '', t.bal, '', '', t.collected, t.pending, '', ''];
+    }
+
+    function downloadSummaryData(format) {
+      var filtered = getSummaryFilteredBookings();
+      if (filtered.length === 0) { showToast('No bookings in selected date range', 'error'); return; }
+      var startDate = document.getElementById('summaryStartDate').value;
+      var endDate = document.getElementById('summaryEndDate').value;
+      var fileName = 'Neelkanth-Summary-' + startDate + '-to-' + endDate;
+      if (format === 'csv') downloadSummaryCSV(filtered, fileName);
+      else if (format === 'excel') downloadSummaryExcel(filtered, fileName);
+      else if (format === 'pdf') downloadSummaryPDF(filtered, fileName, startDate, endDate);
+    }
+
+    function downloadSummaryCSV(filtered, fileName) {
+      var headers = buildSummaryHeaders();
+      var rows = filtered.map(buildSummaryRow);
+      rows.push(buildSummaryTotalsRow(filtered));
+      var csvContent = [headers].concat(rows).map(function(row) {
+        return row.map(function(cell) { return '"' + String(cell).replace(/"/g, '""') + '"'; }).join(',');
+      }).join('\n');
+      downloadAsCSV(csvContent, fileName + '.csv');
+      showToast('CSV downloaded', 'success');
+    }
+
+    function downloadSummaryExcel(filtered, fileName) {
+      var headers = buildSummaryHeaders();
+      var rows = filtered.map(buildSummaryRow);
+      var totals = buildSummaryTotalsRow(filtered);
+      var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+      html += '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+      html += '<x:Name>Summary</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>';
+      html += '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+      html += '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;">';
+      html += '<tr><td colspan="' + headers.length + '" style="font-size:14px;font-weight:bold;text-align:center;background:#1e3a5f;color:white;padding:10px;">The Neelkanth Grand - Booking Summary</td></tr>';
+      html += '<tr><td colspan="' + headers.length + '" style="font-size:11px;text-align:center;background:#e8ecf1;padding:6px;">Period: ' + formatDate(document.getElementById('summaryStartDate').value) + ' to ' + formatDate(document.getElementById('summaryEndDate').value) + '</td></tr>';
+      html += '<tr>'; headers.forEach(function(h) { html += '<th style="background:#2d5a87;color:white;padding:6px 8px;font-size:10px;white-space:nowrap;">' + h + '</th>'; }); html += '</tr>';
+      var lastDate = '';
+      rows.forEach(function(row) {
+        var isNewDate = row[0] !== lastDate; lastDate = row[0];
+        html += '<tr' + (isNewDate ? ' style="border-top:2px solid #1e3a5f;"' : '') + '>';
+        row.forEach(function(cell, ci) {
+          var style = 'padding:4px 6px;font-size:10px;';
+          if ([4,7,8,15,16,18,19,20,23,26,27].indexOf(ci) !== -1) { style += 'text-align:right;'; if (typeof cell === 'number') cell = cell.toLocaleString('en-IN'); }
+          html += '<td style="' + style + '">' + escapeHtml(String(cell)) + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '<tr>'; totals.forEach(function(cell, ci) {
+        var style = 'padding:6px 8px;font-weight:bold;font-size:11px;background:#f0f4f8;border-top:2px solid #1e3a5f;';
+        if ([4,7,8,15,16,18,19,20,23,26,27].indexOf(ci) !== -1) { style += 'text-align:right;'; if (typeof cell === 'number') cell = cell.toLocaleString('en-IN'); }
+        html += '<td style="' + style + '">' + escapeHtml(String(cell)) + '</td>';
+      }); html += '</tr>';
+      html += '</table></body></html>';
+      downloadAsExcel(html, fileName + '.xls');
+      showToast('Excel downloaded', 'success');
+    }
+
+    function downloadSummaryPDF(filtered, fileName, startDate, endDate) {
+      var headers = buildSummaryHeaders();
+      var rows = filtered.map(buildSummaryRow);
+      var sT = { room: 0, kot: 0, addOn: 0, total: 0, collected: 0, pending: 0 };
+      filtered.forEach(function(b) {
+        var kotAmt = parseFloat(b.kotAmount) || 0; var addOnAmt = 0;
+        if (b.addOns && b.addOns.length > 0) b.addOns.forEach(function(a) { addOnAmt += parseFloat(a.amount) || 0; });
+        var totalAmt = parseFloat(b.totalAmount) || 0;
+        var baseRoom = totalAmt - kotAmt - addOnAmt; if (baseRoom < 0) baseRoom = totalAmt;
+        sT.room += baseRoom; sT.kot += kotAmt; sT.addOn += addOnAmt; sT.total += totalAmt;
+        var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        sT.collected += recv; var pend = totalAmt - recv; if (pend > 0) sT.pending += pend;
+      });
+      var pdfHtml = '<!DOCTYPE html><html><head><title>' + fileName + '</title>';
+      pdfHtml += '<style>body{font-family:Arial,sans-serif;margin:20px;color:#1a1a2e;}.header{text-align:center;margin-bottom:20px;}.header h1{font-size:18px;margin:0;color:#1e3a5f;}.header p{font-size:12px;color:#6b7280;margin:4px 0;}.summary-cards{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}.s-card{flex:1;min-width:100px;padding:12px;border-radius:8px;text-align:center;border:1px solid #e5e7eb;}.s-card .label{font-size:10px;color:#6b7280;margin-bottom:4px;}.s-card .val{font-size:16px;font-weight:700;}.blue{color:#1e3a5f;}.green{color:#059669;}.red{color:#dc2626;}table{width:100%;border-collapse:collapse;font-size:9px;margin-top:10px;}th{background:#1e3a5f;color:white;padding:5px 4px;text-align:left;white-space:nowrap;}td{padding:4px;border-bottom:1px solid #e5e7eb;}tr.date-break{border-top:2px solid #1e3a5f;}.totals td{font-weight:bold;background:#f0f4f8;border-top:2px solid #1e3a5f;font-size:10px;}.right{text-align:right;}@media print{body{margin:10px;}.no-print{display:none;}}</style></head><body>';
+      pdfHtml += '<div class="header"><h1>The Neelkanth Grand - by AKS Hospitality</h1><p>Booking Summary: ' + formatDate(startDate) + ' to ' + formatDate(endDate) + '</p><p>Total Bookings: ' + filtered.length + '</p></div>';
+      pdfHtml += '<div class="summary-cards">';
+      pdfHtml += '<div class="s-card"><div class="label">Room Charge</div><div class="val blue">' + formatCurrency(sT.room) + '</div></div>';
+      pdfHtml += '<div class="s-card"><div class="label">KOT</div><div class="val blue">' + formatCurrency(sT.kot) + '</div></div>';
+      pdfHtml += '<div class="s-card"><div class="label">Add-On</div><div class="val blue">' + formatCurrency(sT.addOn) + '</div></div>';
+      pdfHtml += '<div class="s-card"><div class="label">Total</div><div class="val blue">' + formatCurrency(sT.total) + '</div></div>';
+      pdfHtml += '<div class="s-card"><div class="label">Collected</div><div class="val green">' + formatCurrency(sT.collected) + '</div></div>';
+      pdfHtml += '<div class="s-card"><div class="label">Pending</div><div class="val red">' + formatCurrency(sT.pending) + '</div></div></div>';
+      pdfHtml += '<div class="no-print" style="text-align:center;margin-bottom:15px;"><button onclick="window.print()" style="padding:10px 30px;background:#1e3a5f;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">Print / Save as PDF</button></div>';
+      var pdfHeaders = ['Date','ID','Guest','Room','Category','Nights','Source','Agent','Payment Type','Room Charge','KOT','Add-On','Total','Collected','Pending','Status'];
+      pdfHtml += '<table><thead><tr>'; pdfHeaders.forEach(function(h) { pdfHtml += '<th>' + h + '</th>'; }); pdfHtml += '</tr></thead><tbody>';
+      var lastDate = '';
+      rows.forEach(function(row) {
+        var isNewDate = row[0] !== lastDate; lastDate = row[0];
+        pdfHtml += '<tr' + (isNewDate ? ' class="date-break"' : '') + '>';
+        var pdfCols = [0,1,2,5,6,8,12,13,14,15,16,18,19,26,27,28];
+        pdfCols.forEach(function(ci) {
+          var cell = row[ci]; var cls = '';
+          if (typeof cell === 'number') { cls = ' class="right"'; cell = cell.toLocaleString('en-IN'); }
+          if (ci === 0 && cell) cell = formatDate(cell);
+          pdfHtml += '<td' + cls + '>' + escapeHtml(String(cell)) + '</td>';
+        });
+        pdfHtml += '</tr>';
+      });
+      pdfHtml += '<tr class="totals"><td colspan="2"></td><td>TOTAL</td><td colspan="6"></td>';
+      pdfHtml += '<td class="right">' + sT.room.toLocaleString('en-IN') + '</td>';
+      pdfHtml += '<td class="right">' + sT.kot.toLocaleString('en-IN') + '</td>';
+      pdfHtml += '<td class="right">' + sT.addOn.toLocaleString('en-IN') + '</td>';
+      pdfHtml += '<td class="right">' + sT.total.toLocaleString('en-IN') + '</td>';
+      pdfHtml += '<td class="right">' + sT.collected.toLocaleString('en-IN') + '</td>';
+      pdfHtml += '<td class="right">' + sT.pending.toLocaleString('en-IN') + '</td><td></td></tr>';
+      pdfHtml += '</tbody></table></body></html>';
+      openPrintableHtml(pdfHtml);
+      showToast('PDF ready - use Print / Save as PDF', 'success');
+    }
+
+    // ========== ROOM INVENTORY ==========
+    function getBookingRooms(b) {
+      if (!b.roomNo) return [];
+      return b.roomNo.split(',').map(function(r) { return r.trim(); });
+    }
+
+    function isRoomOccupied(room, dateStr, excludeId) {
+      return bookings.some(function(b) {
+        if (b.status === 'CANCELLED') return false;
+        if (excludeId && b.id === excludeId) return false;
+        var bRooms = getBookingRooms(b);
+        if (bRooms.indexOf(room) === -1) return false;
+        return b.checkIn <= dateStr && b.checkOut > dateStr;
+      });
+    }
+
+    function getOccupantBooking(room, dateStr) {
+      return bookings.find(function(bk) {
+        if (bk.status === 'CANCELLED') return false;
+        var bRooms = getBookingRooms(bk);
+        if (bRooms.indexOf(room) === -1) return false;
+        return bk.checkIn <= dateStr && bk.checkOut > dateStr;
+      }) || null;
+    }
+
+    function renderInventory() {
+      renderInventoryDayView();
+      renderInventoryMonthGrid();
+      if (!document.getElementById('occMonth').value) {
+        var now = new Date();
+        var cm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('occMonth').value = cm;
+        var yearSel = document.getElementById('occYear');
+        if (yearSel.options.length <= 1) {
+          yearSel.innerHTML = '';
+          for (var y = now.getFullYear() - 1; y <= now.getFullYear() + 1; y++) {
+            var opt = document.createElement('option'); opt.value = y; opt.textContent = y;
+            if (y === now.getFullYear()) opt.selected = true; yearSel.appendChild(opt);
+          }
+        }
+      }
+      renderOccupancyReport();
+    }
+
+    function renderInventoryDayView() {
+      var dateStr = document.getElementById('inventoryDate').value; if (!dateStr) dateStr = getToday();
+      var container = document.getElementById('inventoryDayView');
+      var occupied = [], vacant = [];
+      ALL_ROOMS.forEach(function(rm) {
+        var type = ROOM_TYPE[rm] || '';
+        if (isRoomOccupied(rm, dateStr)) {
+          var bk = getOccupantBooking(rm, dateStr);
+          occupied.push({ room: rm, type: type, guest: bk ? bk.guestName : '', pax: bk ? (bk.pax || 1) : 0 });
+        } else { vacant.push({ room: rm, type: type }); }
+      });
+      var html = '<h4 style="margin-bottom:12px;color:#1e3a5f;">Date: <strong>' + formatDate(dateStr) + '</strong> &mdash; ' +
+        '<span style="color:#065f46">' + vacant.length + ' Vacant</span> | <span style="color:#991b1b">' + occupied.length + ' Occupied</span> (of ' + ALL_ROOMS.length + ')</h4>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+      html += '<div><h5 style="color:#065f46;margin-bottom:8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Vacant Rooms (' + vacant.length + ')</h5>';
+      html += '<table class="report-table" style="margin:0"><thead><tr><th>Room</th><th>Type</th></tr></thead><tbody>';
+      if (vacant.length === 0) html += '<tr><td colspan="2" style="text-align:center;color:#6b7280">No vacant rooms</td></tr>';
+      else vacant.forEach(function(v) { html += '<tr><td><strong>' + v.room + '</strong></td><td>' + escapeHtml(v.type) + '</td></tr>'; });
+      html += '</tbody></table></div>';
+      html += '<div><h5 style="color:#991b1b;margin-bottom:8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Occupied Rooms (' + occupied.length + ')</h5>';
+      html += '<table class="report-table" style="margin:0"><thead><tr><th>Room</th><th>Type</th><th>Guest</th><th>Adults</th></tr></thead><tbody>';
+      if (occupied.length === 0) html += '<tr><td colspan="4" style="text-align:center;color:#6b7280">No occupied rooms</td></tr>';
+      else occupied.forEach(function(o) { html += '<tr><td><strong>' + o.room + '</strong></td><td>' + escapeHtml(o.type) + '</td><td>' + escapeHtml(o.guest) + '</td><td>' + o.pax + '</td></tr>'; });
+      html += '</tbody></table></div></div>';
+      container.innerHTML = html;
+      document.getElementById('invTodaySummary').textContent = 'Today: ' + occupied.length + ' Occupied | ' + vacant.length + ' Vacant (of ' + ALL_ROOMS.length + ')';
+    }
+
+    function renderInventoryMonthGrid() {
+      var monthStr = document.getElementById('inventoryMonth').value; if (!monthStr) return;
+      var parts = monthStr.split('-'); var year = parseInt(parts[0]); var month = parseInt(parts[1]) - 1;
+      var daysInMonth = new Date(year, month + 1, 0).getDate(); var today = getToday();
+      var dates = []; for (var d = 1; d <= daysInMonth; d++) dates.push(monthStr + '-' + String(d).padStart(2, '0'));
+      var html = '<table class="inv-table"><thead><tr><th class="room-col">Room</th><th class="room-col" style="min-width:80px">Type</th>';
+      dates.forEach(function(dt, idx) { var isToday = dt === today; html += '<th' + (isToday ? ' class="cell-today"' : '') + '>' + (idx + 1) + '</th>'; });
+      html += '</tr></thead><tbody>';
+      var daySummary = dates.map(function() { return { occ: 0, vac: 0 }; });
+      ALL_ROOMS.forEach(function(rm) {
+        var type = ROOM_TYPE[rm] || '';
+        html += '<tr><td class="room-col">' + rm + '</td><td class="room-col" style="font-size:10px;font-weight:400;color:#6b7280">' + type + '</td>';
+        dates.forEach(function(dt, idx) {
+          var isToday = dt === today; var occ = isRoomOccupied(rm, dt);
+          if (occ) {
+            daySummary[idx].occ++; var bk = getOccupantBooking(rm, dt);
+            var guest = bk ? bk.guestName : ''; var pax = bk ? (bk.pax || 1) : 0;
+            var initials = guest.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
+            html += '<td class="cell-occupied' + (isToday ? ' cell-today' : '') + '" title="' + escapeHtml(guest) + ' (' + pax + ' adults)">' + initials + '</td>';
+          } else { daySummary[idx].vac++; html += '<td class="cell-vacant' + (isToday ? ' cell-today' : '') + '"></td>'; }
+        });
+        html += '</tr>';
+      });
+      html += '<tr style="font-weight:700;background:#f0f4f8"><td class="room-col" style="background:#f0f4f8">Occ</td><td style="background:#f0f4f8"></td>';
+      daySummary.forEach(function(s, idx) { var isToday = dates[idx] === today; html += '<td' + (isToday ? ' class="cell-today"' : '') + ' style="color:#991b1b">' + s.occ + '</td>'; });
+      html += '</tr><tr style="font-weight:700;background:#f0f4f8"><td class="room-col" style="background:#f0f4f8">Vac</td><td style="background:#f0f4f8"></td>';
+      daySummary.forEach(function(s, idx) { var isToday = dates[idx] === today; html += '<td' + (isToday ? ' class="cell-today"' : '') + ' style="color:#065f46">' + s.vac + '</td>'; });
+      html += '</tr></tbody></table>';
+      document.getElementById('inventoryTableWrap').innerHTML = html;
+    }
+
+    // ========== OCCUPANCY REPORT ==========
+    function toggleOccFilters() {
+      var vt = document.getElementById('occViewType').value;
+      document.getElementById('occMonth').style.display = vt === 'month' ? 'block' : 'none';
+      document.getElementById('occYear').style.display = vt === 'year' ? 'block' : 'none';
+      document.getElementById('occFrom').style.display = vt === 'custom' ? 'block' : 'none';
+      document.getElementById('occToLabel').style.display = vt === 'custom' ? 'inline' : 'none';
+      document.getElementById('occTo').style.display = vt === 'custom' ? 'block' : 'none';
+    }
+
+    function getOccDateRange() {
+      var vt = document.getElementById('occViewType').value;
+      if (vt === 'month') { var m = document.getElementById('occMonth').value; if (!m) return null; var p = m.split('-'); return { start: m + '-01', end: toLocalDateStr(new Date(parseInt(p[0]), parseInt(p[1]), 0)) }; }
+      if (vt === 'year') { var y = document.getElementById('occYear').value; if (!y) return null; return { start: y + '-01-01', end: y + '-12-31' }; }
+      var s = document.getElementById('occFrom').value; var e = document.getElementById('occTo').value;
+      return (s && e) ? { start: s, end: e } : null;
+    }
+
+    function getDatesInRange(start, end) {
+      var dates = []; var dt = start; var safety = 0;
+      while (dt <= end && safety < 400) { dates.push(dt); var next = new Date(dt + 'T00:00:00'); next.setDate(next.getDate() + 1); dt = toLocalDateStr(next); safety++; }
+      return dates;
+    }
+
+    function renderOccupancyReport() {
+      var range = getOccDateRange();
+      var container = document.getElementById('occupancyReportContent');
+      if (!range) { container.innerHTML = '<p style="color:#6b7280;text-align:center;padding:20px;">Select a period</p>'; return; }
+      var dates = getDatesInRange(range.start, range.end);
+      var totalSlots = ALL_ROOMS.length * dates.length; var totalOccupied = 0; var agentOccupied = {};
+      dates.forEach(function(dt) { ALL_ROOMS.forEach(function(rm) {
+        var bk = getOccupantBooking(rm, dt);
+        if (bk) { totalOccupied++; var agentKey = 'Walk-in'; if (bk.source === 'Agent' || bk.source === 'OTA') agentKey = bk.sourceName || bk.source; agentOccupied[agentKey] = (agentOccupied[agentKey] || 0) + 1; }
+      }); });
+      var occPct = totalSlots > 0 ? ((totalOccupied / totalSlots) * 100).toFixed(1) : '0.0';
+      var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;">';
+      html += '<div class="monthly-card"><div class="mc-label">Total Room-Nights</div><div class="mc-value blue">' + totalSlots + '</div></div>';
+      html += '<div class="monthly-card"><div class="mc-label">Occupied Room-Nights</div><div class="mc-value orange">' + totalOccupied + '</div></div>';
+      html += '<div class="monthly-card"><div class="mc-label">Vacant Room-Nights</div><div class="mc-value green">' + (totalSlots - totalOccupied) + '</div></div>';
+      html += '<div class="monthly-card" style="border:2px solid #1e3a5f;"><div class="mc-label">Occupancy %</div><div class="mc-value" style="color:#1e3a5f;font-size:32px;">' + occPct + '%</div></div></div>';
+      html += '<div style="margin-bottom:24px;"><div style="background:#e5e7eb;border-radius:10px;height:28px;overflow:hidden;position:relative;"><div style="background:linear-gradient(135deg,#1e3a5f,#2d5a87);height:100%;width:' + occPct + '%;border-radius:10px;transition:width 0.5s;display:flex;align-items:center;justify-content:center;"><span style="color:white;font-size:12px;font-weight:700;">' + occPct + '%</span></div></div></div>';
+      var agents = Object.keys(agentOccupied).sort(function(a, b) { return agentOccupied[b] - agentOccupied[a]; });
+      html += '<h4 style="color:#1e3a5f;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span class="material-icons" style="font-size:20px;">group</span> Agent-wise Occupancy Contribution</h4>';
+      html += '<table class="report-table"><thead><tr><th>Source / Agent</th><th>Room-Nights</th><th>Contribution %</th><th>Share of Occupied</th><th>Visual</th></tr></thead><tbody>';
+      agents.forEach(function(agent) {
+        var rn = agentOccupied[agent]; var contribPct = totalSlots > 0 ? ((rn / totalSlots) * 100).toFixed(1) : '0.0'; var sharePct = totalOccupied > 0 ? ((rn / totalOccupied) * 100).toFixed(1) : '0.0';
+        html += '<tr><td><strong>' + escapeHtml(agent) + '</strong></td><td>' + rn + '</td><td class="amount">' + contribPct + '%</td><td class="amount" style="color:#1e3a5f;font-weight:700;">' + sharePct + '%</td><td style="min-width:120px;"><div style="background:#e5e7eb;border-radius:6px;height:16px;overflow:hidden;"><div style="background:#3b82f6;height:100%;width:' + sharePct + '%;border-radius:6px;"></div></div></td></tr>';
+      });
+      if (agents.length === 0) html += '<tr><td colspan="5" style="text-align:center;color:#6b7280;">No occupancy data</td></tr>';
+      html += '<tr class="total-row"><td>TOTAL</td><td>' + totalOccupied + '</td><td class="amount">' + occPct + '%</td><td class="amount" style="font-weight:700;">100%</td><td></td></tr>';
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ========== ROOM AVAILABILITY IN BOOKING FORM ==========
+    function getAvailableAndOccupiedRooms() {
+      var checkIn = document.getElementById('checkIn').value; var checkOut = document.getElementById('checkOut').value;
+      var editId = document.getElementById('editBookingId').value;
+      var availableRooms = [], occupiedRooms = [];
+      ALL_ROOMS.forEach(function(rm) {
+        var occupied = false;
+        if (checkIn && checkOut) { var dt = checkIn; while (dt < checkOut) { if (isRoomOccupied(rm, dt, editId)) { occupied = true; break; } var next = new Date(dt + 'T00:00:00'); next.setDate(next.getDate() + 1); dt = toLocalDateStr(next); } }
+        else if (checkIn) { occupied = isRoomOccupied(rm, checkIn, editId); }
+        if (occupied) occupiedRooms.push(rm); else availableRooms.push(rm);
+      });
+      return { available: availableRooms, occupied: occupiedRooms };
+    }
+
+    function populateRoomSelect(selectEl, availableRooms, occupiedRooms) {
+      var currentVal = selectEl.value; selectEl.innerHTML = '<option value="">Not Assigned</option>';
+      availableRooms.forEach(function(rm) { var opt = document.createElement('option'); opt.value = rm; opt.textContent = rm + ' - ' + (ROOM_TYPE[rm] || '') + ' (Available)'; opt.style.color = '#065f46'; selectEl.appendChild(opt); });
+      occupiedRooms.forEach(function(rm) { var opt = document.createElement('option'); opt.value = rm; opt.textContent = rm + ' - ' + (ROOM_TYPE[rm] || '') + ' (Occupied)'; opt.style.color = '#991b1b'; selectEl.appendChild(opt); });
+      if (currentVal) selectEl.value = currentVal;
+    }
+
+    function updateRoomAvailability() {
+      var checkIn = document.getElementById('checkIn').value; var hint = document.getElementById('roomAvailHint');
+      if (!checkIn) { hint.textContent = ''; return; }
+      var rooms = getAvailableAndOccupiedRooms();
+      var container = document.getElementById('roomSelectContainer');
+      var selects = container.querySelectorAll('select');
+      selects.forEach(function(sel) { populateRoomSelect(sel, rooms.available, rooms.occupied); });
+      hint.textContent = rooms.available.length + ' rooms available, ' + rooms.occupied.length + ' occupied';
+      hint.className = 'room-avail-hint' + (rooms.available.length === 0 ? ' warn' : '');
+    }
+
+    function updateRoomSelects() {
+      var count = parseInt(document.getElementById('noOfRooms').value) || 1;
+      var container = document.getElementById('roomSelectContainer');
+      var existing = container.querySelectorAll('select'); var currentValues = [];
+      existing.forEach(function(sel) { currentValues.push(sel.value); });
+      container.innerHTML = '';
+      for (var i = 0; i < count; i++) {
+        var sel = document.createElement('select');
+        sel.style.cssText = 'padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;min-width:160px;';
+        if (i === 0) sel.id = 'roomNo';
+        sel.innerHTML = '<option value="">Not Assigned</option>';
+        container.appendChild(sel);
+      }
+      updateRoomAvailability();
+      var newSelects = container.querySelectorAll('select');
+      for (var i = 0; i < newSelects.length && i < currentValues.length; i++) { if (currentValues[i]) newSelects[i].value = currentValues[i]; }
+    }
+
+    function getAllSelectedRooms() {
+      var container = document.getElementById('roomSelectContainer'); var selects = container.querySelectorAll('select'); var rooms = [];
+      selects.forEach(function(sel) { if (sel.value) rooms.push(sel.value); }); return rooms.join(',');
+    }
+
+    function updateNightsDisplay() {
+      var checkIn = document.getElementById('checkIn').value; var checkOut = document.getElementById('checkOut').value; var el = document.getElementById('nightsDisplay');
+      if (checkIn && checkOut) { var nights = calculateNights(checkIn, checkOut); el.textContent = nights + (nights === 1 ? ' Night' : ' Nights'); } else { el.textContent = '-'; }
+    }
+
+    // ========== BOOKING MODAL ==========
+    function openBookingModal() {
+      document.getElementById('bookingModal').classList.add('active');
+      document.getElementById('modalTitle').textContent = 'New Booking';
+      document.getElementById('editBookingId').value = '';
+      document.getElementById('guestName').value = '';
+      document.getElementById('guestPhone').value = '';
+      document.getElementById('pax').value = '1';
+      document.getElementById('kot').value = '';
+      document.getElementById('noOfRooms').value = '1';
+      document.getElementById('roomCategory').value = '';
+      document.getElementById('checkIn').value = getToday();
+      document.getElementById('checkOut').value = '';
+      document.getElementById('roomSelectGroup').style.display = 'none';
+      updateRoomSelects();
+      document.getElementById('mealPlan').value = '';
+      document.getElementById('bookingSource').value = 'Walk-in';
+      document.getElementById('sourceName').value = '';
+      document.getElementById('sourceNameOther').value = '';
+      document.getElementById('sourceNameOther').style.display = 'none';
+      document.getElementById('complimentary').value = '';
+      document.getElementById('actualRoomRent').value = '';
+      document.getElementById('totalAmount').value = '';
+      document.getElementById('paymentType').value = 'Postpaid';
+      document.getElementById('advanceReceived').value = '0';
+      document.getElementById('paymentMode').value = '';
+      document.getElementById('remarks').value = '';
+      toggleSourceName(); resetSaveBtn(); updateNightsDisplay();
+    }
+
+    function openEditModalById(id) {
+      var booking = bookings.find(function(b) { return b.id === id; }); if (!booking) return;
+      document.getElementById('bookingModal').classList.add('active');
+      document.getElementById('modalTitle').textContent = 'Edit Booking';
+      document.getElementById('editBookingId').value = booking.id;
+      document.getElementById('guestName').value = booking.guestName;
+      document.getElementById('guestPhone').value = booking.phone || '';
+      document.getElementById('pax').value = booking.pax || 1;
+      document.getElementById('kot').value = booking.kot || '';
+      document.getElementById('noOfRooms').value = booking.noOfRooms || 1;
+      document.getElementById('roomCategory').value = booking.roomCategory || '';
+      document.getElementById('checkIn').value = booking.checkIn;
+      document.getElementById('checkOut').value = booking.checkOut;
+      document.getElementById('roomSelectGroup').style.display = 'block';
+      updateRoomSelects();
+      var roomValues = (booking.roomNo || '').split(',').map(function(r) { return r.trim(); });
+      var container = document.getElementById('roomSelectContainer'); var selects = container.querySelectorAll('select');
+      for (var ri = 0; ri < selects.length && ri < roomValues.length; ri++) { selects[ri].value = roomValues[ri]; }
+      document.getElementById('mealPlan').value = booking.mealPlan || '';
+      document.getElementById('bookingSource').value = booking.source;
+      var knownAgents = Array.from(document.getElementById('sourceName').options).map(function(o){return o.value;});
+      if (booking.sourceName && knownAgents.indexOf(booking.sourceName) === -1) {
+        document.getElementById('sourceName').value = 'Other';
+        document.getElementById('sourceNameOther').value = booking.sourceName;
+        document.getElementById('sourceNameOther').style.display = 'block';
+      } else { document.getElementById('sourceName').value = booking.sourceName || ''; document.getElementById('sourceNameOther').value = ''; document.getElementById('sourceNameOther').style.display = 'none'; }
+      document.getElementById('complimentary').value = booking.complimentary || '';
+      document.getElementById('actualRoomRent').value = booking.actualRoomRent || '';
+      document.getElementById('totalAmount').value = booking.totalAmount;
+      document.getElementById('paymentType').value = booking.paymentType;
+      document.getElementById('advanceReceived').value = booking.advanceReceived || 0;
+      document.getElementById('paymentMode').value = booking.paymentMode || '';
+      document.getElementById('remarks').value = booking.remarks || '';
+      toggleSourceName(); resetSaveBtn(); updateRoomAvailability(); updateNightsDisplay();
+    }
+
+    function closeBookingModal() { document.getElementById('bookingModal').classList.remove('active'); }
+
+    function toggleSourceName() {
+      var source = document.getElementById('bookingSource').value;
+      document.getElementById('sourceNameGroup').style.display = (source === 'OTA' || source === 'Agent') ? 'flex' : 'none';
+      toggleOtherSource();
+    }
+
+    function toggleOtherSource() {
+      var val = document.getElementById('sourceName').value;
+      document.getElementById('sourceNameOther').style.display = val === 'Other' ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var sn = document.getElementById('sourceName');
+      if (sn) sn.addEventListener('change', toggleOtherSource);
+    });
+
+    function resetSaveBtn() { var btn = document.getElementById('saveBtn'); btn.disabled = false; btn.innerHTML = '<span class="material-icons">save</span> Save Booking'; }
+
+    function saveBooking() {
+      var editId = document.getElementById('editBookingId').value;
+      var guestName = document.getElementById('guestName').value.trim();
+      var phone = document.getElementById('guestPhone').value.trim();
+      var pax = parseInt(document.getElementById('pax').value) || 1;
+      var kot = document.getElementById('kot').value;
+      var roomNo = getAllSelectedRooms();
+      var noOfRooms = parseInt(document.getElementById('noOfRooms').value) || 1;
+      var roomCategory = document.getElementById('roomCategory').value;
+      var checkIn = document.getElementById('checkIn').value;
+      var checkOut = document.getElementById('checkOut').value;
+      var mealPlan = document.getElementById('mealPlan').value;
+      var source = document.getElementById('bookingSource').value;
+      var sourceNameVal = document.getElementById('sourceName').value;
+      var sourceName = sourceNameVal === 'Other' ? document.getElementById('sourceNameOther').value.trim() : sourceNameVal;
+      var complimentary = document.getElementById('complimentary').value;
+      var actualRoomRent = parseFloat(document.getElementById('actualRoomRent').value) || 0;
+      var totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
+      var paymentType = document.getElementById('paymentType').value;
+      var advanceReceived = parseFloat(document.getElementById('advanceReceived').value) || 0;
+      var paymentMode = document.getElementById('paymentMode').value;
+      var remarks = document.getElementById('remarks').value.trim();
+
+      if (!guestName || !checkIn || !checkOut || !totalAmount) { showToast('Please fill all required fields', 'error'); return; }
+      if ((source === 'OTA' || source === 'Agent') && !sourceName) { showToast('Please enter source name', 'error'); return; }
+
+      if (editId) {
+        var index = bookings.findIndex(function(b) { return b.id === editId; });
+        if (index === -1) { showToast('Booking not found', 'error'); return; }
+        var existing = bookings[index];
+        var balanceReceived = parseFloat(existing.balanceReceived) || 0;
+        var totalRecv = advanceReceived + balanceReceived;
+        var pendingAmt = totalAmount - totalRecv;
+        var status = 'PENDING'; if (pendingAmt <= 0) status = 'COLLECTED'; else if (totalRecv > 0) status = 'PARTIAL';
+
+        bookings[index] = {
+          id: editId, guestName: guestName, phone: phone, pax: pax, kot: kot, roomNo: roomNo, noOfRooms: noOfRooms,
+          roomCategory: roomCategory, checkIn: checkIn, checkOut: checkOut, mealPlan: mealPlan, source: source,
+          sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '', complimentary: complimentary,
+          actualRoomRent: actualRoomRent, totalAmount: totalAmount, paymentType: paymentType,
+          advanceReceived: advanceReceived, advanceDate: existing.advanceDate, balanceReceived: balanceReceived,
+          balanceDate: existing.balanceDate, balancePaymentMode: existing.balancePaymentMode, paymentMode: paymentMode,
+          status: status, remarks: remarks, createdAt: existing.createdAt, rescheduledFrom: existing.rescheduledFrom || '',
+          checkedIn: existing.checkedIn, checkedInTime: existing.checkedInTime || '',
+          checkedOut: existing.checkedOut, checkedOutTime: existing.checkedOutTime || '',
+          kotAmount: existing.kotAmount || 0, addOns: existing.addOns || []
+        };
+        persistBooking(bookings[index]);
+        closeBookingModal(); renderBookings(); updateDashboard();
+        showToast('Booking updated!', 'success');
+      } else {
+        var pending = totalAmount - advanceReceived;
+        var status = 'PENDING'; if (pending <= 0) status = 'COLLECTED'; else if (advanceReceived > 0) status = 'PARTIAL';
+        var newBooking = {
+          id: generateBookingId(), guestName: guestName, phone: phone, pax: pax, kot: kot, roomNo: roomNo, noOfRooms: noOfRooms,
+          roomCategory: roomCategory, checkIn: checkIn, checkOut: checkOut, mealPlan: mealPlan, source: source,
+          sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '', complimentary: complimentary,
+          actualRoomRent: actualRoomRent, totalAmount: totalAmount, paymentType: paymentType,
+          advanceReceived: advanceReceived, advanceDate: advanceReceived > 0 ? getToday() : '', balanceReceived: 0,
+          balanceDate: '', balancePaymentMode: '', paymentMode: paymentMode, status: status, remarks: remarks,
+          createdAt: new Date().toISOString(), rescheduledFrom: '',
+          checkedIn: false, checkedInTime: '', checkedOut: false, checkedOutTime: '', kotAmount: 0, addOns: []
+        };
+        bookings.push(newBooking);
+        persistBooking(newBooking);
+        closeBookingModal(); renderBookings(); updateDashboard();
+        showToast('Booking added!', 'success');
+      }
+    }
+
+    // ========== COLLECT PAYMENT ==========
+    function openCollectModalById(id) {
+      var booking = bookings.find(function(b) { return b.id === id; }); if (!booking) return;
+      var totalReceived = (parseFloat(booking.advanceReceived) || 0) + (parseFloat(booking.balanceReceived) || 0);
+      var pending = (parseFloat(booking.totalAmount) || 0) - totalReceived;
+      document.getElementById('collectModal').classList.add('active');
+      document.getElementById('collectBookingId').value = booking.id;
+      document.getElementById('collectPendingAmount').textContent = formatCurrency(pending);
+      document.getElementById('collectAmount').value = pending > 0 ? pending : 0;
+    }
+
+    function closeCollectModal() { document.getElementById('collectModal').classList.remove('active'); }
+
+    function collectPayment() {
+      var id = document.getElementById('collectBookingId').value;
+      var amount = parseFloat(document.getElementById('collectAmount').value) || 0;
+      var mode = document.getElementById('collectPaymentMode').value;
+      if (amount <= 0) { showToast('Please enter a valid amount', 'error'); return; }
+      var index = bookings.findIndex(function(b) { return b.id === id; });
+      if (index === -1) { showToast('Booking not found', 'error'); return; }
+      bookings[index].balanceReceived = (parseFloat(bookings[index].balanceReceived) || 0) + amount;
+      bookings[index].balancePaymentMode = mode;
+      bookings[index].balanceDate = getToday();
+      var totalReceived = (parseFloat(bookings[index].advanceReceived) || 0) + bookings[index].balanceReceived;
+      var pending = (parseFloat(bookings[index].totalAmount) || 0) - totalReceived;
+      bookings[index].status = pending <= 0 ? 'COLLECTED' : 'PARTIAL';
+      persistBooking(bookings[index]);
+      closeCollectModal(); renderBookings(); updateDashboard();
+      showToast('Payment collected!', 'success');
+    }
+
+    // ========== CANCEL / RESCHEDULE ==========
+    function openCancelModal(id) {
+      var booking = bookings.find(function(b) { return b.id === id; }); if (!booking) return;
+      document.getElementById('cancelModal').classList.add('active');
+      document.getElementById('cancelBookingId').value = booking.id;
+      document.getElementById('cancelBookingName').textContent = booking.guestName + ' (' + booking.id + ')';
+      document.getElementById('cancelBookingDate').textContent = formatDate(booking.checkOut);
+      document.getElementById('cancelAction').value = 'cancel';
+      document.getElementById('rescheduleDate').value = '';
+      toggleRescheduleDate();
+    }
+
+    function closeCancelModal() { document.getElementById('cancelModal').classList.remove('active'); }
+
+    function toggleRescheduleDate() {
+      var action = document.getElementById('cancelAction').value;
+      document.getElementById('rescheduleDateGroup').style.display = action === 'reschedule' ? 'flex' : 'none';
+      var btn = document.getElementById('cancelConfirmBtn');
+      if (action === 'reschedule') { btn.innerHTML = '<span class="material-icons">event</span> Reschedule'; btn.className = 'btn btn-warning'; }
+      else { btn.innerHTML = '<span class="material-icons">cancel</span> Cancel Booking'; btn.className = 'btn btn-danger'; }
+    }
+
+    function confirmCancelOrReschedule() {
+      var id = document.getElementById('cancelBookingId').value;
+      var action = document.getElementById('cancelAction').value;
+      var index = bookings.findIndex(function(b) { return b.id === id; }); if (index === -1) return;
+      if (action === 'cancel') {
+        bookings[index].status = 'CANCELLED';
+        persistBooking(bookings[index]);
+        closeCancelModal(); renderBookings(); updateDashboard();
+        showToast('Booking cancelled', 'success');
+      } else {
+        var newDate = document.getElementById('rescheduleDate').value;
+        if (!newDate) { showToast('Please select new checkout date', 'error'); return; }
+        bookings[index].rescheduledFrom = bookings[index].checkOut;
+        bookings[index].checkOut = newDate;
+        bookings[index].status = 'RESCHEDULED';
+        persistBooking(bookings[index]);
+        closeCancelModal(); renderBookings(); updateDashboard();
+        showToast('Booking rescheduled to ' + formatDate(newDate), 'success');
+      }
+    }
+
+    // ========== DELETE BOOKING ==========
+    function deleteBooking(id) {
+      if (!confirm('Permanently delete this booking? This cannot be undone.')) return;
+      bookings = bookings.filter(function(b) { return b.id !== id; });
+      persistDelete(id);
+      renderBookings(); updateDashboard();
+      showToast('Booking deleted', 'success');
+    }
+
+    // ========== CHECK-IN ==========
+    var checkinBookingData = null;
+
+    function markCheckedIn(id) {
+      var b = bookings.find(function(bk) { return bk.id === id; }); if (!b) return;
+      checkinBookingData = b;
+      document.getElementById('checkinModal').classList.add('active');
+      document.getElementById('checkinBookingId').value = b.id;
+      document.getElementById('checkinNoOfRooms').value = b.noOfRooms || 1;
+      document.getElementById('checkinRoomCategory').textContent = b.roomCategory || '-';
+      var nights = calculateNights(b.checkIn, b.checkOut);
+      document.getElementById('checkinGuestInfo').innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+        '<div><small style="color:#6b7280">Guest</small><br><strong>' + escapeHtml(b.guestName) + '</strong></div>' +
+        '<div><small style="color:#6b7280">Pax</small><br><strong>' + (b.pax || 1) + '</strong></div>' +
+        '<div><small style="color:#6b7280">Check-in</small><br>' + formatDate(b.checkIn) + '</div>' +
+        '<div><small style="color:#6b7280">Check-out</small><br>' + formatDate(b.checkOut) + ' (' + nights + ' nights)</div>' +
+        '<div><small style="color:#6b7280">Category</small><br>' + escapeHtml(b.roomCategory || '-') + '</div>' +
+        '<div><small style="color:#6b7280">No. of Rooms</small><br>' + (b.noOfRooms || 1) + '</div></div>';
+      updateCheckinRoomSelects();
+    }
+
+    function closeCheckinModal() { document.getElementById('checkinModal').classList.remove('active'); checkinBookingData = null; }
+
+    function updateCheckinRoomSelects() {
+      if (!checkinBookingData) return;
+      var count = parseInt(document.getElementById('checkinNoOfRooms').value) || 1;
+      var container = document.getElementById('checkinRoomSelectContainer'); container.innerHTML = '';
+      var b = checkinBookingData; var availableRooms = [], occupiedRooms = [];
+      ALL_ROOMS.forEach(function(rm) {
+        var occupied = false;
+        if (b.checkIn && b.checkOut) { var dt = b.checkIn; var safety = 0;
+          while (dt < b.checkOut && safety < 400) { if (isRoomOccupied(rm, dt, b.id)) { occupied = true; break; } var next = new Date(dt + 'T00:00:00'); next.setDate(next.getDate() + 1); dt = toLocalDateStr(next); safety++; }
+        }
+        if (occupied) occupiedRooms.push(rm); else availableRooms.push(rm);
+      });
+      var existingRooms = (b.roomNo || '').split(',').map(function(r) { return r.trim(); }).filter(function(r) { return r; });
+      for (var i = 0; i < count; i++) {
+        var sel = document.createElement('select');
+        sel.style.cssText = 'padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;min-width:160px;';
+        sel.innerHTML = '<option value="">Select Room</option>';
+        availableRooms.forEach(function(rm) { var opt = document.createElement('option'); opt.value = rm; opt.textContent = rm + ' - ' + (ROOM_TYPE[rm] || '') + ' (Available)'; opt.style.color = '#065f46'; sel.appendChild(opt); });
+        occupiedRooms.forEach(function(rm) { var opt = document.createElement('option'); opt.value = rm; opt.textContent = rm + ' - ' + (ROOM_TYPE[rm] || '') + ' (Occupied)'; opt.style.color = '#991b1b'; sel.appendChild(opt); });
+        if (existingRooms[i]) sel.value = existingRooms[i];
+        container.appendChild(sel);
+      }
+      var hint = document.getElementById('checkinRoomHint');
+      hint.textContent = availableRooms.length + ' available, ' + occupiedRooms.length + ' occupied';
+      hint.className = 'room-avail-hint' + (availableRooms.length === 0 ? ' warn' : '');
+    }
+
+    function confirmCheckin() {
+      var id = document.getElementById('checkinBookingId').value;
+      var index = bookings.findIndex(function(b) { return b.id === id; }); if (index === -1) return;
+      var container = document.getElementById('checkinRoomSelectContainer');
+      var selects = container.querySelectorAll('select'); var rooms = [];
+      selects.forEach(function(sel) { if (sel.value) rooms.push(sel.value); });
+      if (rooms.length === 0) { showToast('Please select at least one room', 'error'); return; }
+      bookings[index].roomNo = rooms.join(',');
+      bookings[index].noOfRooms = parseInt(document.getElementById('checkinNoOfRooms').value) || rooms.length;
+      bookings[index].checkedIn = true;
+      bookings[index].checkedInTime = new Date().toISOString();
+      persistBooking(bookings[index]);
+      closeCheckinModal(); renderBookings(); updateDashboard();
+      showToast(bookings[index].guestName + ' checked in to Room ' + rooms.join('/') + '!', 'success');
+    }
+
+    // ========== CHECKOUT ==========
+    var checkoutBookingData = null;
+
+    function openCheckoutModal(id) {
+      var b = bookings.find(function(bk) { return bk.id === id; }); if (!b) return;
+      checkoutBookingData = b;
+      document.getElementById('checkoutModal').classList.add('active');
+      document.getElementById('checkoutBookingId').value = b.id;
+      var nights = calculateNights(b.checkIn, b.checkOut);
+      document.getElementById('checkoutGuestInfo').innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+        '<div><small style="color:#6b7280">Guest</small><br><strong>' + escapeHtml(b.guestName) + '</strong></div>' +
+        '<div><small style="color:#6b7280">Room</small><br><strong>' + escapeHtml(b.roomNo || 'N/A') + '</strong></div>' +
+        '<div><small style="color:#6b7280">Check-in</small><br>' + formatDate(b.checkIn) + '</div>' +
+        '<div><small style="color:#6b7280">Check-out</small><br>' + formatDate(b.checkOut) + ' (' + nights + ' nights)</div>' +
+        '<div><small style="color:#6b7280">Pax</small><br>' + (b.pax || 1) + '</div>' +
+        '<div><small style="color:#6b7280">Plan</small><br>' + escapeHtml(b.mealPlan || '-') + '</div></div>';
+      document.getElementById('checkoutKotAmount').value = b.kotAmount || 0;
+      document.getElementById('addOnChargesContainer').innerHTML = '';
+      document.getElementById('checkoutPayMode').value = '';
+      if (b.addOns && b.addOns.length > 0) b.addOns.forEach(function(ao) { addAddOnRow(ao.type, ao.amount); });
+      updateCheckoutTotals();
+    }
+
+    function closeCheckoutModal() { document.getElementById('checkoutModal').classList.remove('active'); checkoutBookingData = null; }
+
+    function addAddOnRow(type, amount) {
+      var container = document.getElementById('addOnChargesContainer');
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+      row.innerHTML =
+        '<select style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;flex:1;">' +
+          '<option value="">Select</option>' +
+          '<option value="Heater"' + (type === 'Heater' ? ' selected' : '') + '>Heater</option>' +
+          '<option value="Bonfire"' + (type === 'Bonfire' ? ' selected' : '') + '>Bonfire</option>' +
+          '<option value="BJ"' + (type === 'BJ' ? ' selected' : '') + '>BJ (Bonfire + Jalebi)</option>' +
+          '<option value="Honeymoon"' + (type === 'Honeymoon' ? ' selected' : '') + '>Honeymoon Decoration</option>' +
+          '<option value="Birthday"' + (type === 'Birthday' ? ' selected' : '') + '>Birthday Decoration</option>' +
+          '<option value="DJ"' + (type === 'DJ' ? ' selected' : '') + '>DJ</option>' +
+          '<option value="Cake"' + (type === 'Cake' ? ' selected' : '') + '>Cake</option>' +
+          '<option value="Other"' + (type === 'Other' ? ' selected' : '') + '>Other</option>' +
+        '</select>' +
+        '<input type="number" placeholder="Amount" min="0" value="' + (amount || '') + '" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;width:120px;" oninput="updateCheckoutTotals()">' +
+        '<button onclick="this.parentElement.remove();updateCheckoutTotals();" style="background:#fee2e2;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-icons" style="font-size:16px;color:#ef4444;">close</span></button>';
+      container.appendChild(row);
+      updateCheckoutTotals();
+    }
+
+    function getAddOnTotal() { var total = 0; var rows = document.getElementById('addOnChargesContainer').children; for (var i = 0; i < rows.length; i++) { var input = rows[i].querySelector('input[type="number"]'); if (input) total += parseFloat(input.value) || 0; } return total; }
+
+    function getAddOnItems() { var items = []; var rows = document.getElementById('addOnChargesContainer').children; for (var i = 0; i < rows.length; i++) { var sel = rows[i].querySelector('select'); var input = rows[i].querySelector('input[type="number"]'); if (sel && input && (sel.value || parseFloat(input.value))) items.push({ type: sel.value || 'Other', amount: parseFloat(input.value) || 0 }); } return items; }
+
+    function updateCheckoutTotals() {
+      if (!checkoutBookingData) return;
+      var b = checkoutBookingData;
+      var origTotal = parseFloat(b.totalAmount) || 0;
+      var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
+      var addOnTotal = getAddOnTotal();
+      var grandTotal = origTotal + kotAmt + addOnTotal;
+      var received = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+      var balance = grandTotal - received;
+      document.getElementById('checkoutOrigTotal').textContent = formatCurrency(origTotal);
+      document.getElementById('checkoutKotDisplay').textContent = formatCurrency(kotAmt);
+      document.getElementById('checkoutAddOnDisplay').textContent = formatCurrency(addOnTotal);
+      document.getElementById('checkoutGrandTotal').textContent = formatCurrency(grandTotal);
+      document.getElementById('checkoutReceived').textContent = formatCurrency(received);
+      document.getElementById('checkoutBalance').textContent = formatCurrency(balance > 0 ? balance : 0);
+    }
+
+    function processCheckout() {
+      var id = document.getElementById('checkoutBookingId').value;
+      var index = bookings.findIndex(function(b) { return b.id === id; }); if (index === -1) return;
+      var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
+      var addOnItems = getAddOnItems(); var addOnTotal = getAddOnTotal();
+      var payMode = document.getElementById('checkoutPayMode').value;
+      bookings[index].kotAmount = kotAmt;
+      bookings[index].addOns = addOnItems;
+      bookings[index].checkedOut = true;
+      bookings[index].checkedOutTime = new Date().toISOString();
+      var origTotal = parseFloat(bookings[index].totalAmount) || 0;
+      var newTotal = origTotal + kotAmt + addOnTotal;
+      bookings[index].totalAmount = newTotal;
+      var received = (parseFloat(bookings[index].advanceReceived) || 0) + (parseFloat(bookings[index].balanceReceived) || 0);
+      var balance = newTotal - received;
+      if (payMode && balance > 0) {
+        bookings[index].balanceReceived = (parseFloat(bookings[index].balanceReceived) || 0) + balance;
+        bookings[index].balancePaymentMode = payMode;
+        bookings[index].balanceDate = getToday();
+        bookings[index].status = 'COLLECTED';
+      } else {
+        var totalRecv = (parseFloat(bookings[index].advanceReceived) || 0) + (parseFloat(bookings[index].balanceReceived) || 0);
+        var pend = newTotal - totalRecv;
+        if (pend <= 0) bookings[index].status = 'COLLECTED';
+        else if (totalRecv > 0) bookings[index].status = 'PARTIAL';
+        else bookings[index].status = 'PENDING';
+      }
+      persistBooking(bookings[index]);
+      closeCheckoutModal(); renderBookings(); updateDashboard();
+      showToast('Guest checked out! ' + (kotAmt > 0 || addOnTotal > 0 ? 'Extra charges added.' : ''), 'success');
+    }
+
+    // ========== EXPORT CSV ==========
+    function exportData() {
+      if (bookings.length === 0) { showToast('No data to export', 'error'); return; }
+      var headers = ['Booking ID','Guest Name','Phone','Pax','KOT','Room','No. of Rooms','Room Category','Check-in','Checkout','Plan','Source','Source Name','Add-On','Actual Room Rent','Collection Amount','Payment Type','Advance Received','Balance Received','Pending','Status','Payment Mode','Remarks'];
+      var rows = bookings.map(function(b) {
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        return [b.id, b.guestName, b.phone || '', b.pax || 1, b.kot || '', b.roomNo, b.noOfRooms || 1, b.roomCategory || '', b.checkIn, b.checkOut, b.mealPlan || '', b.source, b.sourceName || '', b.complimentary || '', b.actualRoomRent || 0, b.totalAmount, b.paymentType, b.advanceReceived || 0, b.balanceReceived || 0, pending, b.status, b.paymentMode || '', b.remarks || ''];
+      });
+      var csvContent = [headers].concat(rows).map(function(row) { return row.map(function(cell) { return '"' + String(cell).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+      downloadAsCSV(csvContent, 'neelkanth-grand-bookings-' + getToday() + '.csv');
+      showToast('Exported successfully', 'success');
+    }
+
+    // ========== REPORTS ==========
+    function renderSourceReport() {
+      var from = document.getElementById('reportDateFrom').value; var to = document.getElementById('reportDateTo').value;
+      var sources = {};
+      bookings.forEach(function(b) {
+        if (from && b.checkOut < from) return; if (to && b.checkOut > to) return;
+        var src = b.source || 'Unknown'; var srcName = b.sourceName ? src + ' - ' + b.sourceName : src;
+        if (!sources[srcName]) sources[srcName] = { bookings: 0, totalAmount: 0, collected: 0, pending: 0 };
+        var total = parseFloat(b.totalAmount) || 0; var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0); var pending = total - totalReceived;
+        sources[srcName].bookings++; sources[srcName].totalAmount += total; sources[srcName].collected += totalReceived; if (pending > 0) sources[srcName].pending += pending;
+      });
+      var names = Object.keys(sources).sort(); var container = document.getElementById('sourceReportContent');
+      if (names.length === 0) { container.innerHTML = '<p style="color:#6b7280;text-align:center;padding:20px;">No data for selected date range</p>'; return; }
+      var grandTotal = { bookings: 0, totalAmount: 0, collected: 0, pending: 0 };
+      var html = '<table class="report-table"><thead><tr><th>Source</th><th>Bookings</th><th>Total Amount</th><th>Collected</th><th>Pending</th></tr></thead><tbody>';
+      names.forEach(function(name) { var s = sources[name]; grandTotal.bookings += s.bookings; grandTotal.totalAmount += s.totalAmount; grandTotal.collected += s.collected; grandTotal.pending += s.pending;
+        html += '<tr><td><strong>' + escapeHtml(name) + '</strong></td><td>' + s.bookings + '</td><td class="amount">' + formatCurrency(s.totalAmount) + '</td><td class="amount amount-received">' + formatCurrency(s.collected) + '</td><td class="amount ' + (s.pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(s.pending) + '</td></tr>'; });
+      html += '<tr class="total-row"><td>TOTAL</td><td>' + grandTotal.bookings + '</td><td class="amount">' + formatCurrency(grandTotal.totalAmount) + '</td><td class="amount amount-received">' + formatCurrency(grandTotal.collected) + '</td><td class="amount ' + (grandTotal.pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(grandTotal.pending) + '</td></tr>';
+      html += '</tbody></table>'; container.innerHTML = html;
+    }
+
+    function renderPaymentReport() {
+      var from = document.getElementById('payReportFrom').value; var to = document.getElementById('payReportTo').value;
+      var days = {};
+      bookings.forEach(function(b) {
+        if (b.status === 'CANCELLED') return;
+        var advAmt = parseFloat(b.advanceReceived) || 0; var advDate = b.advanceDate || ''; var advMode = b.paymentMode || 'Other';
+        if (advAmt > 0 && advDate && !(from && advDate < from) && !(to && advDate > to)) {
+          if (!days[advDate]) days[advDate] = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+          var modeKey = days[advDate].hasOwnProperty(advMode) ? advMode : 'Other'; days[advDate][modeKey] += advAmt; days[advDate].total += advAmt;
+        }
+        var balAmt = parseFloat(b.balanceReceived) || 0; var balDate = b.balanceDate || ''; var balMode = b.balancePaymentMode || 'Other';
+        if (balAmt > 0 && balDate && !(from && balDate < from) && !(to && balDate > to)) {
+          if (!days[balDate]) days[balDate] = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+          var modeKey2 = days[balDate].hasOwnProperty(balMode) ? balMode : 'Other'; days[balDate][modeKey2] += balAmt; days[balDate].total += balAmt;
+        }
+      });
+      var dateKeys = Object.keys(days).sort(); var container = document.getElementById('paymentReportContent');
+      if (dateKeys.length === 0) { container.innerHTML = '<p style="color:#6b7280;text-align:center;padding:20px;">No payment data for selected range</p>'; return; }
+      var grand = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+      var html = '<table class="report-table"><thead><tr><th>Date</th><th>Cash</th><th>UPI</th><th>Card</th><th>Bank Transfer</th><th>Other</th><th>Day Total</th></tr></thead><tbody>';
+      dateKeys.forEach(function(dt) { var d = days[dt]; grand.Cash += d.Cash; grand.UPI += d.UPI; grand.Card += d.Card; grand['Bank Transfer'] += d['Bank Transfer']; grand.Other += d.Other; grand.total += d.total;
+        html += '<tr><td><strong>' + formatDate(dt) + '</strong></td><td class="amount">' + (d.Cash ? formatCurrency(d.Cash) : '-') + '</td><td class="amount">' + (d.UPI ? formatCurrency(d.UPI) : '-') + '</td><td class="amount">' + (d.Card ? formatCurrency(d.Card) : '-') + '</td><td class="amount">' + (d['Bank Transfer'] ? formatCurrency(d['Bank Transfer']) : '-') + '</td><td class="amount">' + (d.Other ? formatCurrency(d.Other) : '-') + '</td><td class="amount" style="font-weight:700">' + formatCurrency(d.total) + '</td></tr>'; });
+      html += '<tr class="total-row"><td>TOTAL</td><td class="amount">' + formatCurrency(grand.Cash) + '</td><td class="amount">' + formatCurrency(grand.UPI) + '</td><td class="amount">' + formatCurrency(grand.Card) + '</td><td class="amount">' + formatCurrency(grand['Bank Transfer']) + '</td><td class="amount">' + formatCurrency(grand.Other) + '</td><td class="amount" style="font-weight:700">' + formatCurrency(grand.total) + '</td></tr>';
+      html += '</tbody></table>'; container.innerHTML = html;
+    }
+
+    // ========== LEDGER REPORT ==========
+    var ledgerFilteredBookings = [];
+
+    function renderLedgerReport() {
+      var agent = document.getElementById('ledgerAgent').value;
+      var from = document.getElementById('ledgerFrom').value; var to = document.getElementById('ledgerTo').value;
+      var filtered = bookings.filter(function(b) {
+        if (b.status === 'CANCELLED') return false; if (b.source !== 'Agent' && b.source !== 'OTA') return false;
+        if (agent && b.sourceName !== agent) return false; if (from && b.checkIn < from) return false; if (to && b.checkOut > to) return false; return true;
+      });
+      ledgerFilteredBookings = filtered;
+      var agentSums = {}; var grandTotal = { total: 0, received: 0, pending: 0, count: 0 };
+      filtered.forEach(function(b) {
+        var name = b.sourceName || 'Unknown'; if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, count: 0 };
+        var total = parseFloat(b.totalAmount) || 0; var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0); var pend = total - recv;
+        agentSums[name].total += total; agentSums[name].received += recv; if (pend > 0) agentSums[name].pending += pend; agentSums[name].count++;
+        grandTotal.total += total; grandTotal.received += recv; if (pend > 0) grandTotal.pending += pend; grandTotal.count++;
+      });
+      var cardsHtml = '';
+      if (agent) {
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">' + escapeHtml(agent) + ' - Bookings</div><div class="mc-value blue">' + grandTotal.count + '</div></div>';
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Total Amount</div><div class="mc-value blue">' + formatCurrency(grandTotal.total) + '</div></div>';
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Received</div><div class="mc-value green">' + formatCurrency(grandTotal.received) + '</div></div>';
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Pending Due</div><div class="mc-value red">' + formatCurrency(grandTotal.pending) + '</div></div>';
+      } else {
+        Object.keys(agentSums).sort().forEach(function(name) { var s = agentSums[name];
+          cardsHtml += '<div class="monthly-card"><div class="mc-label">' + escapeHtml(name) + ' (' + s.count + ')</div><div class="mc-value ' + (s.pending > 0 ? 'red' : 'green') + '">' + formatCurrency(s.pending) + '</div><div style="font-size:11px;color:#6b7280;margin-top:4px;">Total: ' + formatCurrency(s.total) + ' | Rcvd: ' + formatCurrency(s.received) + '</div></div>';
+        });
+      }
+      document.getElementById('ledgerSummaryCards').innerHTML = cardsHtml;
+      var container = document.getElementById('ledgerReportContent');
+      if (filtered.length === 0) { container.innerHTML = '<p style="color:#6b7280;text-align:center;padding:20px;">No bookings found for selected filters</p>'; return; }
+      var html = '<table class="report-table"><thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Total</th><th>Received</th><th>Pending</th><th>Status</th></tr></thead><tbody>';
+      filtered.forEach(function(b) {
+        var total = parseFloat(b.totalAmount) || 0; var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0); var pend = total - recv;
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
+        html += '<tr><td><strong>' + escapeHtml(b.id) + '</strong></td><td>' + escapeHtml(b.guestName) + '</td><td>' + escapeHtml(b.sourceName || '-') + '</td><td>' + escapeHtml(b.roomNo || '-') + '</td><td>' + formatDate(b.checkIn) + '</td><td>' + formatDate(b.checkOut) + '</td><td class="amount">' + formatCurrency(total) + '</td><td class="amount amount-received">' + formatCurrency(recv) + '</td><td class="amount ' + (pend > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pend) + '</td><td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td></tr>';
+      });
+      html += '<tr class="total-row"><td colspan="6">TOTAL (' + grandTotal.count + ' bookings)</td><td class="amount">' + formatCurrency(grandTotal.total) + '</td><td class="amount amount-received">' + formatCurrency(grandTotal.received) + '</td><td class="amount ' + (grandTotal.pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(grandTotal.pending) + '</td><td></td></tr>';
+      html += '</tbody></table>'; container.innerHTML = html;
+    }
+
+    function exportLedgerCSV() {
+      if (ledgerFilteredBookings.length === 0) { showToast('No data to export', 'error'); return; }
+      var agent = document.getElementById('ledgerAgent').value || 'All-Agents';
+      var headers = ['Booking ID','Guest','Agent','Room','Check-in','Checkout','Total','Received','Pending','Status'];
+      var rows = ledgerFilteredBookings.map(function(b) { var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0); var pend = (parseFloat(b.totalAmount) || 0) - recv; return [b.id, b.guestName, b.sourceName||'', b.roomNo||'', b.checkIn, b.checkOut, b.totalAmount, recv, pend > 0 ? pend : 0, b.status]; });
+      var csv = [headers].concat(rows).map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+      downloadAsCSV(csv, 'ledger-' + agent.replace(/\s+/g,'-') + '-' + getToday() + '.csv');
+      showToast('Ledger exported', 'success');
+    }
+
+    function renderMonthlyReport() {
+      var selectedMonth = document.getElementById('reportMonth').value; if (!selectedMonth) return;
+      var dates = {};
+      bookings.forEach(function(b) {
+        if (!b.checkOut || b.checkOut.substring(0, 7) !== selectedMonth) return;
+        var dt = b.checkOut; if (!dates[dt]) dates[dt] = { bookings: 0, totalAmount: 0, collected: 0, pending: 0, guests: [] };
+        var total = parseFloat(b.totalAmount) || 0; var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0); var pending = total - totalReceived;
+        dates[dt].bookings++; dates[dt].totalAmount += total; dates[dt].collected += totalReceived; if (pending > 0) dates[dt].pending += pending; dates[dt].guests.push(b.guestName);
+      });
+      var dateKeys = Object.keys(dates).sort(); var container = document.getElementById('monthlyReportContent');
+      if (dateKeys.length === 0) { container.innerHTML = '<p style="color:#6b7280;text-align:center;padding:20px;">No data for selected month</p>'; return; }
+      var grandTotal = { bookings: 0, totalAmount: 0, collected: 0, pending: 0 };
+      var html = '<table class="report-table"><thead><tr><th>Date</th><th>Bookings</th><th>Guests</th><th>Collection</th><th>Collected</th><th>Pending</th></tr></thead><tbody>';
+      dateKeys.forEach(function(dt) { var d = dates[dt]; grandTotal.bookings += d.bookings; grandTotal.totalAmount += d.totalAmount; grandTotal.collected += d.collected; grandTotal.pending += d.pending;
+        html += '<tr><td><strong>' + formatDate(dt) + '</strong></td><td>' + d.bookings + '</td><td><small>' + d.guests.map(function(g) { return escapeHtml(g); }).join(', ') + '</small></td><td class="amount">' + formatCurrency(d.totalAmount) + '</td><td class="amount amount-received">' + formatCurrency(d.collected) + '</td><td class="amount ' + (d.pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(d.pending) + '</td></tr>'; });
+      html += '<tr class="total-row"><td>TOTAL</td><td>' + grandTotal.bookings + '</td><td></td><td class="amount">' + formatCurrency(grandTotal.totalAmount) + '</td><td class="amount amount-received">' + formatCurrency(grandTotal.collected) + '</td><td class="amount ' + (grandTotal.pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(grandTotal.pending) + '</td></tr>';
+      html += '</tbody></table>'; container.innerHTML = html;
+    }
+</script>
