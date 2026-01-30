@@ -510,7 +510,7 @@ export default function Dashboard() {
           <div className="form-group"><label>Advance Received</label><input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} /></div>
           <div className="form-group"><label>Payment Mode</label>
             <select value={form.paymentMode} onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}>
-              <option value="">Select</option><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option>
+              <option value="">Select</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
             </select>
           </div>
         </div>
@@ -526,7 +526,7 @@ export default function Dashboard() {
             <div className="form-group"><label>Amount</label><input type="number" value={collectAmount} onChange={(e) => setCollectAmount(Number(e.target.value))} /></div>
             <div className="form-group" style={{ marginTop: '12px' }}><label>Payment Mode</label>
               <select value={collectMode} onChange={(e) => setCollectMode(e.target.value)}>
-                <option value="">Select</option><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option>
+                <option value="">Select</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
               </select>
             </div>
           </>
@@ -619,7 +619,7 @@ export default function Dashboard() {
               </div>
               <div className="form-group" style={{ marginTop: '16px' }}><label>Collect Balance Via</label>
                 <select value={checkoutPayMode} onChange={(e) => setCheckoutPayMode(e.target.value)}>
-                  <option value="">Don't collect now</option><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option>
+                  <option value="">Don't collect now</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
                 </select>
               </div>
             </>

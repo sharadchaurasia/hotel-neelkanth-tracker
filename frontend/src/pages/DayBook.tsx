@@ -157,7 +157,7 @@ export default function DayBook() {
       {/* Balance Cards */}
       <div className="monthly-grid" style={{ marginBottom: '24px' }}>
         <div className="monthly-card" style={{ cursor: 'pointer' }} onClick={openBalanceModal}><div className="mc-label">Cash Opening</div><div className="mc-value blue">{formatCurrency(balance?.cashOpening || 0)}</div></div>
-        <div className="monthly-card" style={{ cursor: 'pointer' }} onClick={openBalanceModal}><div className="mc-label">Bank SBI Opening</div><div className="mc-value blue">{formatCurrency(balance?.bankSbiOpening || 0)}</div></div>
+        <div className="monthly-card" style={{ cursor: 'pointer' }} onClick={openBalanceModal}><div className="mc-label">Bank (SBI Neelkanth) Opening</div><div className="mc-value blue">{formatCurrency(balance?.bankSbiOpening || 0)}</div></div>
         <div className="monthly-card"><div className="mc-label">Cash Closing</div><div className="mc-value green">{formatCurrency(closing?.cashClosing || 0)}</div></div>
         <div className="monthly-card"><div className="mc-label">Bank Closing</div><div className="mc-value green">{formatCurrency(closing?.bankClosing || 0)}</div></div>
       </div>
@@ -220,7 +220,7 @@ export default function DayBook() {
         <div className="daybook-section" style={{ marginTop: '24px' }}>
           <h3><span className="material-icons">calculate</span> Day Closing Summary</h3>
           <table className="report-table" style={{ marginTop: '12px' }}>
-            <thead><tr><th></th><th>Cash</th><th>Bank SBI</th><th>Total</th></tr></thead>
+            <thead><tr><th></th><th>Cash</th><th>Bank Transfer</th><th>Total</th></tr></thead>
             <tbody>
               <tr><td><strong>Opening Balance</strong></td><td className="amount">{formatCurrency(closing.cashOpening)}</td><td className="amount">{formatCurrency(closing.bankOpening)}</td><td className="amount" style={{ fontWeight: 700 }}>{formatCurrency(closing.cashOpening + closing.bankOpening)}</td></tr>
               <tr style={{ color: 'var(--accent-green)' }}><td><strong>+ Income</strong></td><td className="amount">{formatCurrency(closing.cashIncome)}</td><td className="amount">{formatCurrency(closing.bankIncome)}</td><td className="amount" style={{ fontWeight: 700 }}>{formatCurrency(closing.cashIncome + closing.bankIncome)}</td></tr>
@@ -235,7 +235,7 @@ export default function DayBook() {
       <Modal open={balanceModal} onClose={() => setBalanceModal(false)} title={`Opening Balance — ${formatDate(date)}`}
         footer={<><button className="btn btn-secondary" onClick={() => setBalanceModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveBalance}>Save</button></>}>
         <div className="form-group"><label>Cash Opening</label><input type="number" value={balCash || ''} onChange={(e) => setBalCash(Number(e.target.value))} /></div>
-        <div className="form-group" style={{ marginTop: '12px' }}><label>Bank SBI Opening</label><input type="number" value={balBank || ''} onChange={(e) => setBalBank(Number(e.target.value))} /></div>
+        <div className="form-group" style={{ marginTop: '12px' }}><label>Bank (SBI Neelkanth) Opening</label><input type="number" value={balBank || ''} onChange={(e) => setBalBank(Number(e.target.value))} /></div>
       </Modal>
 
       {/* Add Expense Modal */}
@@ -265,7 +265,7 @@ export default function DayBook() {
         )}
         <div className="form-group" style={{ marginTop: '12px' }}><label>Amount</label><input type="number" value={expAmt || ''} onChange={(e) => setExpAmt(Number(e.target.value))} /></div>
         <div className="form-group" style={{ marginTop: '12px' }}><label>Pay From</label>
-          <select value={expPayFrom} onChange={(e) => setExpPayFrom(e.target.value)}><option value="Cash">Cash</option><option value="Bank SBI">Bank SBI</option></select>
+          <select value={expPayFrom} onChange={(e) => setExpPayFrom(e.target.value)}><option value="Cash">Cash</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option></select>
         </div>
         <div className="form-group" style={{ marginTop: '12px' }}><label>Description</label><input value={expDesc} onChange={(e) => setExpDesc(e.target.value)} /></div>
       </Modal>
@@ -280,10 +280,10 @@ export default function DayBook() {
         </div>
         <div className="form-group" style={{ marginTop: '12px' }}><label>Amount</label><input type="number" value={incAmt || ''} onChange={(e) => setIncAmt(Number(e.target.value))} /></div>
         <div className="form-group" style={{ marginTop: '12px' }}><label>Payment Mode</label>
-          <select value={incPayMode} onChange={(e) => setIncPayMode(e.target.value)}><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select>
+          <select value={incPayMode} onChange={(e) => setIncPayMode(e.target.value)}><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option></select>
         </div>
         <div className="form-group" style={{ marginTop: '12px' }}><label>Received In</label>
-          <select value={incReceivedIn} onChange={(e) => setIncReceivedIn(e.target.value)}><option value="Cash">Cash</option><option value="Bank SBI">Bank SBI</option></select>
+          <select value={incReceivedIn} onChange={(e) => setIncReceivedIn(e.target.value)}><option value="Cash">Cash</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option></select>
         </div>
         <div className="form-group" style={{ marginTop: '12px' }}><label>Description</label><input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} /></div>
       </Modal>

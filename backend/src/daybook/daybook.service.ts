@@ -109,9 +109,9 @@ export class DaybookService {
             incomeSource: 'Room Rent (Advance)',
             description: `Advance - ${b.guestName}`,
             amount: advAmt,
-            paymentSource: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank SBI',
+            paymentSource: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank Transfer',
             paymentMode: b.paymentMode || 'Cash',
-            receivedIn: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank SBI',
+            receivedIn: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank Transfer',
             refBookingId: b.bookingId,
             guestName: b.guestName,
           });
@@ -130,9 +130,9 @@ export class DaybookService {
             incomeSource: 'Room Rent (Balance)',
             description: `Balance - ${b.guestName}`,
             amount: balAmt,
-            paymentSource: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank SBI',
+            paymentSource: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank Transfer',
             paymentMode: b.balancePaymentMode || 'Cash',
-            receivedIn: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank SBI',
+            receivedIn: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank Transfer',
             refBookingId: b.bookingId,
             guestName: b.guestName,
           });

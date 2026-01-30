@@ -44,8 +44,8 @@ export default function Reports() {
   const payDates = Object.keys(payData).sort();
   const payGrand = payDates.reduce((a, dt) => {
     const d = payData[dt];
-    return { Cash: a.Cash + (d.Cash || 0), UPI: a.UPI + (d.UPI || 0), Card: a.Card + (d.Card || 0), BT: a.BT + (d['Bank Transfer'] || 0), Other: a.Other + (d.Other || 0), total: a.total + (d.total || 0) };
-  }, { Cash: 0, UPI: 0, Card: 0, BT: 0, Other: 0, total: 0 });
+    return { Cash: a.Cash + (d.Cash || 0), Card: a.Card + (d.Card || 0), BT: a.BT + (d['Bank Transfer'] || 0), Other: a.Other + (d.Other || 0), total: a.total + (d.total || 0) };
+  }, { Cash: 0, Card: 0, BT: 0, Other: 0, total: 0 });
 
   const monthDates = Object.keys(monthlyData).sort();
   const monthGrand = monthDates.reduce((a, dt) => {
@@ -90,14 +90,13 @@ export default function Reports() {
         </div>
         {payDates.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No data</p> : (
           <table className="report-table">
-            <thead><tr><th>Date</th><th>Cash</th><th>UPI</th><th>Card</th><th>Bank Transfer</th><th>Other</th><th>Day Total</th></tr></thead>
+            <thead><tr><th>Date</th><th>Cash</th><th>Card</th><th>Bank Transfer</th><th>Other</th><th>Day Total</th></tr></thead>
             <tbody>
               {payDates.map(dt => {
                 const d = payData[dt];
                 return (
                   <tr key={dt}><td><strong>{formatDate(dt)}</strong></td>
                     <td className="amount">{d.Cash ? formatCurrency(d.Cash) : '-'}</td>
-                    <td className="amount">{d.UPI ? formatCurrency(d.UPI) : '-'}</td>
                     <td className="amount">{d.Card ? formatCurrency(d.Card) : '-'}</td>
                     <td className="amount">{d['Bank Transfer'] ? formatCurrency(d['Bank Transfer']) : '-'}</td>
                     <td className="amount">{d.Other ? formatCurrency(d.Other) : '-'}</td>
@@ -106,7 +105,7 @@ export default function Reports() {
                 );
               })}
               <tr className="total-row"><td>TOTAL</td>
-                <td className="amount">{formatCurrency(payGrand.Cash)}</td><td className="amount">{formatCurrency(payGrand.UPI)}</td>
+                <td className="amount">{formatCurrency(payGrand.Cash)}</td>
                 <td className="amount">{formatCurrency(payGrand.Card)}</td><td className="amount">{formatCurrency(payGrand.BT)}</td>
                 <td className="amount">{formatCurrency(payGrand.Other)}</td><td className="amount" style={{ fontWeight: 700 }}>{formatCurrency(payGrand.total)}</td>
               </tr>

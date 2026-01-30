@@ -51,9 +51,10 @@ export class ReportsService {
 
       const advAmt = Number(b.advanceReceived) || 0;
       const advDate = b.advanceDate || '';
-      const advMode = b.paymentMode || 'Other';
+      let advMode = b.paymentMode || 'Other';
+      if (advMode === 'UPI' || advMode === 'SBI Neelkanth') advMode = 'Bank Transfer';
       if (advAmt > 0 && advDate && (!from || advDate >= from) && (!to || advDate <= to)) {
-        if (!days[advDate]) days[advDate] = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+        if (!days[advDate]) days[advDate] = { Cash: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
         const modeKey = days[advDate].hasOwnProperty(advMode) ? advMode : 'Other';
         days[advDate][modeKey] += advAmt;
         days[advDate].total += advAmt;
@@ -61,9 +62,10 @@ export class ReportsService {
 
       const balAmt = Number(b.balanceReceived) || 0;
       const balDate = b.balanceDate || '';
-      const balMode = b.balancePaymentMode || 'Other';
+      let balMode = b.balancePaymentMode || 'Other';
+      if (balMode === 'UPI' || balMode === 'SBI Neelkanth') balMode = 'Bank Transfer';
       if (balAmt > 0 && balDate && (!from || balDate >= from) && (!to || balDate <= to)) {
-        if (!days[balDate]) days[balDate] = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+        if (!days[balDate]) days[balDate] = { Cash: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
         const modeKey = days[balDate].hasOwnProperty(balMode) ? balMode : 'Other';
         days[balDate][modeKey] += balAmt;
         days[balDate].total += balAmt;
@@ -256,6 +258,182 @@ export class ReportsService {
         if (a.checkOut > b.checkOut) return 1;
         return 0;
       });
+  }
+
+  async getPnlReport(from: string, to: string) {
+    // --- INCOME ---
+    const bookings = await this.bookingRepo.find({ relations: ['addOns'] });
+    const daybookEntries = await this.daybookRepo.find();
+
+    const incomeCategories: Record<string, { cash: number; bank: number }> = {
+      'Room Rent': { cash: 0, bank: 0 },
+      'KOT': { cash: 0, bank: 0 },
+      'Add-On': { cash: 0, bank: 0 },
+      'Other': { cash: 0, bank: 0 },
+    };
+
+    // Income from daybook entries in the date range
+    for (const e of daybookEntries) {
+      if (e.type !== 'income') continue;
+      if (!e.date || e.date < from || e.date > to) continue;
+
+      const amt = Number(e.amount) || 0;
+      let src = e.receivedIn || e.paymentSource || 'Cash';
+      if (src === 'UPI' || src === 'SBI Neelkanth') src = 'Bank Transfer';
+      const isCash = src === 'Cash';
+
+      let cat = e.category || 'Other';
+      if (cat === 'Room Rent') {
+        // keep as Room Rent
+      } else if (cat === 'KOT') {
+        cat = 'KOT';
+      } else if (cat === 'Other Collection' || cat === 'Other') {
+        cat = 'Other';
+      } else {
+        cat = 'Other';
+      }
+
+      if (!incomeCategories[cat]) incomeCategories[cat] = { cash: 0, bank: 0 };
+      if (isCash) incomeCategories[cat].cash += amt;
+      else incomeCategories[cat].bank += amt;
+    }
+
+    // Add-On income from bookings (checkout in range)
+    for (const b of bookings) {
+      if (b.status === 'CANCELLED') continue;
+      if (!b.checkOut || b.checkOut < from || b.checkOut > to) continue;
+
+      if (b.addOns && b.addOns.length > 0) {
+        for (const addon of b.addOns) {
+          const amt = Number(addon.amount) || 0;
+          if (amt > 0) {
+            // Add-on payment mode follows the last payment mode of booking
+            let mode = b.balancePaymentMode || b.paymentMode || 'Cash';
+            if (mode === 'UPI' || mode === 'SBI Neelkanth') mode = 'Bank Transfer';
+            const isCash = mode === 'Cash';
+            if (isCash) incomeCategories['Add-On'].cash += amt;
+            else incomeCategories['Add-On'].bank += amt;
+          }
+        }
+      }
+    }
+
+    // Calculate total income
+    let totalIncomeCash = 0, totalIncomeBank = 0;
+    for (const cat of Object.keys(incomeCategories)) {
+      totalIncomeCash += incomeCategories[cat].cash;
+      totalIncomeBank += incomeCategories[cat].bank;
+    }
+
+    // --- EXPENSES ---
+    const expenseCategories: Record<string, { cash: number; bank: number }> = {};
+    const EXPENSE_CATS = ['Electricity', 'Salary', 'Grocery', 'Maintenance', 'Fuel', 'Cylinder',
+      'Laundry', 'Recharges', 'Garbage', 'Deco Items', 'Staff Meal', 'Bakery', 'Housekeeping', 'Butchery', 'Others'];
+
+    for (const cat of EXPENSE_CATS) {
+      expenseCategories[cat] = { cash: 0, bank: 0 };
+    }
+
+    for (const e of daybookEntries) {
+      if (e.type !== 'expense') continue;
+      if (!e.date || e.date < from || e.date > to) continue;
+
+      const amt = Number(e.amount) || 0;
+      let src = e.paymentSource || 'Cash';
+      if (src === 'UPI' || src === 'SBI Neelkanth') src = 'Bank Transfer';
+      const isCash = src === 'Cash';
+
+      let cat = e.category || 'Others';
+      if (!expenseCategories[cat]) cat = 'Others';
+      if (isCash) expenseCategories[cat].cash += amt;
+      else expenseCategories[cat].bank += amt;
+    }
+
+    let totalExpenseCash = 0, totalExpenseBank = 0;
+    for (const cat of Object.keys(expenseCategories)) {
+      totalExpenseCash += expenseCategories[cat].cash;
+      totalExpenseBank += expenseCategories[cat].bank;
+    }
+
+    // --- LEASE ---
+    // FY 2026-27 (Apr 2026 - Mar 2027): 3,50,000/month
+    // FY 2027-28 to FY 2029-30: 3,75,000/month
+    const leasePerMonth = this.getLeaseForRange(from, to);
+
+    // --- ROOM NIGHTS SOLD (for ARR) ---
+    let totalRoomRevenue = 0;
+    let totalRoomNightsSold = 0;
+
+    for (const b of bookings) {
+      if (b.status === 'CANCELLED') continue;
+      if (!b.checkOut || b.checkOut < from || b.checkOut > to) continue;
+
+      const rooms = (b.roomNo || '').split(',').map(r => r.trim()).filter(r => r);
+      const checkIn = new Date(b.checkIn + 'T00:00:00');
+      const checkOut = new Date(b.checkOut + 'T00:00:00');
+      const nights = Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
+      const roomNights = nights * (rooms.length || 1);
+
+      totalRoomNightsSold += roomNights;
+      totalRoomRevenue += Number(b.actualRoomRent) || Number(b.totalAmount) || 0;
+    }
+
+    const arr = totalRoomNightsSold > 0 ? Math.round(totalRoomRevenue / totalRoomNightsSold) : 0;
+
+    const totalOperationalExpense = totalExpenseCash + totalExpenseBank;
+    const grandTotalExpense = totalOperationalExpense + leasePerMonth.totalLease;
+    const totalIncome = totalIncomeCash + totalIncomeBank;
+    const profitLoss = totalIncome - grandTotalExpense;
+
+    return {
+      income: incomeCategories,
+      totalIncome: { cash: totalIncomeCash, bank: totalIncomeBank, total: totalIncome },
+      expenses: expenseCategories,
+      totalOperationalExpense: { cash: totalExpenseCash, bank: totalExpenseBank, total: totalOperationalExpense },
+      lease: leasePerMonth,
+      grandTotalExpense,
+      profitLoss,
+      arr,
+      totalRoomRevenue,
+      totalRoomNightsSold,
+    };
+  }
+
+  private getLeaseForRange(from: string, to: string): { totalLease: number; monthlyBreakdown: { month: string; amount: number }[] } {
+    const startDate = new Date(from + 'T00:00:00');
+    const endDate = new Date(to + 'T00:00:00');
+    const breakdown: { month: string; amount: number }[] = [];
+    let totalLease = 0;
+
+    const current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (current <= endDate) {
+      const y = current.getFullYear();
+      const m = current.getMonth(); // 0-indexed
+
+      // Determine FY: Apr(3) to Mar(2)
+      // FY 2026-27: Apr 2026 (y=2026,m=3) to Mar 2027 (y=2027,m=2)
+      let fyStart: number;
+      if (m >= 3) {
+        fyStart = y; // Apr-Dec of year Y => FY Y-(Y+1)
+      } else {
+        fyStart = y - 1; // Jan-Mar of year Y => FY (Y-1)-Y
+      }
+
+      let monthlyLease: number;
+      if (fyStart <= 2026) {
+        monthlyLease = 350000; // 3,50,000/month for FY 2026-27 and before
+      } else {
+        monthlyLease = 375000; // 3,75,000/month for FY 2027-28 onwards
+      }
+
+      const monthStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+      breakdown.push({ month: monthStr, amount: monthlyLease });
+      totalLease += monthlyLease;
+
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    return { totalLease, monthlyBreakdown: breakdown };
   }
 
   async getInventoryData(month: string) {

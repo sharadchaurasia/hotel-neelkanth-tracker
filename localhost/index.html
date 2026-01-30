@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Neelkanth CRM">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
   <title>The Neelkanth Grand - CRM</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <style>
@@ -16,10 +22,83 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+      background: linear-gradient(135deg, #f5f3ef 0%, #ebe8e2 100%);
       min-height: 100vh;
-      color: #1a1a2e;
+      color: #2c2a26;
     }
+
+    h1, h2, h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    /* Auth Screens */
+    .auth-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1c2038 0%, #2c2450 100%);
+    }
+    .auth-card {
+      background: rgba(255,255,255,0.97);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .auth-card .auth-logo { font-size: 48px; margin-bottom: 8px; }
+    .auth-card h2 { font-family: 'Playfair Display', serif; margin-bottom: 8px; color: #1c2038; }
+    .auth-card p { color: #666; margin-bottom: 24px; font-size: 14px; }
+    .auth-card input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e0ddd8;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .auth-card input:focus { border-color: #b8943e; }
+    .auth-card .auth-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #1c2038, #2c2450);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .auth-card .auth-btn:hover { opacity: 0.9; }
+    .auth-card .auth-link { color: #b8943e; cursor: pointer; font-size: 14px; }
+    .auth-card .error-text { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+    .auth-hidden { display: none !important; }
+
+    /* User badge in header */
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.1);
+      padding: 8px 16px;
+      border-radius: 10px;
+    }
+    .header-user .user-name { font-size: 14px; color: #f5f3ef; font-weight: 500; }
+    .header-user .logout-btn {
+      background: rgba(255,255,255,0.15);
+      color: #f5f3ef;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .header-user .logout-btn:hover { background: rgba(255,255,255,0.25); }
 
     .app-container {
       max-width: 1400px;
@@ -29,12 +108,13 @@
 
     /* Header */
     .header {
-      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-      color: white;
+      background: linear-gradient(135deg, #1c2038 0%, #2c2450 100%);
+      color: #f5f3ef;
       padding: 24px 30px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 10px 40px rgba(30, 58, 95, 0.3);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      border-bottom: 3px solid #b8943e;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -55,11 +135,13 @@
     .header-brand h1 {
       font-size: 26px;
       font-weight: 700;
+      color: #d4b87a;
     }
 
     .header-brand p {
       opacity: 0.85;
       font-size: 14px;
+      color: #d4c9a8;
     }
 
     .header-actions {
@@ -93,13 +175,14 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
+      background: linear-gradient(135deg, #b8862e 0%, #9a7520 100%);
+      color: #ffffff;
     }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.95);
-      color: #1e3a5f;
+      background: #ffffff;
+      color: #996b2f;
+      border: 1px solid rgba(153, 107, 47, 0.4);
     }
 
     .btn-danger {
@@ -131,10 +214,13 @@
     }
 
     .stat-card {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
       position: relative;
       overflow: hidden;
     }
@@ -148,15 +234,15 @@
       height: 100%;
     }
 
-    .stat-card.blue::before { background: #3b82f6; }
-    .stat-card.red::before { background: #ef4444; }
-    .stat-card.green::before { background: #10b981; }
-    .stat-card.orange::before { background: #f59e0b; }
+    .stat-card.blue::before { background: #996b2f; }
+    .stat-card.red::before { background: #a07a28; }
+    .stat-card.green::before { background: #c99b1a; }
+    .stat-card.orange::before { background: #9c7525; }
 
     .stat-card .label {
       font-size: 12px;
       font-weight: 600;
-      color: #6b7280;
+      color: #7a7060;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 8px;
@@ -167,15 +253,19 @@
       font-weight: 700;
     }
 
-    .stat-card.blue .value { color: #3b82f6; }
-    .stat-card.red .value { color: #ef4444; }
-    .stat-card.green .value { color: #10b981; }
-    .stat-card.orange .value { color: #f59e0b; }
+    .stat-card.blue .value { color: #996b2f; }
+    .stat-card.red .value { color: #a07a28; }
+    .stat-card.green .value { color: #8b6d1e; }
+    .stat-card.orange .value { color: #9c7525; }
 
     /* Alert Box */
     .alert-box {
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-      border-left: 5px solid #f59e0b;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-left: 5px solid #996b2f;
+      border: 1px solid rgba(153, 107, 47, 0.3);
+      border-left: 5px solid #996b2f;
       padding: 18px 24px;
       border-radius: 12px;
       margin-bottom: 24px;
@@ -185,33 +275,36 @@
     }
 
     .alert-box .material-icons {
-      color: #d97706;
+      color: #996b2f;
       font-size: 28px;
     }
 
     .alert-box h4 {
-      color: #92400e;
+      color: #8b6d1e;
       font-size: 15px;
       margin-bottom: 4px;
     }
 
     .alert-box p {
-      color: #78350f;
+      color: #5c5040;
       font-size: 14px;
     }
 
     /* Ledger Summary */
     .ledger-summary {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .ledger-summary h3 {
       font-size: 16px;
-      color: #1e3a5f;
+      color: #996b2f;
       margin-bottom: 16px;
       display: flex;
       align-items: center;
@@ -229,29 +322,32 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 16px;
-      background: #f9fafb;
+      background: #ffffff;
       border-radius: 10px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid rgba(153, 107, 47, 0.15);
     }
 
     .ledger-item .name {
       font-weight: 500;
-      color: #374151;
+      color: #5c5040;
     }
 
     .ledger-item .amount {
       font-weight: 700;
-      color: #ef4444;
+      color: #a07a28;
       font-family: 'SF Mono', 'Courier New', monospace;
     }
 
     /* Filters */
     .filters-card {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 20px 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .filters-row {
@@ -270,7 +366,7 @@
     .filter-group label {
       font-size: 11px;
       font-weight: 600;
-      color: #6b7280;
+      color: #7a7060;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -278,31 +374,36 @@
     .filter-group input,
     .filter-group select {
       padding: 10px 14px;
-      border: 2px solid #e5e7eb;
+      border: 2px solid rgba(153, 107, 47, 0.3);
       border-radius: 10px;
       font-size: 14px;
       font-family: inherit;
       min-width: 160px;
       transition: border-color 0.2s;
+      background: #ffffff;
+      color: #2c2a26;
     }
 
     .filter-group input:focus,
     .filter-group select:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: #996b2f;
     }
 
     /* Table */
     .table-card {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
       overflow: hidden;
     }
 
     .table-header {
       padding: 20px 24px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.2);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -311,16 +412,16 @@
     .table-header h2 {
       font-size: 18px;
       font-weight: 600;
-      color: #1e3a5f;
+      color: #996b2f;
     }
 
     .record-count {
-      background: #e5e7eb;
+      background: rgba(153, 107, 47, 0.15);
       padding: 6px 14px;
       border-radius: 20px;
       font-size: 13px;
       font-weight: 500;
-      color: #4b5563;
+      color: #996b2f;
     }
 
     .table-wrapper {
@@ -333,36 +434,37 @@
     }
 
     th {
-      background: #f9fafb;
+      background: rgba(240, 237, 230, 0.95);
       padding: 14px 16px;
       text-align: left;
       font-size: 11px;
       font-weight: 600;
-      color: #6b7280;
+      color: #996b2f;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.2);
       white-space: nowrap;
     }
 
     td {
       padding: 16px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.1);
       font-size: 14px;
+      color: #2c2a26;
     }
 
     tr:hover {
-      background: #f9fafb;
+      background: rgba(153, 107, 47, 0.05);
     }
 
     .guest-info .name {
       font-weight: 600;
-      color: #1f2937;
+      color: #2c2a26;
     }
 
     .guest-info .phone {
       font-size: 12px;
-      color: #6b7280;
+      color: #7a7060;
       margin-top: 2px;
     }
 
@@ -375,19 +477,19 @@
       text-transform: uppercase;
     }
 
-    .badge-walkin { background: #e0e7ff; color: #3730a3; }
-    .badge-ota { background: #fce7f3; color: #9d174d; }
-    .badge-agent { background: #cffafe; color: #0e7490; }
+    .badge-walkin { background: rgba(99, 102, 241, 0.12); color: #4338ca; }
+    .badge-ota { background: rgba(236, 72, 153, 0.12); color: #be185d; }
+    .badge-agent { background: rgba(6, 182, 212, 0.12); color: #0e7490; }
 
-    .badge-collected { background: #d1fae5; color: #065f46; }
-    .badge-pending { background: #fee2e2; color: #991b1b; }
-    .badge-partial { background: #fef3c7; color: #92400e; }
-    .badge-cancelled { background: #e5e7eb; color: #374151; text-decoration: line-through; }
-    .badge-rescheduled { background: #dbeafe; color: #1e40af; }
+    .badge-collected { background: rgba(16, 185, 129, 0.15); color: #0d7a54; }
+    .badge-pending { background: rgba(239, 68, 68, 0.12); color: #c53030; }
+    .badge-partial { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+    .badge-cancelled { background: rgba(107, 114, 128, 0.12); color: #6b7280; text-decoration: line-through; }
+    .badge-rescheduled { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
 
     .badge-kot {
-      background: #fef3c7;
-      color: #92400e;
+      background: rgba(245, 158, 11, 0.12);
+      color: #b45309;
       font-size: 10px;
       padding: 2px 8px;
       border-radius: 6px;
@@ -400,17 +502,17 @@
     }
 
     .amount-pending {
-      color: #ef4444;
+      color: #dc2626;
     }
 
     .amount-received {
-      color: #10b981;
+      color: #059669;
     }
 
     .payment-type {
       font-size: 11px;
-      color: #6b7280;
-      background: #f3f4f6;
+      color: #7a7060;
+      background: #ffffff;
       padding: 4px 10px;
       border-radius: 6px;
     }
@@ -428,18 +530,18 @@
 
     .empty-state .material-icons {
       font-size: 64px;
-      color: #d1d5db;
+      color: rgba(153, 107, 47, 0.3);
       margin-bottom: 16px;
     }
 
     .empty-state h3 {
-      color: #6b7280;
+      color: #7a7060;
       font-size: 18px;
       margin-bottom: 8px;
     }
 
     .empty-state p {
-      color: #9ca3af;
+      color: #9e9688;
       font-size: 14px;
     }
 
@@ -451,7 +553,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.35);
       z-index: 1000;
       justify-content: center;
       align-items: center;
@@ -464,13 +566,14 @@
     }
 
     .modal {
-      background: white;
+      background: #ffffff;
       border-radius: 20px;
       width: 100%;
       max-width: 640px;
       max-height: 90vh;
       overflow: hidden;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+      border: 1px solid rgba(153, 107, 47, 0.2);
       animation: modalIn 0.3s ease;
     }
 
@@ -487,7 +590,8 @@
 
     .modal-header {
       padding: 24px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.2);
+      background: rgba(153, 107, 47, 0.08);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -496,11 +600,11 @@
     .modal-header h3 {
       font-size: 20px;
       font-weight: 600;
-      color: #1e3a5f;
+      color: #996b2f;
     }
 
     .modal-close {
-      background: #f3f4f6;
+      background: rgba(153, 107, 47, 0.15);
       border: none;
       width: 36px;
       height: 36px;
@@ -510,10 +614,11 @@
       align-items: center;
       justify-content: center;
       transition: background 0.2s;
+      color: #996b2f;
     }
 
     .modal-close:hover {
-      background: #e5e7eb;
+      background: rgba(153, 107, 47, 0.25);
     }
 
     .modal-body {
@@ -538,32 +643,34 @@
     .form-group label {
       font-size: 13px;
       font-weight: 600;
-      color: #374151;
+      color: #5c5040;
     }
 
     .form-group input,
     .form-group select {
       padding: 12px 14px;
-      border: 2px solid #e5e7eb;
+      border: 2px solid rgba(153, 107, 47, 0.3);
       border-radius: 10px;
       font-size: 14px;
       font-family: inherit;
       transition: border-color 0.2s;
+      background: #ffffff;
+      color: #2c2a26;
     }
 
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: #996b2f;
     }
 
     .modal-footer {
       padding: 20px 24px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid rgba(153, 107, 47, 0.2);
       display: flex;
       justify-content: flex-end;
       gap: 12px;
-      background: #f9fafb;
+      background: rgba(240, 237, 230, 0.6);
     }
 
     /* Toast Notification */
@@ -571,11 +678,12 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: #1e3a5f;
-      color: white;
+      background: #ffffff;
+      color: #2c2a26;
       padding: 16px 24px;
       border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid rgba(153, 107, 47, 0.3);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -583,8 +691,8 @@
       animation: toastIn 0.3s ease;
     }
 
-    .toast.success { background: #059669; }
-    .toast.error { background: #dc2626; }
+    .toast.success { background: #f0fdf4; border-color: rgba(16, 185, 129, 0.4); color: #166534; }
+    .toast.error { background: #fef2f2; border-color: rgba(239, 68, 68, 0.4); color: #991b1b; }
 
     @keyframes toastIn {
       from {
@@ -599,37 +707,127 @@
 
     /* Responsive */
     @media (max-width: 768px) {
+      body { font-size: 11px; }
+      .app-container { padding: 6px; }
+
+      /* Header - compact */
       .header {
-        flex-direction: column;
-        text-align: center;
+        flex-direction: column; text-align: center;
+        padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; gap: 4px;
+      }
+      .header-brand { gap: 8px; }
+      .header-brand .icon { font-size: 22px; }
+      .header-brand h1 { font-size: 14px; }
+      .header-brand p { font-size: 9px; }
+      .header-user { padding: 3px 8px; gap: 4px; }
+      .header-user .user-name { font-size: 10px; }
+      .header-user .logout-btn { font-size: 9px; padding: 3px 8px; }
+      .header-actions { justify-content: center; gap: 4px; }
+      .header-actions .btn { font-size: 9px; padding: 4px 8px; }
+
+      /* Tabs - icon only */
+      .nav-tabs { margin-bottom: 8px; border-radius: 6px; justify-content: center; }
+      .nav-tabs button {
+        font-size: 0; padding: 8px 0; gap: 0;
+        flex: 1 1 12.5%; min-width: 0; justify-content: center;
+        border-bottom-width: 2px;
+      }
+      .nav-tabs button .material-icons { font-size: 18px; }
+
+      /* Dashboard cards */
+      .dashboard { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
+      .stat-card { padding: 8px; border-radius: 8px; }
+      .stat-card .label { font-size: 8px; margin-bottom: 2px; letter-spacing: 0.3px; }
+      .stat-card .value { font-size: 16px; }
+      .stat-card::before { width: 3px; }
+
+      /* Alert box */
+      .alert-box { padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; gap: 6px; }
+      .alert-box .material-icons { font-size: 16px; }
+      .alert-box h4 { font-size: 10px; margin-bottom: 2px; }
+      .alert-box p { font-size: 9px; }
+
+      /* Ledger summary */
+      .ledger-summary { padding: 8px; border-radius: 8px; margin-bottom: 8px; }
+      .ledger-summary h3 { font-size: 11px; margin-bottom: 6px; }
+      .ledger-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+      .ledger-item { padding: 6px 8px; border-radius: 6px; }
+      .ledger-item .name { font-size: 10px; }
+      .ledger-item .amount { font-size: 10px; }
+
+      /* Filters */
+      .filters-card { padding: 8px; border-radius: 8px; margin-bottom: 8px; }
+      .filters-row { flex-direction: column; gap: 6px; }
+      .filter-group { width: 100%; }
+      .filter-group label { font-size: 9px; margin-bottom: 2px; }
+      .filter-group input, .filter-group select {
+        width: 100%; font-size: 11px; padding: 6px 8px; border-radius: 6px;
       }
 
-      .header-actions {
-        justify-content: center;
-      }
+      /* Buttons */
+      .btn { padding: 5px 10px; font-size: 10px; border-radius: 6px; gap: 4px; }
+      .btn:hover { transform: none; box-shadow: none; }
+      .btn-small { padding: 4px 8px; font-size: 9px; }
+      .btn .material-icons { font-size: 14px; }
 
-      .filters-row {
-        flex-direction: column;
-      }
+      /* Tables */
+      table { min-width: 700px; }
+      .table-wrapper { border-radius: 6px; margin-bottom: 8px; }
+      .report-table th { padding: 6px 8px; font-size: 9px; }
+      .report-table td { padding: 6px 8px; font-size: 10px; }
 
-      .filter-group {
-        width: 100%;
-      }
+      /* Guest lists */
+      .guest-lists { margin-bottom: 8px; }
+      .guest-list-section { border-radius: 8px; margin-bottom: 8px; }
+      .guest-list-section .section-title { padding: 8px 12px; font-size: 11px; gap: 6px; }
+      .guest-list-section .section-title .material-icons { font-size: 16px; }
+      .guest-list-table th { padding: 5px 8px; font-size: 8px; }
+      .guest-list-table td { padding: 6px 8px; font-size: 10px; }
+      .guest-list-empty { padding: 10px; font-size: 10px; }
 
-      .filter-group input,
-      .filter-group select {
-        width: 100%;
-      }
-
-      table {
-        min-width: 900px;
-      }
-
+      /* Modal */
       .modal {
-        max-width: 100%;
-        border-radius: 16px 16px 0 0;
-        max-height: 85vh;
+        max-width: 100%; border-radius: 10px 10px 0 0; max-height: 90vh;
       }
+      .modal-header { padding: 10px 12px; }
+      .modal-header h3 { font-size: 14px; }
+      .modal-body { padding: 10px 12px; }
+      .modal-body label { font-size: 10px; }
+      .modal-body input, .modal-body select, .modal-body textarea {
+        font-size: 12px; padding: 7px 10px;
+      }
+      .modal-footer { padding: 8px 12px; }
+      .form-group { margin-bottom: 8px; }
+
+      /* Auth screens */
+      .auth-card { padding: 24px 18px; border-radius: 12px; }
+      .auth-card .auth-logo { font-size: 30px; }
+      .auth-card h2 { font-size: 18px; }
+      .auth-card p { font-size: 11px; margin-bottom: 16px; }
+      .auth-card input { padding: 10px 12px; font-size: 13px; margin-bottom: 10px; }
+      .auth-card .auth-btn { padding: 10px; font-size: 13px; }
+      .auth-card .auth-link { font-size: 11px; }
+
+      /* Day Book */
+      .daybook-date-bar { flex-direction: column; gap: 6px; margin-bottom: 8px; }
+      .balance-cards { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+      .balance-card { padding: 6px; border-radius: 6px; }
+      .bc-label { font-size: 8px; }
+      .bc-value { font-size: 13px; }
+      .daybook-section { margin-bottom: 8px; }
+      .section-header { flex-direction: column; gap: 4px; padding: 6px 0; }
+      .section-header h3 { font-size: 12px; }
+
+      /* Dashboard controls */
+      .dashboard-controls { gap: 6px; margin-bottom: 8px; }
+      .dashboard-controls label { font-size: 10px; }
+      .dashboard-controls select { font-size: 10px; padding: 4px 8px; }
+
+      /* General text overrides */
+      h2 { font-size: 14px !important; }
+      h3 { font-size: 12px !important; }
+      h4 { font-size: 11px !important; }
+      p, span, small, label, td, th { line-height: 1.3; }
     }
 
     /* Dashboard View Toggle */
@@ -644,30 +842,31 @@
     .dashboard-controls label {
       font-size: 13px;
       font-weight: 600;
-      color: #6b7280;
+      color: #7a7060;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     .view-toggle {
       display: flex;
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
       border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .view-toggle button {
       padding: 10px 20px;
       border: none;
-      background: white;
-      color: #6b7280;
+      background: transparent;
+      color: #7a7060;
       font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
       transition: all 0.2s;
-      border-right: 1px solid #e5e7eb;
+      border-right: 1px solid rgba(153, 107, 47, 0.15);
     }
 
     .view-toggle button:last-child {
@@ -675,21 +874,24 @@
     }
 
     .view-toggle button.active {
-      background: #1e3a5f;
-      color: white;
+      background: linear-gradient(135deg, #b8862e 0%, #9a7520 100%);
+      color: #ffffff;
     }
 
     .view-toggle button:hover:not(.active) {
-      background: #f3f4f6;
+      background: rgba(153, 107, 47, 0.1);
     }
 
     /* Monthly Summary Section */
     .monthly-summary {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .monthly-summary .section-header {
@@ -703,7 +905,7 @@
 
     .monthly-summary h3 {
       font-size: 16px;
-      color: #1e3a5f;
+      color: #996b2f;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -711,10 +913,12 @@
 
     .month-selector {
       padding: 8px 14px;
-      border: 2px solid #e5e7eb;
+      border: 2px solid rgba(153, 107, 47, 0.3);
       border-radius: 10px;
       font-size: 14px;
       font-family: inherit;
+      background: #ffffff;
+      color: #2c2a26;
     }
 
     .monthly-grid {
@@ -726,14 +930,14 @@
     .monthly-card {
       padding: 16px 20px;
       border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
+      border: 1px solid rgba(153, 107, 47, 0.15);
+      background: #ffffff;
     }
 
     .monthly-card .mc-label {
       font-size: 11px;
       font-weight: 600;
-      color: #6b7280;
+      color: #7a7060;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 6px;
@@ -745,18 +949,21 @@
       font-family: 'SF Mono', 'Courier New', monospace;
     }
 
-    .monthly-card .mc-value.blue { color: #3b82f6; }
-    .monthly-card .mc-value.green { color: #10b981; }
-    .monthly-card .mc-value.red { color: #ef4444; }
-    .monthly-card .mc-value.orange { color: #f59e0b; }
+    .monthly-card .mc-value.blue { color: #996b2f; }
+    .monthly-card .mc-value.green { color: #8b6d1e; }
+    .monthly-card .mc-value.red { color: #a07a28; }
+    .monthly-card .mc-value.orange { color: #9c7525; }
 
     /* Room Inventory Section */
     .inventory-section {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .inventory-section .section-header {
@@ -770,7 +977,7 @@
 
     .inventory-section h3 {
       font-size: 16px;
-      color: #1e3a5f;
+      color: #996b2f;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -789,14 +996,14 @@
     .inv-table th, .inv-table td {
       padding: 6px 4px;
       text-align: center;
-      border: 1px solid #e5e7eb;
+      border: 1px solid rgba(153, 107, 47, 0.15);
       min-width: 36px;
     }
 
     .inv-table th {
-      background: #f0f4f8;
+      background: rgba(240, 237, 230, 0.95);
       font-weight: 700;
-      color: #1e3a5f;
+      color: #996b2f;
       position: sticky;
       top: 0;
     }
@@ -808,39 +1015,39 @@
       position: sticky;
       left: 0;
       z-index: 2;
-      background: #f0f4f8;
+      background: rgba(240, 237, 230, 0.95);
     }
 
     .inv-table td.room-col {
       text-align: left;
       padding-left: 10px;
       font-weight: 600;
-      color: #374151;
+      color: #5c5040;
       position: sticky;
       left: 0;
-      background: white;
+      background: #ffffff;
       z-index: 1;
     }
 
     .inv-table .cell-occupied {
-      background: #fee2e2;
-      color: #991b1b;
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
       font-weight: 600;
       font-size: 10px;
       cursor: pointer;
     }
 
     .inv-table .cell-occupied:hover {
-      background: #fecaca;
+      background: rgba(239, 68, 68, 0.18);
     }
 
     .inv-table .cell-vacant {
-      background: #d1fae5;
-      color: #065f46;
+      background: rgba(16, 185, 129, 0.08);
+      color: #059669;
     }
 
     .inv-table .cell-today {
-      border-bottom: 3px solid #3b82f6;
+      border-bottom: 3px solid #996b2f;
     }
 
     .inv-summary-row {
@@ -864,27 +1071,30 @@
       border-radius: 4px;
     }
 
-    .dot-occupied { background: #fee2e2; border: 1px solid #fca5a5; }
-    .dot-vacant { background: #d1fae5; border: 1px solid #6ee7b7; }
+    .dot-occupied { background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); }
+    .dot-vacant { background: rgba(16, 185, 129, 0.3); border: 1px solid rgba(16, 185, 129, 0.5); }
 
     .room-avail-hint {
       font-size: 12px;
-      color: #10b981;
+      color: #059669;
       margin-top: 4px;
       font-weight: 500;
     }
 
     .room-avail-hint.warn {
-      color: #ef4444;
+      color: #dc2626;
     }
 
     /* Reports Section */
     .reports-section {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .reports-section .section-header {
@@ -898,7 +1108,7 @@
 
     .reports-section h3 {
       font-size: 16px;
-      color: #1e3a5f;
+      color: #996b2f;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -914,10 +1124,12 @@
     .report-filters select,
     .report-filters input {
       padding: 8px 14px;
-      border: 2px solid #e5e7eb;
+      border: 2px solid rgba(153, 107, 47, 0.3);
       border-radius: 10px;
       font-size: 13px;
       font-family: inherit;
+      background: #ffffff;
+      color: #2c2a26;
     }
 
     .report-table {
@@ -927,53 +1139,56 @@
     }
 
     .report-table th {
-      background: #f0f4f8;
+      background: rgba(240, 237, 230, 0.95);
       padding: 12px 16px;
       text-align: left;
       font-size: 11px;
       font-weight: 700;
-      color: #1e3a5f;
+      color: #996b2f;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      border-bottom: 2px solid #e5e7eb;
+      border-bottom: 2px solid rgba(153, 107, 47, 0.2);
     }
 
     .report-table td {
       padding: 12px 16px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.1);
       font-size: 14px;
+      color: #2c2a26;
     }
 
     .report-table tr:hover {
-      background: #f9fafb;
+      background: rgba(153, 107, 47, 0.05);
     }
 
     .report-table .total-row {
       font-weight: 700;
-      background: #f0f4f8;
+      background: rgba(153, 107, 47, 0.1);
     }
 
     .report-table .total-row td {
-      border-top: 2px solid #1e3a5f;
+      border-top: 2px solid #996b2f;
     }
 
     /* Tabs */
     .nav-tabs {
       display: flex;
+      flex-wrap: wrap;
       gap: 0;
       margin-bottom: 24px;
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
 
     .nav-tabs button {
-      flex: 1;
-      padding: 14px 24px;
+      flex: 1 1 auto;
+      padding: 10px 12px;
       border: none;
-      background: white;
-      color: #6b7280;
+      background: transparent;
+      color: #7a7060;
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
@@ -987,13 +1202,13 @@
     }
 
     .nav-tabs button.active {
-      color: #1e3a5f;
-      border-bottom-color: #1e3a5f;
-      background: #f0f4f8;
+      color: #996b2f;
+      border-bottom-color: #996b2f;
+      background: rgba(153, 107, 47, 0.1);
     }
 
     .nav-tabs button:hover:not(.active) {
-      background: #f9fafb;
+      background: rgba(153, 107, 47, 0.05);
     }
 
     .tab-content {
@@ -1007,49 +1222,53 @@
     /* Dashboard Guest Lists */
     .guest-lists { margin-bottom: 24px; }
     .guest-list-section {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-radius: 16px;
       margin-bottom: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
       overflow: hidden;
     }
     .guest-list-section .section-title {
       padding: 16px 24px;
       font-size: 15px;
       font-weight: 700;
-      color: white;
+      color: #ffffff;
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .guest-list-section.checkin-section .section-title { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-    .guest-list-section.inhouse-section .section-title { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .guest-list-section.checkout-section .section-title { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .guest-list-section.checkin-section .section-title { background: linear-gradient(135deg, #996b2f, #c99b1a); }
+    .guest-list-section.inhouse-section .section-title { background: linear-gradient(135deg, #8b6d1e, #c9a51a); }
+    .guest-list-section.checkout-section .section-title { background: linear-gradient(135deg, #9c7525, #d4a94e); }
     .guest-list-table {
       width: 100%;
       border-collapse: collapse;
     }
     .guest-list-table th {
-      background: #f9fafb;
+      background: rgba(240, 237, 230, 0.95);
       padding: 10px 16px;
       text-align: left;
       font-size: 11px;
       font-weight: 600;
-      color: #6b7280;
+      color: #996b2f;
       text-transform: uppercase;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.2);
       white-space: nowrap;
     }
     .guest-list-table td {
       padding: 12px 16px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(153, 107, 47, 0.1);
       font-size: 13px;
+      color: #2c2a26;
     }
-    .guest-list-table tr:hover { background: #f9fafb; }
+    .guest-list-table tr:hover { background: rgba(153, 107, 47, 0.05); }
     .guest-list-empty {
       text-align: center;
       padding: 20px;
-      color: #9ca3af;
+      color: #9e9688;
       font-size: 13px;
     }
 
@@ -1070,13 +1289,13 @@
     .balance-card {
       padding: 16px 20px;
       border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
+      border: 1px solid rgba(153, 107, 47, 0.15);
+      background: #ffffff;
     }
     .balance-card .bc-label {
       font-size: 11px;
       font-weight: 600;
-      color: #6b7280;
+      color: #7a7060;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 6px;
@@ -1086,17 +1305,20 @@
       font-weight: 700;
       font-family: 'SF Mono', 'Courier New', monospace;
     }
-    .bc-value.blue { color: #3b82f6; }
-    .bc-value.green { color: #10b981; }
-    .bc-value.red { color: #ef4444; }
-    .bc-value.orange { color: #f59e0b; }
+    .bc-value.blue { color: #996b2f; }
+    .bc-value.green { color: #8b6d1e; }
+    .bc-value.red { color: #a07a28; }
+    .bc-value.orange { color: #9c7525; }
 
     .daybook-section {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
     .daybook-section .section-header {
       display: flex;
@@ -1108,7 +1330,7 @@
     }
     .daybook-section h3 {
       font-size: 16px;
-      color: #1e3a5f;
+      color: #996b2f;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1133,30 +1355,30 @@
     }
     .attendance-day.header {
       font-weight: 700;
-      color: #1e3a5f;
+      color: #996b2f;
       font-size: 11px;
       text-transform: uppercase;
       cursor: default;
-      background: #f0f4f8;
+      background: #ffffff;
     }
     .attendance-day.present {
-      background: #d1fae5;
-      color: #065f46;
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
     }
     .attendance-day.present:hover {
-      border-color: #10b981;
+      border-color: #059669;
     }
     .attendance-day.absent {
-      background: #fee2e2;
-      color: #991b1b;
+      background: rgba(239, 68, 68, 0.12);
+      color: #dc2626;
       font-weight: 700;
     }
     .attendance-day.absent:hover {
-      border-color: #ef4444;
+      border-color: #dc2626;
     }
     .attendance-day.future {
-      background: #f3f4f6;
-      color: #9ca3af;
+      background: rgba(0, 0, 0, 0.04);
+      color: #b0a898;
       cursor: default;
     }
     .attendance-day.empty {
@@ -1164,21 +1386,21 @@
     }
 
     /* Staff badges */
-    .badge-active { background: #d1fae5; color: #065f46; }
-    .badge-left { background: #fee2e2; color: #991b1b; }
+    .badge-active { background: rgba(16, 185, 129, 0.12); color: #059669; }
+    .badge-left { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
 
     /* Salary table */
     .salary-paid {
-      background: #d1fae5;
-      color: #065f46;
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
       padding: 4px 10px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 600;
     }
     .salary-unpaid {
-      background: #fef3c7;
-      color: #92400e;
+      background: rgba(245, 158, 11, 0.12);
+      color: #b45309;
       padding: 4px 10px;
       border-radius: 6px;
       font-size: 11px;
@@ -1186,11 +1408,14 @@
     }
 
     .salary-section {
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
     }
     .salary-section .section-header {
       display: flex;
@@ -1202,7 +1427,7 @@
     }
     .salary-section h3 {
       font-size: 16px;
-      color: #1e3a5f;
+      color: #996b2f;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1220,9 +1445,37 @@
       font-size: 13px;
       font-weight: 600;
     }
-    .att-chip.chip-days { background: #e0e7ff; color: #3730a3; }
-    .att-chip.chip-present { background: #d1fae5; color: #065f46; }
-    .att-chip.chip-absent { background: #fee2e2; color: #991b1b; }
+    .att-chip.chip-days { background: rgba(99, 102, 241, 0.1); color: #4338ca; }
+    .att-chip.chip-present { background: rgba(16, 185, 129, 0.1); color: #059669; }
+    .att-chip.chip-absent { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+    /* Global dark theme overrides for inputs/selects not covered by specific selectors */
+    input, select, textarea {
+      background: #ffffff;
+      color: #2c2a26;
+      border-color: rgba(153, 107, 47, 0.3);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #996b2f;
+      outline: none;
+    }
+
+    /* Scrollbar styling for dark theme */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f0ede6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(153, 107, 47, 0.25);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(153, 107, 47, 0.4);
+    }
 
     /* Print styles */
     @media print {
@@ -1231,7 +1484,7 @@
       }
 
       .header {
-        background: #1e3a5f !important;
+        background: #1c2038 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
@@ -1241,11 +1494,81 @@
         print-color-adjust: exact;
       }
     }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .loading-overlay .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid #e0dbd0;
+      border-top-color: #996b2f;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-overlay p {
+      margin-top: 16px;
+      color: #996b2f;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 
 <body>
-  <div class="app-container">
+
+  <!-- ===== AUTH: Login Screen ===== -->
+  <div id="login-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">🏨</div>
+      <h2>Login</h2>
+      <p>Enter your email and password</p>
+      <input type="text" id="loginEmail" placeholder="Email or Phone" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
+      <input type="password" id="loginPassword" placeholder="Password" maxlength="4" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="auth-btn" onclick="doLogin()">Login</button>
+      <p class="auth-link" onclick="showScreen('forgot-screen')">Forgot Password?</p>
+      <p id="loginError" class="error-text" style="display:none"></p>
+    </div>
+  </div>
+
+  <!-- ===== AUTH: Forgot Password Screen ===== -->
+  <div id="forgot-screen" class="auth-screen auth-hidden">
+    <div class="auth-card">
+      <div class="auth-logo">🔑</div>
+      <h2>Forgot Password</h2>
+      <p>Enter your registered email address</p>
+      <input type="email" id="forgotEmail" placeholder="Email address" onkeydown="if(event.key==='Enter')doForgotPassword()">
+      <button class="auth-btn" onclick="doForgotPassword()">Send OTP</button>
+      <p class="auth-link" onclick="showScreen('login-screen')">Back to Login</p>
+      <p id="forgotError" class="error-text" style="display:none"></p>
+    </div>
+  </div>
+
+  <!-- ===== AUTH: OTP + Reset Password Screen ===== -->
+  <div id="otp-screen" class="auth-screen auth-hidden">
+    <div class="auth-card">
+      <div class="auth-logo">🔐</div>
+      <h2>Reset Password</h2>
+      <p>Enter the OTP sent to your email</p>
+      <input type="text" id="otpCode" maxlength="6" placeholder="6-digit OTP" inputmode="numeric">
+      <input type="password" id="otpNewPin" maxlength="4" placeholder="New 4-digit PIN" inputmode="numeric">
+      <input type="password" id="otpConfirmPin" maxlength="4" placeholder="Confirm PIN" inputmode="numeric" onkeydown="if(event.key==='Enter')doVerifyOtp()">
+      <button class="auth-btn" onclick="doVerifyOtp()">Reset Password</button>
+      <p class="auth-link" onclick="doResendOtp()">Resend OTP</p>
+      <p class="auth-link" onclick="showScreen('login-screen')">Back to Login</p>
+      <p id="otpError" class="error-text" style="display:none"></p>
+    </div>
+  </div>
+
+  <div class="app-container" style="display:none">
     <!-- Header -->
     <div class="header">
       <div class="header-brand">
@@ -1256,7 +1579,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" onclick="openBookingModal()">
+        <button class="btn btn-primary" id="btnNewBooking" onclick="openBookingModal()">
           <span class="material-icons">add</span> New Booking
         </button>
         <button class="btn btn-secondary" onclick="exportData()">
@@ -1265,6 +1588,11 @@
         <button class="btn btn-secondary" onclick="window.print()">
           <span class="material-icons">print</span>
         </button>
+        <div class="header-user" id="headerUser">
+          <span class="user-name" id="headerUserName"></span>
+          <button class="logout-btn" onclick="openChangePassword()">Change PIN</button>
+          <button class="logout-btn" onclick="doLogout()">Logout</button>
+        </div>
       </div>
     </div>
 
@@ -1287,6 +1615,12 @@
       </button>
       <button onclick="switchTab('salary')">
         <span class="material-icons">badge</span> Salary
+      </button>
+      <button id="tab-btn-users" onclick="switchTab('users')" style="display:none">
+        <span class="material-icons">people</span> Users
+      </button>
+      <button id="tab-btn-audit" onclick="switchTab('audit')" style="display:none">
+        <span class="material-icons">history</span> Audit Log
       </button>
     </div>
 
@@ -1357,9 +1691,9 @@
         <div class="section-header">
           <h3><span class="material-icons">calendar_month</span> Summary</h3>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <label style="font-size:13px;font-weight:600;color:#374151;">From</label>
+            <label style="font-size:13px;font-weight:600;color:#5c5040;">From</label>
             <input type="date" id="summaryStartDate" onchange="updateMonthlySummary()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
-            <label style="font-size:13px;font-weight:600;color:#374151;">To</label>
+            <label style="font-size:13px;font-weight:600;color:#5c5040;">To</label>
             <input type="date" id="summaryEndDate" onchange="updateMonthlySummary()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
             <div style="display:flex;gap:6px;margin-left:8px;">
               <button class="btn btn-secondary btn-small" onclick="downloadSummaryData('csv')" title="Download CSV">
@@ -1545,7 +1879,7 @@
         <div class="inv-summary-row">
           <div class="inv-chip"><span class="dot dot-vacant"></span> Vacant</div>
           <div class="inv-chip"><span class="dot dot-occupied"></span> Occupied</div>
-          <div class="inv-chip" id="invTodaySummary" style="font-weight:700;color:#1e3a5f;"></div>
+          <div class="inv-chip" id="invTodaySummary" style="font-weight:700;color:#996b2f;"></div>
         </div>
         <!-- Day view -->
         <div id="inventoryDayView" style="margin-bottom:24px;"></div>
@@ -1636,7 +1970,7 @@
       <!-- Day-wise Payment Report -->
       <div class="reports-section">
         <div class="section-header">
-          <h3><span class="material-icons">payments</span> Day-wise Payment Collection (UPI + Cash)</h3>
+          <h3><span class="material-icons">payments</span> Day-wise Payment Collection</h3>
           <div class="report-filters">
             <input type="date" id="payReportFrom" onchange="renderPaymentReport()">
             <span style="color:#6b7280;font-size:13px;">to</span>
@@ -1657,6 +1991,61 @@
         <div id="monthlyReportContent"></div>
       </div>
 
+      <!-- Profit & Loss Report -->
+      <div class="reports-section">
+        <div class="section-header">
+          <h3><span class="material-icons">account_balance</span> Monthly Profit & Loss</h3>
+        </div>
+        <div class="report-filters" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+          <div class="filter-group">
+            <label>Filter Type</label>
+            <select id="pnlFilterType" onchange="updatePnlFilterInputs()">
+              <option value="month">Specific Month</option>
+              <option value="calendar">Calendar Year (Jan-Dec)</option>
+              <option value="financial">Financial Year (Apr-Mar)</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          <div class="filter-group" id="pnlMonthGroup">
+            <label>Month</label>
+            <input type="month" id="pnlMonth">
+          </div>
+          <div class="filter-group" id="pnlCalYearGroup" style="display:none;">
+            <label>Calendar Year</label>
+            <select id="pnlCalYear">
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+              <option value="2029">2029</option>
+              <option value="2030">2030</option>
+            </select>
+          </div>
+          <div class="filter-group" id="pnlFYGroup" style="display:none;">
+            <label>Financial Year</label>
+            <select id="pnlFY">
+              <option value="2025">FY 2025-26</option>
+              <option value="2026" selected>FY 2026-27</option>
+              <option value="2027">FY 2027-28</option>
+              <option value="2028">FY 2028-29</option>
+              <option value="2029">FY 2029-30</option>
+            </select>
+          </div>
+          <div class="filter-group" id="pnlCustomFromGroup" style="display:none;">
+            <label>From</label>
+            <input type="date" id="pnlCustomFrom">
+          </div>
+          <div class="filter-group" id="pnlCustomToGroup" style="display:none;">
+            <label>To</label>
+            <input type="date" id="pnlCustomTo">
+          </div>
+          <button class="btn btn-primary btn-small" onclick="renderPnlReport()">
+            <span class="material-icons" style="font-size:14px">search</span> Generate
+          </button>
+        </div>
+        <div id="pnlReportContent"></div>
+      </div>
+
     </div><!-- end tab-reports -->
 
     <!-- ==================== DAY BOOK TAB ==================== -->
@@ -1667,19 +2056,19 @@
           <label>Date</label>
           <input type="date" id="daybookDate" onchange="renderDayBook()">
         </div>
-        <button class="btn btn-secondary btn-small" onclick="openSetBalanceModal()">
+        <button class="btn btn-secondary btn-small" id="btnSetOpeningBalance" onclick="openSetBalanceModal()">
           <span class="material-icons" style="font-size:14px">account_balance_wallet</span> Set Opening Balance
         </button>
       </div>
 
       <!-- Balance Cards -->
       <div class="balance-cards">
-        <div class="balance-card">
+        <div class="balance-card" id="cardCashOpening">
           <div class="bc-label">Cash Opening</div>
           <div class="bc-value blue" id="dbCashOpening">&#8377;0</div>
         </div>
-        <div class="balance-card">
-          <div class="bc-label">Bank SBI Opening</div>
+        <div class="balance-card" id="cardBankOpening">
+          <div class="bc-label">Bank (SBI Neelkanth) Opening</div>
           <div class="bc-value blue" id="dbBankOpening">&#8377;0</div>
         </div>
         <div class="balance-card">
@@ -1687,7 +2076,7 @@
           <div class="bc-value green" id="dbCashClosing">&#8377;0</div>
         </div>
         <div class="balance-card">
-          <div class="bc-label">Bank SBI Closing</div>
+          <div class="bc-label">Bank (SBI Neelkanth) Closing</div>
           <div class="bc-value green" id="dbBankClosing">&#8377;0</div>
         </div>
       </div>
@@ -1720,7 +2109,7 @@
             <tbody id="dayBookIncomeTable"></tbody>
           </table>
         </div>
-        <div style="padding:12px 16px;background:#f0f4f8;border-radius:8px;margin-top:12px;display:flex;justify-content:space-between;font-weight:700;">
+        <div style="padding:12px 16px;background:rgba(201,169,110,0.1);border-radius:8px;margin-top:12px;display:flex;justify-content:space-between;font-weight:700;color:#996b2f;">
           <span>Total Income</span>
           <span id="dbTotalIncome">&#8377;0</span>
         </div>
@@ -1766,7 +2155,7 @@
               <tr>
                 <th></th>
                 <th>Cash</th>
-                <th>Bank SBI</th>
+                <th>Bank Transfer</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -1879,6 +2268,99 @@
 
     </div><!-- end tab-salary -->
 
+    <!-- ==================== USERS TAB (Admin Only) ==================== -->
+    <div class="tab-content" id="tab-users">
+      <div class="section-card" style="padding:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>User Management</h2>
+          <button class="btn btn-primary" onclick="openUserModal()"><span class="material-icons">person_add</span> Add User</button>
+        </div>
+        <table class="data-table" style="width:100%">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Permissions</th><th>Actions</th></tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== AUDIT TAB (Admin Only) ==================== -->
+    <div class="tab-content" id="tab-audit">
+      <div class="section-card" style="padding:24px">
+        <h2 style="margin-bottom:16px">Audit Log</h2>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+          <select id="auditEntityFilter" onchange="loadAuditLogs()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+            <option value="">All Types</option>
+            <option value="booking">Bookings</option>
+            <option value="daybook">Daybook</option>
+            <option value="staff">Staff</option>
+            <option value="attendance">Attendance</option>
+            <option value="salary_advance">Advances</option>
+            <option value="user">Users</option>
+          </select>
+          <input type="date" id="auditFrom" onchange="loadAuditLogs()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+          <input type="date" id="auditTo" onchange="loadAuditLogs()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+        </div>
+        <table class="data-table" style="width:100%">
+          <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Type</th><th>ID</th><th>Description</th></tr></thead>
+          <tbody id="auditTableBody"></tbody>
+        </table>
+        <div id="auditPagination" style="margin-top:16px;text-align:center"></div>
+      </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal-overlay" id="userModal">
+      <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+          <h3 id="userModalTitle">Add User</h3>
+          <button class="modal-close" onclick="closeModal('userModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label>Name</label><input type="text" id="userName" placeholder="Full name"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="userEmail" placeholder="user@email.com"></div>
+          <div class="form-group"><label>Phone</label><input type="text" id="userPhone" placeholder="Phone (optional)"></div>
+          <div class="form-group"><label>Role</label>
+            <select id="userRole"><option value="staff">Staff</option><option value="admin">Admin</option></select>
+          </div>
+          <div class="form-group" id="permissionsGroup">
+            <label>Permissions (select sections this user can access)</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px" id="permCheckboxes">
+              <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
+              <label><input type="checkbox" data-section="bookings"> Bookings</label>
+              <label><input type="checkbox" data-section="inventory"> Inventory</label>
+              <label><input type="checkbox" data-section="ledger"> Ledger</label>
+              <label><input type="checkbox" data-section="reports"> Reports</label>
+              <label><input type="checkbox" data-section="daybook"> Day Book</label>
+              <label><input type="checkbox" data-section="salary"> Salary</label>
+              <label><input type="checkbox" data-section="staff"> Staff</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('userModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="changePinModal">
+      <div class="modal" style="max-width:400px">
+        <div class="modal-header">
+          <h3>Change Password</h3>
+          <button class="modal-close" onclick="closeModal('changePinModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label>Current Password</label><input type="password" id="cpOldPin" maxlength="4" inputmode="numeric" placeholder="Current 4-digit PIN"></div>
+          <div class="form-group"><label>New Password</label><input type="password" id="cpNewPin" maxlength="4" inputmode="numeric" placeholder="New 4-digit PIN"></div>
+          <div class="form-group"><label>Confirm New Password</label><input type="password" id="cpConfirmPin" maxlength="4" inputmode="numeric" placeholder="Confirm new PIN"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('changePinModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="doChangePassword()">Change Password</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Booking Modal -->
@@ -1952,7 +2434,7 @@
           </div>
           <div class="form-group">
             <label>Nights</label>
-            <div id="nightsDisplay" style="font-size:20px;font-weight:700;color:#1e3a5f;background:#e0e7ff;padding:10px 14px;border-radius:10px;text-align:center;">-</div>
+            <div id="nightsDisplay" style="font-size:20px;font-weight:700;color:#996b2f;background:rgba(201,169,110,0.15);padding:10px 14px;border-radius:10px;text-align:center;">-</div>
           </div>
           <div class="form-group">
             <label>Plan</label>
@@ -2047,9 +2529,8 @@
             <select id="paymentMode">
               <option value="">Select</option>
               <option value="Cash">Cash</option>
-              <option value="UPI">UPI</option>
               <option value="Card">Card</option>
-              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
             </select>
           </div>
         </div>
@@ -2090,9 +2571,8 @@
           <label>Payment Mode *</label>
           <select id="collectPaymentMode">
             <option value="Cash">Cash</option>
-            <option value="UPI">UPI</option>
             <option value="Card">Card</option>
-            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
           </select>
         </div>
       </div>
@@ -2156,7 +2636,7 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="checkinBookingId">
-        <div id="checkinGuestInfo" style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;"></div>
+        <div id="checkinGuestInfo" style="margin-bottom:20px;padding:16px;background:rgba(20,20,40,0.6);border-radius:12px;"></div>
         <div class="form-row">
           <div class="form-group">
             <label>No. of Rooms</label>
@@ -2193,7 +2673,7 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="checkoutBookingId">
-        <div id="checkoutGuestInfo" style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;"></div>
+        <div id="checkoutGuestInfo" style="margin-bottom:20px;padding:16px;background:rgba(20,20,40,0.6);border-radius:12px;"></div>
 
         <div class="form-row">
           <div class="form-group">
@@ -2203,14 +2683,14 @@
         </div>
 
         <div style="margin-bottom:16px;">
-          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:8px;">Add-On Charges</label>
+          <label style="font-size:13px;font-weight:600;color:#5c5040;display:block;margin-bottom:8px;">Add-On Charges</label>
           <div id="addOnChargesContainer"></div>
           <button class="btn btn-secondary btn-small" onclick="addAddOnRow()" style="margin-top:8px;">
             <span class="material-icons" style="font-size:14px">add</span> Add Item
           </button>
         </div>
 
-        <div style="padding:16px;background:#f0f4f8;border-radius:12px;">
+        <div style="padding:16px;background:rgba(20,20,40,0.6);border-radius:12px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
             <span>Original Total:</span>
             <strong id="checkoutOrigTotal">&#8377;0</strong>
@@ -2225,7 +2705,7 @@
           </div>
           <div style="display:flex;justify-content:space-between;border-top:2px solid #1e3a5f;padding-top:8px;font-size:16px;">
             <span>Grand Total:</span>
-            <strong style="color:#1e3a5f" id="checkoutGrandTotal">&#8377;0</strong>
+            <strong style="color:#996b2f" id="checkoutGrandTotal">&#8377;0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;">
             <span>Already Received:</span>
@@ -2243,9 +2723,8 @@
             <select id="checkoutPayMode">
               <option value="">No Collection Now</option>
               <option value="Cash">Cash</option>
-              <option value="UPI">UPI</option>
               <option value="Card">Card</option>
-              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
             </select>
           </div>
         </div>
@@ -2275,7 +2754,7 @@
           <input type="number" id="balCashOpening" min="0" placeholder="0">
         </div>
         <div class="form-group">
-          <label>Bank SBI Opening (&#8377;)</label>
+          <label>Bank (SBI Neelkanth) Opening (&#8377;)</label>
           <input type="number" id="balBankOpening" min="0" placeholder="0">
         </div>
       </div>
@@ -2338,7 +2817,7 @@
           <label>Payment From *</label>
           <select id="expensePayFrom">
             <option value="Cash">Cash</option>
-            <option value="Bank SBI">Bank SBI</option>
+            <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
           </select>
         </div>
         <div class="form-group">
@@ -2381,16 +2860,15 @@
           <label>Payment Mode *</label>
           <select id="incomePayMode">
             <option value="Cash">Cash</option>
-            <option value="UPI">UPI</option>
             <option value="Card">Card</option>
-            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
           </select>
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label>Received In *</label>
           <select id="incomeReceivedIn">
             <option value="Cash">Cash</option>
-            <option value="Bank SBI">Bank SBI</option>
+            <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
           </select>
         </div>
         <div class="form-group">
@@ -2539,12 +3017,12 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="fnfEmpId">
-        <div id="fnfEmployeeInfo" style="padding:16px;background:#f9fafb;border-radius:12px;margin-bottom:16px;"></div>
+        <div id="fnfEmployeeInfo" style="padding:16px;background:rgba(20,20,40,0.6);border-radius:12px;margin-bottom:16px;"></div>
         <div class="form-group" style="margin-bottom:16px;">
           <label>Last Working Date *</label>
           <input type="date" id="fnfLastDate" onchange="calculateFnf()">
         </div>
-        <div id="fnfBreakdown" style="padding:16px;background:#f0f4f8;border-radius:12px;"></div>
+        <div id="fnfBreakdown" style="padding:16px;background:rgba(20,20,40,0.6);border-radius:12px;"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('fnfModal')">Cancel</button>
@@ -2556,50 +3034,603 @@
   </div>
 
   <script>
-    // ========== DATA STORAGE ==========
-    var STORAGE_KEY = 'hotelBookings';
+    // ========== AUTH STATE ==========
+    var authToken = null;
+    var currentUser = null;
 
-    function loadBookings() {
+    function getStoredAuth() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      } catch (e) {
-        return [];
+        var t = sessionStorage.getItem('auth_token');
+        var u = sessionStorage.getItem('auth_user');
+        if (t && u) { authToken = t; currentUser = JSON.parse(u); return true; }
+      } catch(e) {}
+      return false;
+    }
+    function setStoredAuth(token, user) {
+      authToken = token; currentUser = user;
+      sessionStorage.setItem('auth_token', token);
+      sessionStorage.setItem('auth_user', JSON.stringify(user));
+    }
+    function clearAuth() {
+      authToken = null; currentUser = null;
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_user');
+    }
+    function hasPermission(section, action) {
+      if (!currentUser) return false;
+      if (currentUser.role === 'admin') return true;
+      var p = currentUser.permissions || {};
+      return (p[section] || []).includes(action);
+    }
+
+    // ========== AUTH SCREENS ==========
+    function showScreen(id) {
+      ['login-screen','forgot-screen','otp-screen'].forEach(function(s) {
+        document.getElementById(s).classList.add('auth-hidden');
+      });
+      document.querySelector('.app-container').style.display = 'none';
+      if (id === 'app') {
+        document.querySelector('.app-container').style.display = 'block';
+      } else {
+        document.getElementById(id).classList.remove('auth-hidden');
       }
     }
 
-    function saveBookings(bookings) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+    async function checkStoredLogin() {
+      if (getStoredAuth()) {
+        try {
+          var profile = await apiFetch('/auth/profile');
+          currentUser = profile;
+          sessionStorage.setItem('auth_user', JSON.stringify(profile));
+          showScreen('app');
+          initializeApp();
+        } catch(e) { clearAuth(); showScreen('login-screen'); }
+      } else {
+        showScreen('login-screen');
+      }
     }
 
-    var bookings = loadBookings();
+    var _pendingOtpUserId = null;
+
+    async function doLogin() {
+      var email = document.getElementById('loginEmail').value;
+      var pass = document.getElementById('loginPassword').value;
+      if (!email || !pass) return;
+      try {
+        document.getElementById('loginError').style.display = 'none';
+        var r = await apiFetch('/auth/login', { method: 'POST', body: { emailOrPhone: email, password: pass } });
+        setStoredAuth(r.token, r.user);
+        showScreen('app');
+        initializeApp();
+      } catch(e) {
+        document.getElementById('loginError').textContent = e.message || 'Login failed';
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    async function doForgotPassword() {
+      var email = document.getElementById('forgotEmail').value;
+      if (!email) return;
+      try {
+        document.getElementById('forgotError').style.display = 'none';
+        var r = await apiFetch('/auth/forgot-password', { method: 'POST', body: { email: email } });
+        if (r.userId) {
+          _pendingOtpUserId = r.userId;
+          showScreen('otp-screen');
+          showToast('OTP bheja gaya hai aapki email pe', 'success');
+        } else {
+          document.getElementById('forgotError').textContent = r.message || 'Email not found';
+          document.getElementById('forgotError').style.display = 'block';
+        }
+      } catch(e) {
+        document.getElementById('forgotError').textContent = e.message || 'Something went wrong';
+        document.getElementById('forgotError').style.display = 'block';
+      }
+    }
+
+    async function doVerifyOtp() {
+      var code = document.getElementById('otpCode').value;
+      var newPin = document.getElementById('otpNewPin').value;
+      var confirmPin = document.getElementById('otpConfirmPin').value;
+      if (!code || !newPin) return;
+      if (!/^\d{4}$/.test(newPin)) {
+        document.getElementById('otpError').textContent = 'Password must be exactly 4 digits';
+        document.getElementById('otpError').style.display = 'block';
+        return;
+      }
+      if (newPin !== confirmPin) {
+        document.getElementById('otpError').textContent = 'Passwords do not match';
+        document.getElementById('otpError').style.display = 'block';
+        return;
+      }
+      try {
+        document.getElementById('otpError').style.display = 'none';
+        var r = await apiFetch('/auth/verify-otp', { method: 'POST', body: { userId: _pendingOtpUserId, code: code, newPassword: newPin } });
+        setStoredAuth(r.token, r.user);
+        showScreen('app');
+        initializeApp();
+        showToast('Password reset successful!', 'success');
+      } catch(e) {
+        document.getElementById('otpError').textContent = e.message || 'Invalid OTP';
+        document.getElementById('otpError').style.display = 'block';
+      }
+    }
+
+    async function doResendOtp() {
+      if (!_pendingOtpUserId) return;
+      try {
+        await apiFetch('/auth/resend-otp', { method: 'POST', body: { userId: _pendingOtpUserId } });
+        showToast('OTP resent to your email', 'success');
+      } catch(e) {}
+    }
+
+    function doLogout() {
+      clearAuth();
+      showScreen('login-screen');
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    function openChangePassword() {
+      document.getElementById('cpOldPin').value = '';
+      document.getElementById('cpNewPin').value = '';
+      document.getElementById('cpConfirmPin').value = '';
+      document.getElementById('changePinModal').classList.add('active');
+    }
+
+    async function doChangePassword() {
+      var oldPin = document.getElementById('cpOldPin').value;
+      var newPin = document.getElementById('cpNewPin').value;
+      var confirmPin = document.getElementById('cpConfirmPin').value;
+      if (!/^\d{4}$/.test(oldPin)) { showToast('Current password must be 4 digits', 'error'); return; }
+      if (!/^\d{4}$/.test(newPin)) { showToast('New password must be 4 digits', 'error'); return; }
+      if (newPin !== confirmPin) { showToast('New passwords do not match', 'error'); return; }
+      try {
+        await apiFetch('/auth/change-password', { method: 'POST', body: { oldPassword: oldPin, newPassword: newPin } });
+        showToast('Password changed successfully', 'success');
+        closeModal('changePinModal');
+      } catch(e) {
+        showToast(e.message || 'Failed to change password', 'error');
+      }
+    }
+
+    function updateUIForPermissions() {
+      // Header user info
+      if (currentUser) {
+        document.getElementById('headerUserName').textContent = currentUser.name;
+      }
+      // Tab visibility
+      var tabSections = ['dashboard','inventory','ledger','reports','daybook','salary'];
+      var navBtns = document.querySelectorAll('.nav-tabs button');
+      navBtns.forEach(function(btn) {
+        var onclick = btn.getAttribute('onclick') || '';
+        var match = onclick.match(/switchTab\('(\w+)'\)/);
+        if (match) {
+          var tabName = match[1];
+          if (tabName === 'users' || tabName === 'audit') {
+            btn.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+          } else if (tabSections.includes(tabName)) {
+            btn.style.display = hasPermission(tabName, 'view') ? '' : 'none';
+          }
+        }
+      });
+      // New Booking button
+      var nbBtn = document.getElementById('btnNewBooking');
+      if (nbBtn) nbBtn.style.display = hasPermission('bookings', 'create') ? '' : 'none';
+      // Opening Balance button - admin only (cards visible to all)
+      var isAdmin = currentUser && currentUser.role === 'admin';
+      var obBtn = document.getElementById('btnSetOpeningBalance');
+      if (obBtn) obBtn.style.display = isAdmin ? '' : 'none';
+    }
+
+    // ========== USER MANAGEMENT (Admin) ==========
+    var _editUserId = null;
+
+    function openUserModal(userId) {
+      _editUserId = userId || null;
+      document.getElementById('userModalTitle').textContent = userId ? 'Edit User' : 'Add User';
+      document.getElementById('userName').value = '';
+      document.getElementById('userEmail').value = '';
+      document.getElementById('userPhone').value = '';
+      document.getElementById('userRole').value = 'staff';
+      document.querySelectorAll('#permCheckboxes input').forEach(function(cb) { cb.checked = cb.dataset.section === 'dashboard'; });
+
+      if (userId) {
+        apiFetch('/users').then(function(users) {
+          var u = users.find(function(x) { return x.id === userId; });
+          if (u) {
+            document.getElementById('userName').value = u.name;
+            document.getElementById('userEmail').value = u.email;
+            document.getElementById('userPhone').value = u.phone || '';
+            document.getElementById('userRole').value = u.role;
+            var p = u.permissions || {};
+            document.querySelectorAll('#permCheckboxes input').forEach(function(cb) {
+              cb.checked = (p[cb.dataset.section] || []).length > 0;
+            });
+          }
+        });
+      }
+      document.getElementById('userModal').classList.add('active');
+    }
+
+    async function saveUser() {
+      var name = document.getElementById('userName').value;
+      var email = document.getElementById('userEmail').value;
+      var phone = document.getElementById('userPhone').value;
+      var role = document.getElementById('userRole').value;
+      if (!name || !email) { showToast('Name and email required', 'error'); return; }
+
+      var perms = {};
+      document.querySelectorAll('#permCheckboxes input').forEach(function(cb) {
+        if (cb.checked) perms[cb.dataset.section] = ['view','create','edit','delete'];
+        else perms[cb.dataset.section] = [];
+      });
+
+      try {
+        if (_editUserId) {
+          await apiFetch('/users/' + _editUserId, { method: 'PUT', body: { name: name, email: email, phone: phone, role: role, permissions: perms } });
+          showToast('User updated', 'success');
+        } else {
+          await apiFetch('/users', { method: 'POST', body: { name: name, email: email, phone: phone, role: role, permissions: perms } });
+          showToast('User created! Default PIN: 1234', 'success');
+        }
+        closeModal('userModal');
+        loadUsersTable();
+      } catch(e) {}
+    }
+
+    async function loadUsersTable() {
+      try {
+        var users = await apiFetch('/users');
+        var tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = users.map(function(u) {
+          var permLabels = Object.keys(u.permissions || {}).filter(function(k) { return (u.permissions[k] || []).length > 0; }).join(', ') || 'None';
+          return '<tr>' +
+            '<td>' + escapeHtml(u.name) + '</td>' +
+            '<td>' + escapeHtml(u.email) + '</td>' +
+            '<td>' + escapeHtml(u.phone || '-') + '</td>' +
+            '<td><span class="badge ' + (u.role === 'admin' ? 'badge-info' : 'badge-default') + '">' + u.role.toUpperCase() + '</span></td>' +
+            '<td><span class="badge ' + (u.isActive ? 'badge-success' : 'badge-danger') + '">' + (u.isActive ? 'Active' : 'Inactive') + '</span></td>' +
+            '<td style="font-size:12px">' + (u.role === 'admin' ? 'All Access' : permLabels) + '</td>' +
+            '<td>' +
+              '<button class="btn btn-sm btn-secondary" onclick="openUserModal(' + u.id + ')" title="Edit"><span class="material-icons" style="font-size:16px">edit</span></button> ' +
+              (u.role !== 'admin' ? '<button class="btn btn-sm btn-secondary" onclick="resetUserPw(' + u.id + ')" title="Reset Password"><span class="material-icons" style="font-size:16px">lock_reset</span></button> ' : '') +
+              (u.role !== 'admin' ? '<button class="btn btn-sm btn-danger" onclick="deleteUserConfirm(' + u.id + ')" title="Delete"><span class="material-icons" style="font-size:16px">delete</span></button>' : '') +
+            '</td></tr>';
+        }).join('');
+      } catch(e) {}
+    }
+
+    async function resetUserPw(id) {
+      if (!confirm('Reset password to default 1234?')) return;
+      try { await apiFetch('/users/' + id + '/reset-password', { method: 'POST' }); showToast('Password reset to 1234', 'success'); } catch(e) {}
+    }
+
+    async function deleteUserConfirm(id) {
+      if (!confirm('Delete this user permanently?')) return;
+      try { await apiFetch('/users/' + id, { method: 'DELETE' }); showToast('User deleted', 'success'); loadUsersTable(); } catch(e) {}
+    }
+
+    // ========== AUDIT LOG (Admin) ==========
+    var _auditPage = 1;
+
+    async function loadAuditLogs(page) {
+      _auditPage = page || 1;
+      var entityType = document.getElementById('auditEntityFilter').value;
+      var from = document.getElementById('auditFrom').value;
+      var to = document.getElementById('auditTo').value;
+      var q = '?page=' + _auditPage + '&limit=30';
+      if (entityType) q += '&entityType=' + entityType;
+      if (from) q += '&from=' + from;
+      if (to) q += '&to=' + to;
+      try {
+        var r = await apiFetch('/audit' + q);
+        var tbody = document.getElementById('auditTableBody');
+        if (!r.data || r.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999">No audit entries found</td></tr>';
+        } else {
+          tbody.innerHTML = r.data.map(function(l) {
+            var dt = new Date(l.createdAt);
+            var timeStr = dt.toLocaleDateString('en-IN', {day:'2-digit',month:'short'}) + ' ' + dt.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+            return '<tr>' +
+              '<td style="font-size:12px;white-space:nowrap">' + timeStr + '</td>' +
+              '<td>' + escapeHtml(l.userName || '-') + '</td>' +
+              '<td><span class="badge badge-default">' + escapeHtml(l.action) + '</span></td>' +
+              '<td>' + escapeHtml(l.entityType) + '</td>' +
+              '<td>' + escapeHtml(l.entityId || '-') + '</td>' +
+              '<td style="font-size:13px">' + escapeHtml(l.description || '-') + '</td>' +
+            '</tr>';
+          }).join('');
+        }
+        // Pagination
+        var totalPages = Math.ceil(r.total / r.limit);
+        var pagHtml = '';
+        if (totalPages > 1) {
+          if (_auditPage > 1) pagHtml += '<button class="btn btn-sm btn-secondary" onclick="loadAuditLogs(' + (_auditPage-1) + ')">Prev</button> ';
+          pagHtml += 'Page ' + _auditPage + ' of ' + totalPages;
+          if (_auditPage < totalPages) pagHtml += ' <button class="btn btn-sm btn-secondary" onclick="loadAuditLogs(' + (_auditPage+1) + ')">Next</button>';
+        }
+        document.getElementById('auditPagination').innerHTML = pagHtml;
+      } catch(e) {}
+    }
+
+    // ========== API LAYER ==========
+    var API_BASE = '/api';
+
+    // ID mapping: frontend string IDs ↔ backend numeric IDs
+    var _bookingIdMap = {};  // { 'NKH-0001': 5 }
+    var _staffIdMap = {};    // { 'EMP-001': 3 }
+    var _advanceIdMap = {};  // { 'ADV-123': 7 }
+
+    function getBackendBookingId(frontendId) {
+      return _bookingIdMap[frontendId];
+    }
+    function getBackendStaffId(frontendId) {
+      return _staffIdMap[frontendId];
+    }
+    function getBackendAdvanceId(frontendId) {
+      return _advanceIdMap[frontendId];
+    }
+
+    async function apiFetch(path, options) {
+      options = options || {};
+      if (!options.headers) options.headers = {};
+      if (authToken) {
+        options.headers['Authorization'] = 'Bearer ' + authToken;
+      }
+      if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(options.body);
+      }
+      try {
+        var resp = await fetch(API_BASE + path, options);
+        if (resp.status === 401) {
+          clearAuth();
+          showScreen('login-screen');
+          throw new Error('Session expired. Please login again.');
+        }
+        if (!resp.ok) {
+          var errBody = null;
+          try { errBody = await resp.json(); } catch(e) {}
+          var msg = (errBody && errBody.message) ? errBody.message : ('API error ' + resp.status);
+          throw new Error(msg);
+        }
+        var text = await resp.text();
+        return text ? JSON.parse(text) : null;
+      } catch(e) {
+        if (e.message !== 'Session expired. Please login again.') {
+          showToast('API Error: ' + e.message, 'error');
+        }
+        throw e;
+      }
+    }
+
+    // Data mapping: backend → frontend shape
+    function mapBackendBookingToFrontend(b) {
+      return {
+        id: b.bookingId || ('NKH-TEMP-' + b.id),
+        _backendId: b.id,
+        guestName: b.guestName || '',
+        phone: b.phone || '',
+        pax: b.pax || 1,
+        kot: b.kot || '',
+        roomNo: b.roomNo || '',
+        noOfRooms: b.noOfRooms || 1,
+        roomCategory: b.roomCategory || '',
+        checkIn: b.checkIn || '',
+        checkOut: b.checkOut || '',
+        mealPlan: b.mealPlan || '',
+        source: b.source || '',
+        sourceName: b.sourceName || '',
+        complimentary: b.complimentary || '',
+        actualRoomRent: parseFloat(b.actualRoomRent) || 0,
+        totalAmount: parseFloat(b.totalAmount) || 0,
+        paymentType: b.paymentType || '',
+        advanceReceived: parseFloat(b.advanceReceived) || 0,
+        advanceDate: b.advanceDate || '',
+        balanceReceived: parseFloat(b.balanceReceived) || 0,
+        balanceDate: b.balanceDate || '',
+        balancePaymentMode: b.balancePaymentMode || '',
+        paymentMode: b.paymentMode || '',
+        status: b.status || 'PENDING',
+        remarks: b.remarks || '',
+        kotAmount: parseFloat(b.kotAmount) || 0,
+        addOns: b.addOns || [],
+        checkedIn: b.checkedIn || false,
+        checkedInTime: b.checkedInTime || '',
+        checkedOut: b.checkedOut || false,
+        checkedOutTime: b.checkedOutTime || '',
+        rescheduledFrom: b.rescheduledFrom || '',
+        createdAt: b.createdAt || ''
+      };
+    }
+
+    function mapBackendStaffToFrontend(s) {
+      return {
+        id: s.staffCode || ('EMP-TEMP-' + s.id),
+        _backendId: s.id,
+        name: s.name || '',
+        designation: s.designation || '',
+        salary: parseFloat(s.salary) || 0,
+        doj: s.doj || '',
+        status: s.status || 'active',
+        lastWorkingDate: s.lastWorkingDate || '',
+        createdAt: s.createdAt || ''
+      };
+    }
+
+    function mapBackendAdvanceToFrontend(a) {
+      return {
+        id: 'ADV-' + a.id,
+        _backendId: a.id,
+        employeeId: a.staff ? (a.staff.staffCode || ('EMP-TEMP-' + a.staffId)) : ('EMP-TEMP-' + a.staffId),
+        amount: parseFloat(a.amount) || 0,
+        date: a.date || '',
+        deductMonth: a.deductMonth || '',
+        remarks: a.remarks || '',
+        deducted: a.deducted || false,
+        createdAt: a.createdAt || ''
+      };
+    }
+
+    function mapBackendDaybookEntryToFrontend(e) {
+      return {
+        id: String(e.id),
+        _backendId: e.id,
+        date: e.date || '',
+        type: e.type || '',
+        category: e.category || '',
+        subItem: e.subItem || '',
+        description: e.description || '',
+        amount: parseFloat(e.amount) || 0,
+        paymentSource: e.paymentSource || '',
+        incomeSource: e.incomeSource || '',
+        bookingId: e.refBookingId || '',
+        guestName: e.guestName || '',
+        paymentMode: e.paymentMode || '',
+        receivedIn: e.receivedIn || '',
+        employeeId: e.employeeId ? String(e.employeeId) : '',
+        employeeName: e.employeeName || '',
+        createdAt: e.createdAt || ''
+      };
+    }
+
+    // Loading overlay
+    function showLoadingOverlay() {
+      if (document.getElementById('loadingOverlay')) return;
+      var ov = document.createElement('div');
+      ov.id = 'loadingOverlay';
+      ov.className = 'loading-overlay';
+      ov.innerHTML = '<div class="spinner"></div><p>Loading data...</p>';
+      document.body.appendChild(ov);
+    }
+    function hideLoadingOverlay() {
+      var ov = document.getElementById('loadingOverlay');
+      if (ov) ov.remove();
+    }
+
+    // ========== DATA STORAGE (API-backed in-memory cache) ==========
+    var STORAGE_KEY = 'hotelBookings';
+
+    function loadBookings() { return bookings; }
+    function saveBookings() { /* no-op — cache only */ }
+
+    var _staffData = [];
+    var _attendanceCache = {};
+    var _advancesData = [];
+
+    function loadStaffData() { return _staffData; }
+    function saveStaffData() { /* no-op */ }
+    function loadAttendance() { return _attendanceCache; }
+    function saveAttendance() { /* no-op */ }
+    function loadAdvances() { return _advancesData; }
+    function saveAdvances() { /* no-op */ }
+    function loadDayBook() { return []; }
+    function saveDayBook() { /* no-op */ }
+    function loadDayBookBalances() { return {}; }
+    function saveDayBookBalances() { /* no-op */ }
+
+    // Async API loaders
+    async function loadBookingsFromAPI() {
+      var data = await apiFetch('/bookings');
+      bookings = data.map(mapBackendBookingToFrontend);
+      _bookingIdMap = {};
+      bookings.forEach(function(b) { _bookingIdMap[b.id] = b._backendId; });
+      return bookings;
+    }
+
+    async function loadStaffFromAPI() {
+      var data = await apiFetch('/staff');
+      _staffData = data.map(mapBackendStaffToFrontend);
+      _staffIdMap = {};
+      _staffData.forEach(function(s) { _staffIdMap[s.id] = s._backendId; });
+      return _staffData;
+    }
+
+    async function loadAdvancesFromAPI() {
+      var data = await apiFetch('/advances');
+      _advancesData = data.map(mapBackendAdvanceToFrontend);
+      _advanceIdMap = {};
+      _advancesData.forEach(function(a) { _advanceIdMap[a.id] = a._backendId; });
+      return _advancesData;
+    }
+
+    async function loadDayBookEntriesForDate(date) {
+      var data = await apiFetch('/daybook/entries?date=' + encodeURIComponent(date));
+      return data.map(mapBackendDaybookEntryToFrontend);
+    }
+
+    async function loadDayBookBalanceForDate(date) {
+      var data = await apiFetch('/daybook/balance?date=' + encodeURIComponent(date));
+      return data || { cashOpening: 0, bankSbiOpening: 0 };
+    }
+
+    async function loadDayBookClosingForDate(date) {
+      var data = await apiFetch('/daybook/closing?date=' + encodeURIComponent(date));
+      return data || { cashOpening: 0, bankOpening: 0, cashIncome: 0, bankIncome: 0, cashExpense: 0, bankExpense: 0, cashClosing: 0, bankClosing: 0 };
+    }
+
+    async function loadAttendanceForEmployee(empId, month) {
+      var backendId = getBackendStaffId(empId);
+      if (!backendId) return {};
+      var data = await apiFetch('/attendance?staffId=' + backendId + '&month=' + encodeURIComponent(month));
+      var result = {};
+      if (Array.isArray(data)) {
+        data.forEach(function(rec) {
+          if (rec.absent) {
+            result[rec.date] = { absent: true, remark: rec.remark || '' };
+          }
+        });
+      }
+      return result;
+    }
+
+    var bookings = [];
     // dashboardView removed - dashboard now always shows 3 guest lists
 
     // ========== INITIALIZE ==========
+    async function initializeApp() {
+      showLoadingOverlay();
+      try {
+        updateUIForPermissions();
+
+        // Set default date selectors
+        var now = new Date();
+        var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('summaryStartDate').value = currentMonth + '-01';
+        document.getElementById('summaryEndDate').value = getToday();
+        document.getElementById('inventoryMonth').value = currentMonth;
+        document.getElementById('inventoryDate').value = getToday();
+        document.getElementById('reportMonth').value = currentMonth;
+        document.getElementById('pnlMonth').value = currentMonth;
+
+        // Set report date range to current month
+        var firstDay = currentMonth + '-01';
+        var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        var lastDayStr = toLocalDateStr(lastDay);
+        document.getElementById('reportDateFrom').value = firstDay;
+        document.getElementById('reportDateTo').value = lastDayStr;
+        document.getElementById('payReportFrom').value = firstDay;
+        document.getElementById('payReportTo').value = lastDayStr;
+        document.getElementById('ledgerFrom').value = firstDay;
+        document.getElementById('ledgerTo').value = lastDayStr;
+
+        document.getElementById('filterDate').value = getToday();
+        document.getElementById('checkIn').value = getToday();
+
+        await Promise.all([loadBookingsFromAPI(), loadStaffFromAPI(), loadAdvancesFromAPI()]);
+        renderBookings();
+        updateDashboard();
+      } catch(e) {
+        showToast('Failed to load data from server: ' + e.message, 'error');
+      } finally {
+        hideLoadingOverlay();
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-      // Set default date selectors
-      var now = new Date();
-      var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-      document.getElementById('summaryStartDate').value = currentMonth + '-01';
-      document.getElementById('summaryEndDate').value = getToday();
-      document.getElementById('inventoryMonth').value = currentMonth;
-      document.getElementById('inventoryDate').value = getToday();
-      document.getElementById('reportMonth').value = currentMonth;
-
-      // Set report date range to current month
-      var firstDay = currentMonth + '-01';
-      var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      var lastDayStr = toLocalDateStr(lastDay);
-      document.getElementById('reportDateFrom').value = firstDay;
-      document.getElementById('reportDateTo').value = lastDayStr;
-      document.getElementById('payReportFrom').value = firstDay;
-      document.getElementById('payReportTo').value = lastDayStr;
-      document.getElementById('ledgerFrom').value = firstDay;
-      document.getElementById('ledgerTo').value = lastDayStr;
-
-      document.getElementById('filterDate').value = getToday();
-      document.getElementById('checkIn').value = getToday();
-      renderBookings();
-      updateDashboard();
+      // Check if already logged in, otherwise show login screen
+      checkStoredLogin();
     });
 
     // ========== TABS ==========
@@ -2634,6 +3665,12 @@
       }
       if (tab === 'salary') {
         initSalaryTab();
+      }
+      if (tab === 'users') {
+        loadUsersTable();
+      }
+      if (tab === 'audit') {
+        loadAuditLogs();
       }
     }
 
@@ -2807,7 +3844,9 @@
           '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
           '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
           '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
-          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
+            (b.lastModifiedBy ? '<br><small style="color:#6b7280">by ' + escapeHtml(b.lastModifiedBy) + '</small>' : '') +
+          '</td>' +
           '<td><div class="actions">' +
             (!isCancelledOrRescheduled && pending > 0 ? '<button class="btn btn-primary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
             (!isCancelledOrRescheduled ? '<button class="btn btn-warning btn-small" onclick="openCheckoutModal(\'' + b.id + '\')"><span class="material-icons" style="font-size:14px">logout</span> Checkout</button>' : '') +
@@ -3310,7 +4349,7 @@
 
       var pdfHtml = '<!DOCTYPE html><html><head><title>' + fileName + '</title>';
       pdfHtml += '<style>';
-      pdfHtml += 'body{font-family:Arial,sans-serif;margin:20px;color:#1a1a2e;}';
+      pdfHtml += 'body{font-family:Arial,sans-serif;margin:20px;color:#1c2038;}';
       pdfHtml += '.header{text-align:center;margin-bottom:20px;}';
       pdfHtml += '.header h1{font-size:18px;margin:0;color:#1e3a5f;}';
       pdfHtml += '.header p{font-size:12px;color:#6b7280;margin:4px 0;}';
@@ -3932,7 +4971,7 @@
       btn.innerHTML = '<span class="material-icons">save</span> Save Booking';
     }
 
-    function saveBooking() {
+    async function saveBooking() {
       var editId = document.getElementById('editBookingId').value;
       var guestName = document.getElementById('guestName').value.trim();
       var phone = document.getElementById('guestPhone').value.trim();
@@ -3966,101 +5005,49 @@
         return;
       }
 
-      if (editId) {
-        // Update existing booking
-        var index = bookings.findIndex(function(b) { return b.id === editId; });
-        if (index === -1) {
-          showToast('Booking not found', 'error');
-          return;
+      try {
+        if (editId) {
+          // Update existing booking
+          var backendId = getBackendBookingId(editId);
+          if (!backendId) { showToast('Booking not found', 'error'); return; }
+
+          var dto = {
+            guestName: guestName, phone: phone, pax: pax, kot: kot,
+            roomNo: roomNo, noOfRooms: noOfRooms, roomCategory: roomCategory,
+            checkIn: checkIn, checkOut: checkOut, mealPlan: mealPlan,
+            source: source, sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
+            complimentary: complimentary, actualRoomRent: actualRoomRent,
+            totalAmount: totalAmount, paymentType: paymentType,
+            advanceReceived: advanceReceived, paymentMode: paymentMode, remarks: remarks
+          };
+
+          await apiFetch('/bookings/' + backendId, { method: 'PUT', body: dto });
+          await loadBookingsFromAPI();
+          closeBookingModal();
+          renderBookings();
+          updateDashboard();
+          showToast('Booking updated!', 'success');
+        } else {
+          // New booking
+          var dto = {
+            guestName: guestName, phone: phone, pax: pax, kot: kot,
+            roomNo: roomNo, noOfRooms: noOfRooms, roomCategory: roomCategory,
+            checkIn: checkIn, checkOut: checkOut, mealPlan: mealPlan,
+            source: source, sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
+            complimentary: complimentary, actualRoomRent: actualRoomRent,
+            totalAmount: totalAmount, paymentType: paymentType,
+            advanceReceived: advanceReceived, paymentMode: paymentMode, remarks: remarks
+          };
+
+          await apiFetch('/bookings', { method: 'POST', body: dto });
+          await loadBookingsFromAPI();
+          closeBookingModal();
+          renderBookings();
+          updateDashboard();
+          showToast('Booking added!', 'success');
         }
-
-        var existing = bookings[index];
-        var balanceReceived = parseFloat(existing.balanceReceived) || 0;
-        var totalRecv = advanceReceived + balanceReceived;
-        var pendingAmt = totalAmount - totalRecv;
-
-        var status = 'PENDING';
-        if (pendingAmt <= 0) status = 'COLLECTED';
-        else if (totalRecv > 0) status = 'PARTIAL';
-
-        bookings[index] = {
-          id: editId,
-          guestName: guestName,
-          phone: phone,
-          pax: pax,
-          kot: kot,
-          roomNo: roomNo,
-          noOfRooms: noOfRooms,
-          roomCategory: roomCategory,
-          checkIn: checkIn,
-          checkOut: checkOut,
-          mealPlan: mealPlan,
-          source: source,
-          sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
-          complimentary: complimentary,
-          actualRoomRent: actualRoomRent,
-          totalAmount: totalAmount,
-          paymentType: paymentType,
-          advanceReceived: advanceReceived,
-          advanceDate: existing.advanceDate,
-          balanceReceived: balanceReceived,
-          balanceDate: existing.balanceDate,
-          balancePaymentMode: existing.balancePaymentMode,
-          paymentMode: paymentMode,
-          status: status,
-          remarks: remarks,
-          createdAt: existing.createdAt,
-          rescheduledFrom: existing.rescheduledFrom || ''
-        };
-
-        saveBookings(bookings);
-        closeBookingModal();
-        renderBookings();
-        updateDashboard();
-        showToast('Booking updated!', 'success');
-      } else {
-        // New booking
-        var pending = totalAmount - advanceReceived;
-        var status = 'PENDING';
-        if (pending <= 0) status = 'COLLECTED';
-        else if (advanceReceived > 0) status = 'PARTIAL';
-
-        var newBooking = {
-          id: generateBookingId(),
-          guestName: guestName,
-          phone: phone,
-          pax: pax,
-          kot: kot,
-          roomNo: roomNo,
-          noOfRooms: noOfRooms,
-          roomCategory: roomCategory,
-          checkIn: checkIn,
-          checkOut: checkOut,
-          mealPlan: mealPlan,
-          source: source,
-          sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
-          complimentary: complimentary,
-          actualRoomRent: actualRoomRent,
-          totalAmount: totalAmount,
-          paymentType: paymentType,
-          advanceReceived: advanceReceived,
-          advanceDate: advanceReceived > 0 ? getToday() : '',
-          balanceReceived: 0,
-          balanceDate: '',
-          balancePaymentMode: '',
-          paymentMode: paymentMode,
-          status: status,
-          remarks: remarks,
-          createdAt: new Date().toISOString(),
-          rescheduledFrom: ''
-        };
-
-        bookings.push(newBooking);
-        saveBookings(bookings);
-        closeBookingModal();
-        renderBookings();
-        updateDashboard();
-        showToast('Booking added!', 'success');
+      } catch(e) {
+        // toast already shown by apiFetch
       }
     }
 
@@ -4082,7 +5069,7 @@
       document.getElementById('collectModal').classList.remove('active');
     }
 
-    function collectPayment() {
+    async function collectPayment() {
       var id = document.getElementById('collectBookingId').value;
       var amount = parseFloat(document.getElementById('collectAmount').value) || 0;
       var mode = document.getElementById('collectPaymentMode').value;
@@ -4092,31 +5079,20 @@
         return;
       }
 
-      var index = bookings.findIndex(function(b) { return b.id === id; });
-      if (index === -1) {
-        showToast('Booking not found', 'error');
-        return;
-      }
+      var backendId = getBackendBookingId(id);
+      if (!backendId) { showToast('Booking not found', 'error'); return; }
 
-      bookings[index].balanceReceived = (parseFloat(bookings[index].balanceReceived) || 0) + amount;
-      bookings[index].balancePaymentMode = mode;
-      bookings[index].balanceDate = getToday();
-
-      // Recalculate status
-      var totalReceived = (parseFloat(bookings[index].advanceReceived) || 0) + bookings[index].balanceReceived;
-      var pending = (parseFloat(bookings[index].totalAmount) || 0) - totalReceived;
-
-      if (pending <= 0) {
-        bookings[index].status = 'COLLECTED';
-      } else {
-        bookings[index].status = 'PARTIAL';
-      }
-
-      saveBookings(bookings);
-      closeCollectModal();
-      renderBookings();
-      updateDashboard();
-      showToast('Payment collected!', 'success');
+      try {
+        await apiFetch('/bookings/' + backendId + '/collect', {
+          method: 'POST',
+          body: { amount: amount, paymentMode: mode }
+        });
+        await loadBookingsFromAPI();
+        closeCollectModal();
+        renderBookings();
+        updateDashboard();
+        showToast('Payment collected!', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // ========== CANCEL / RESCHEDULE ==========
@@ -4150,45 +5126,53 @@
       }
     }
 
-    function confirmCancelOrReschedule() {
+    async function confirmCancelOrReschedule() {
       var id = document.getElementById('cancelBookingId').value;
       var action = document.getElementById('cancelAction').value;
-      var index = bookings.findIndex(function(b) { return b.id === id; });
-      if (index === -1) return;
+      var backendId = getBackendBookingId(id);
+      if (!backendId) return;
 
-      if (action === 'cancel') {
-        bookings[index].status = 'CANCELLED';
-        saveBookings(bookings);
-        closeCancelModal();
-        renderBookings();
-        updateDashboard();
-        showToast('Booking cancelled', 'success');
-      } else {
-        var newDate = document.getElementById('rescheduleDate').value;
-        if (!newDate) {
-          showToast('Please select new checkout date', 'error');
-          return;
+      try {
+        if (action === 'cancel') {
+          await apiFetch('/bookings/' + backendId + '/cancel', { method: 'POST' });
+          await loadBookingsFromAPI();
+          closeCancelModal();
+          renderBookings();
+          updateDashboard();
+          showToast('Booking cancelled', 'success');
+        } else {
+          var newDate = document.getElementById('rescheduleDate').value;
+          if (!newDate) {
+            showToast('Please select new checkout date', 'error');
+            return;
+          }
+          await apiFetch('/bookings/' + backendId + '/reschedule', {
+            method: 'POST',
+            body: { newCheckOut: newDate }
+          });
+          await loadBookingsFromAPI();
+          closeCancelModal();
+          renderBookings();
+          updateDashboard();
+          showToast('Booking rescheduled to ' + formatDate(newDate), 'success');
         }
-        bookings[index].rescheduledFrom = bookings[index].checkOut;
-        bookings[index].checkOut = newDate;
-        bookings[index].status = 'RESCHEDULED';
-        saveBookings(bookings);
-        closeCancelModal();
-        renderBookings();
-        updateDashboard();
-        showToast('Booking rescheduled to ' + formatDate(newDate), 'success');
-      }
+      } catch(e) { /* toast shown */ }
     }
 
     // ========== DELETE BOOKING ==========
-    function deleteBooking(id) {
+    async function deleteBooking(id) {
       if (!confirm('Permanently delete this booking? This cannot be undone.')) return;
 
-      bookings = bookings.filter(function(b) { return b.id !== id; });
-      saveBookings(bookings);
-      renderBookings();
-      updateDashboard();
-      showToast('Booking deleted', 'success');
+      var backendId = getBackendBookingId(id);
+      if (!backendId) { showToast('Booking not found', 'error'); return; }
+
+      try {
+        await apiFetch('/bookings/' + backendId, { method: 'DELETE' });
+        await loadBookingsFromAPI();
+        renderBookings();
+        updateDashboard();
+        showToast('Booking deleted', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // ========== CHECK-IN ==========
@@ -4279,10 +5263,10 @@
       hint.className = 'room-avail-hint' + (availableRooms.length === 0 ? ' warn' : '');
     }
 
-    function confirmCheckin() {
+    async function confirmCheckin() {
       var id = document.getElementById('checkinBookingId').value;
-      var index = bookings.findIndex(function(b) { return b.id === id; });
-      if (index === -1) return;
+      var backendId = getBackendBookingId(id);
+      if (!backendId) return;
 
       var container = document.getElementById('checkinRoomSelectContainer');
       var selects = container.querySelectorAll('select');
@@ -4294,16 +5278,21 @@
         return;
       }
 
-      bookings[index].roomNo = rooms.join(',');
-      bookings[index].noOfRooms = parseInt(document.getElementById('checkinNoOfRooms').value) || rooms.length;
-      bookings[index].checkedIn = true;
-      bookings[index].checkedInTime = new Date().toISOString();
-
-      saveBookings(bookings);
-      closeCheckinModal();
-      renderBookings();
-      updateDashboard();
-      showToast(bookings[index].guestName + ' checked in to Room ' + rooms.join('/') + '!', 'success');
+      try {
+        await apiFetch('/bookings/' + backendId + '/checkin', {
+          method: 'POST',
+          body: {
+            roomNo: rooms.join(','),
+            noOfRooms: parseInt(document.getElementById('checkinNoOfRooms').value) || rooms.length
+          }
+        });
+        await loadBookingsFromAPI();
+        closeCheckinModal();
+        renderBookings();
+        updateDashboard();
+        var bk = bookings.find(function(b) { return b.id === id; });
+        showToast((bk ? bk.guestName : 'Guest') + ' checked in to Room ' + rooms.join('/') + '!', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // ========== CHECKOUT ==========
@@ -4414,50 +5403,31 @@
       document.getElementById('checkoutBalance').textContent = formatCurrency(balance > 0 ? balance : 0);
     }
 
-    function processCheckout() {
+    async function processCheckout() {
       var id = document.getElementById('checkoutBookingId').value;
-      var index = bookings.findIndex(function(b) { return b.id === id; });
-      if (index === -1) return;
+      var backendId = getBackendBookingId(id);
+      if (!backendId) return;
 
       var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
       var addOnItems = getAddOnItems();
       var addOnTotal = getAddOnTotal();
       var payMode = document.getElementById('checkoutPayMode').value;
 
-      // Update booking with checkout charges
-      bookings[index].kotAmount = kotAmt;
-      bookings[index].addOns = addOnItems;
-      bookings[index].checkedOut = true;
-      bookings[index].checkedOutTime = new Date().toISOString();
-
-      // Update total amount with extra charges
-      var origTotal = parseFloat(bookings[index].totalAmount) || 0;
-      var newTotal = origTotal + kotAmt + addOnTotal;
-      bookings[index].totalAmount = newTotal;
-
-      // If payment mode selected, collect balance
-      var received = (parseFloat(bookings[index].advanceReceived) || 0) + (parseFloat(bookings[index].balanceReceived) || 0);
-      var balance = newTotal - received;
-
-      if (payMode && balance > 0) {
-        bookings[index].balanceReceived = (parseFloat(bookings[index].balanceReceived) || 0) + balance;
-        bookings[index].balancePaymentMode = payMode;
-        bookings[index].balanceDate = getToday();
-        bookings[index].status = 'COLLECTED';
-      } else {
-        // Recalculate status
-        var totalRecv = (parseFloat(bookings[index].advanceReceived) || 0) + (parseFloat(bookings[index].balanceReceived) || 0);
-        var pend = newTotal - totalRecv;
-        if (pend <= 0) bookings[index].status = 'COLLECTED';
-        else if (totalRecv > 0) bookings[index].status = 'PARTIAL';
-        else bookings[index].status = 'PENDING';
-      }
-
-      saveBookings(bookings);
-      closeCheckoutModal();
-      renderBookings();
-      updateDashboard();
-      showToast('Guest checked out! ' + (kotAmt > 0 || addOnTotal > 0 ? 'Extra charges added.' : ''), 'success');
+      try {
+        await apiFetch('/bookings/' + backendId + '/checkout', {
+          method: 'POST',
+          body: {
+            kotAmount: kotAmt,
+            addOns: addOnItems,
+            paymentMode: payMode || undefined
+          }
+        });
+        await loadBookingsFromAPI();
+        closeCheckoutModal();
+        renderBookings();
+        updateDashboard();
+        showToast('Guest checked out! ' + (kotAmt > 0 || addOnTotal > 0 ? 'Extra charges added.' : ''), 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // ========== EXPORT CSV ==========
@@ -4594,13 +5564,11 @@
       container.innerHTML = html;
     }
 
-    // Day-wise Payment Report (UPI + Cash breakdown)
+    // Day-wise Payment Report
     function renderPaymentReport() {
       var from = document.getElementById('payReportFrom').value;
       var to = document.getElementById('payReportTo').value;
 
-      // Collect all payment events grouped by date and mode
-      // Each booking contributes: advance on advanceDate, balance on balanceDate
       var days = {};
 
       bookings.forEach(function(b) {
@@ -4610,11 +5578,12 @@
         var advAmt = parseFloat(b.advanceReceived) || 0;
         var advDate = b.advanceDate || '';
         var advMode = b.paymentMode || 'Other';
+        if (advMode === 'UPI' || advMode === 'SBI Neelkanth') advMode = 'Bank Transfer';
         if (advAmt > 0 && advDate) {
           if (from && advDate < from) { /* skip */ }
           else if (to && advDate > to) { /* skip */ }
           else {
-            if (!days[advDate]) days[advDate] = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+            if (!days[advDate]) days[advDate] = { Cash: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
             var modeKey = days[advDate].hasOwnProperty(advMode) ? advMode : 'Other';
             days[advDate][modeKey] += advAmt;
             days[advDate].total += advAmt;
@@ -4625,11 +5594,12 @@
         var balAmt = parseFloat(b.balanceReceived) || 0;
         var balDate = b.balanceDate || '';
         var balMode = b.balancePaymentMode || 'Other';
+        if (balMode === 'UPI' || balMode === 'SBI Neelkanth') balMode = 'Bank Transfer';
         if (balAmt > 0 && balDate) {
           if (from && balDate < from) { /* skip */ }
           else if (to && balDate > to) { /* skip */ }
           else {
-            if (!days[balDate]) days[balDate] = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+            if (!days[balDate]) days[balDate] = { Cash: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
             var modeKey2 = days[balDate].hasOwnProperty(balMode) ? balMode : 'Other';
             days[balDate][modeKey2] += balAmt;
             days[balDate].total += balAmt;
@@ -4645,16 +5615,15 @@
         return;
       }
 
-      var grand = { Cash: 0, UPI: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
+      var grand = { Cash: 0, Card: 0, 'Bank Transfer': 0, Other: 0, total: 0 };
 
       var html = '<table class="report-table"><thead><tr>' +
-        '<th>Date</th><th>Cash</th><th>UPI</th><th>Card</th><th>Bank Transfer</th><th>Other</th><th>Day Total</th>' +
+        '<th>Date</th><th>Cash</th><th>Card</th><th>Bank Transfer</th><th>Other</th><th>Day Total</th>' +
         '</tr></thead><tbody>';
 
       dateKeys.forEach(function(dt) {
         var d = days[dt];
         grand.Cash += d.Cash;
-        grand.UPI += d.UPI;
         grand.Card += d.Card;
         grand['Bank Transfer'] += d['Bank Transfer'];
         grand.Other += d.Other;
@@ -4663,7 +5632,6 @@
         html += '<tr>' +
           '<td><strong>' + formatDate(dt) + '</strong></td>' +
           '<td class="amount">' + (d.Cash ? formatCurrency(d.Cash) : '-') + '</td>' +
-          '<td class="amount">' + (d.UPI ? formatCurrency(d.UPI) : '-') + '</td>' +
           '<td class="amount">' + (d.Card ? formatCurrency(d.Card) : '-') + '</td>' +
           '<td class="amount">' + (d['Bank Transfer'] ? formatCurrency(d['Bank Transfer']) : '-') + '</td>' +
           '<td class="amount">' + (d.Other ? formatCurrency(d.Other) : '-') + '</td>' +
@@ -4674,7 +5642,6 @@
       html += '<tr class="total-row">' +
         '<td>TOTAL</td>' +
         '<td class="amount">' + formatCurrency(grand.Cash) + '</td>' +
-        '<td class="amount">' + formatCurrency(grand.UPI) + '</td>' +
         '<td class="amount">' + formatCurrency(grand.Card) + '</td>' +
         '<td class="amount">' + formatCurrency(grand['Bank Transfer']) + '</td>' +
         '<td class="amount">' + formatCurrency(grand.Other) + '</td>' +
@@ -4683,6 +5650,180 @@
 
       html += '</tbody></table>';
       container.innerHTML = html;
+    }
+
+    // ========== PROFIT & LOSS REPORT ==========
+    function updatePnlFilterInputs() {
+      var type = document.getElementById('pnlFilterType').value;
+      document.getElementById('pnlMonthGroup').style.display = type === 'month' ? '' : 'none';
+      document.getElementById('pnlCalYearGroup').style.display = type === 'calendar' ? '' : 'none';
+      document.getElementById('pnlFYGroup').style.display = type === 'financial' ? '' : 'none';
+      document.getElementById('pnlCustomFromGroup').style.display = type === 'custom' ? '' : 'none';
+      document.getElementById('pnlCustomToGroup').style.display = type === 'custom' ? '' : 'none';
+    }
+
+    function getPnlDateRange() {
+      var type = document.getElementById('pnlFilterType').value;
+      var from, to;
+      if (type === 'month') {
+        var m = document.getElementById('pnlMonth').value;
+        if (!m) return null;
+        var parts = m.split('-');
+        var y = parseInt(parts[0]), mo = parseInt(parts[1]);
+        from = m + '-01';
+        var lastDay = new Date(y, mo, 0).getDate();
+        to = m + '-' + String(lastDay).padStart(2, '0');
+      } else if (type === 'calendar') {
+        var yr = document.getElementById('pnlCalYear').value;
+        from = yr + '-01-01';
+        to = yr + '-12-31';
+      } else if (type === 'financial') {
+        var fyStart = parseInt(document.getElementById('pnlFY').value);
+        from = fyStart + '-04-01';
+        to = (fyStart + 1) + '-03-31';
+      } else {
+        from = document.getElementById('pnlCustomFrom').value;
+        to = document.getElementById('pnlCustomTo').value;
+        if (!from || !to) return null;
+      }
+      return { from: from, to: to };
+    }
+
+    async function renderPnlReport() {
+      var range = getPnlDateRange();
+      if (!range) {
+        alert('Please select a valid date range');
+        return;
+      }
+
+      var container = document.getElementById('pnlReportContent');
+      container.innerHTML = '<p style="text-align:center;padding:20px;color:#6b7280;">Loading...</p>';
+
+      try {
+        var data = await apiFetch('/reports/pnl?from=' + encodeURIComponent(range.from) + '&to=' + encodeURIComponent(range.to));
+
+        var html = '<table class="report-table">';
+        html += '<thead><tr><th style="width:40%">Particulars</th><th style="text-align:right">Cash</th><th style="text-align:right">Bank</th><th style="text-align:right">Total</th></tr></thead>';
+        html += '<tbody>';
+
+        // INCOME header
+        html += '<tr style="background:rgba(16,185,129,0.08);"><td colspan="4" style="font-weight:700;color:#0d7a54;font-size:15px;padding:12px 16px;">INCOME</td></tr>';
+
+        var incomeKeys = Object.keys(data.income);
+        for (var i = 0; i < incomeKeys.length; i++) {
+          var cat = incomeKeys[i];
+          var inc = data.income[cat];
+          if (inc.cash === 0 && inc.bank === 0) continue;
+          html += '<tr>' +
+            '<td style="padding-left:32px;">' + escapeHtml(cat) + '</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(inc.cash) + '</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(inc.bank) + '</td>' +
+            '<td class="amount" style="text-align:right;font-weight:600">' + formatCurrency(inc.cash + inc.bank) + '</td>' +
+            '</tr>';
+        }
+
+        // Total Income
+        html += '<tr class="total-row" style="background:rgba(16,185,129,0.12);">' +
+          '<td style="font-weight:700;">Total Income</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalIncome.cash) + '</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalIncome.bank) + '</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalIncome.total) + '</td>' +
+          '</tr>';
+
+        // Spacer
+        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
+
+        // EXPENSES header
+        html += '<tr style="background:rgba(239,68,68,0.08);"><td colspan="4" style="font-weight:700;color:#c53030;font-size:15px;padding:12px 16px;">OPERATIONAL EXPENSES</td></tr>';
+
+        var expKeys = Object.keys(data.expenses);
+        for (var j = 0; j < expKeys.length; j++) {
+          var eCat = expKeys[j];
+          var exp = data.expenses[eCat];
+          if (exp.cash === 0 && exp.bank === 0) continue;
+          html += '<tr>' +
+            '<td style="padding-left:32px;">' + escapeHtml(eCat) + '</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(exp.cash) + '</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(exp.bank) + '</td>' +
+            '<td class="amount" style="text-align:right;font-weight:600">' + formatCurrency(exp.cash + exp.bank) + '</td>' +
+            '</tr>';
+        }
+
+        // Total Operational Expense
+        html += '<tr class="total-row" style="background:rgba(239,68,68,0.12);">' +
+          '<td style="font-weight:700;">Total Operational Expense</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalOperationalExpense.cash) + '</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalOperationalExpense.bank) + '</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalOperationalExpense.total) + '</td>' +
+          '</tr>';
+
+        // Spacer
+        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
+
+        // LEASE
+        html += '<tr style="background:rgba(245,158,11,0.08);"><td colspan="4" style="font-weight:700;color:#b45309;font-size:15px;padding:12px 16px;">LEASE RENT</td></tr>';
+        if (data.lease && data.lease.monthlyBreakdown) {
+          for (var k = 0; k < data.lease.monthlyBreakdown.length; k++) {
+            var lb = data.lease.monthlyBreakdown[k];
+            var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var lParts = lb.month.split('-');
+            var lLabel = monthNames[parseInt(lParts[1]) - 1] + ' ' + lParts[0];
+            html += '<tr>' +
+              '<td style="padding-left:32px;">' + lLabel + '</td>' +
+              '<td class="amount" style="text-align:right">-</td>' +
+              '<td class="amount" style="text-align:right">-</td>' +
+              '<td class="amount" style="text-align:right;font-weight:600">' + formatCurrency(lb.amount) + '</td>' +
+              '</tr>';
+          }
+        }
+        html += '<tr class="total-row" style="background:rgba(245,158,11,0.12);">' +
+          '<td style="font-weight:700;">Total Lease</td>' +
+          '<td class="amount" style="text-align:right">-</td>' +
+          '<td class="amount" style="text-align:right">-</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.lease.totalLease) + '</td>' +
+          '</tr>';
+
+        // Spacer
+        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
+
+        // Grand Total Expense
+        html += '<tr class="total-row" style="background:rgba(107,114,128,0.1);">' +
+          '<td style="font-weight:700;font-size:15px;">Grand Total Expense</td>' +
+          '<td class="amount" style="text-align:right">-</td>' +
+          '<td class="amount" style="text-align:right">-</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700;font-size:15px;">' + formatCurrency(data.grandTotalExpense) + '</td>' +
+          '</tr>';
+
+        // Spacer
+        html += '<tr><td colspan="4" style="height:16px;border:none;"></td></tr>';
+
+        // PROFIT / LOSS
+        var plColor = data.profitLoss >= 0 ? '#0d7a54' : '#c53030';
+        var plBg = data.profitLoss >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+        var plLabel = data.profitLoss >= 0 ? 'PROFIT' : 'LOSS';
+        html += '<tr style="background:' + plBg + ';">' +
+          '<td style="font-weight:700;font-size:16px;color:' + plColor + ';">' + plLabel + '</td>' +
+          '<td class="amount" style="text-align:right">-</td>' +
+          '<td class="amount" style="text-align:right">-</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700;font-size:16px;color:' + plColor + ';">' + formatCurrency(Math.abs(data.profitLoss)) + '</td>' +
+          '</tr>';
+
+        // Spacer
+        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
+
+        // ARR
+        html += '<tr style="background:rgba(99,102,241,0.08);">' +
+          '<td style="font-weight:700;color:#4338ca;">ARR (Avg Room Rate)</td>' +
+          '<td class="amount" style="text-align:right;color:#6b7280;">' + data.totalRoomNightsSold + ' nights</td>' +
+          '<td class="amount" style="text-align:right;color:#6b7280;">' + formatCurrency(data.totalRoomRevenue) + ' rev</td>' +
+          '<td class="amount" style="text-align:right;font-weight:700;color:#4338ca;">' + formatCurrency(data.arr) + '</td>' +
+          '</tr>';
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error loading P&L report: ' + (err.message || err) + '</p>';
+      }
     }
 
     // ========== LEDGER REPORT ==========
@@ -4948,7 +6089,7 @@
         '<title>Invoice ' + invoiceNo + '</title>' +
         '<style>' +
         '* { margin:0; padding:0; box-sizing:border-box; }' +
-        'body { font-family: Arial, sans-serif; color: #1a1a2e; padding: 0; }' +
+        'body { font-family: Arial, sans-serif; color: #1c2038; padding: 0; }' +
         '.invoice { max-width: 800px; margin: 0 auto; padding: 40px; }' +
         '.inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e3a5f; padding-bottom: 20px; margin-bottom: 24px; }' +
         '.inv-company h1 { font-size: 24px; color: #1e3a5f; margin-bottom: 4px; }' +
@@ -4975,7 +6116,7 @@
         '.inv-footer .col { width: 45%; }' +
         '.inv-footer h4 { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }' +
         '.inv-footer p { font-size: 12px; color: #4b5563; line-height: 1.5; }' +
-        '.sign-line { margin-top: 60px; border-top: 1px solid #1a1a2e; width: 200px; padding-top: 6px; font-size: 12px; color: #6b7280; }' +
+        '.sign-line { margin-top: 60px; border-top: 1px solid #1c2038; width: 200px; padding-top: 6px; font-size: 12px; color: #6b7280; }' +
         '@media print { body { padding: 0; } .invoice { padding: 20px; } .no-print { display: none !important; } }' +
         '</style></head><body>' +
         '<div class="invoice">' +
@@ -5074,30 +6215,8 @@
     var ATTENDANCE_KEY = 'hotelAttendance';
     var ADVANCES_KEY = 'hotelSalaryAdvances';
 
-    function loadDayBook() {
-      try { return JSON.parse(localStorage.getItem(DAYBOOK_KEY)) || []; } catch(e) { return []; }
-    }
-    function saveDayBook(data) { localStorage.setItem(DAYBOOK_KEY, JSON.stringify(data)); }
-
-    function loadDayBookBalances() {
-      try { return JSON.parse(localStorage.getItem(DAYBOOK_BAL_KEY)) || {}; } catch(e) { return {}; }
-    }
-    function saveDayBookBalances(data) { localStorage.setItem(DAYBOOK_BAL_KEY, JSON.stringify(data)); }
-
-    function loadStaffData() {
-      try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch(e) { return []; }
-    }
-    function saveStaffData(data) { localStorage.setItem(STAFF_KEY, JSON.stringify(data)); }
-
-    function loadAttendance() {
-      try { return JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || {}; } catch(e) { return {}; }
-    }
-    function saveAttendance(data) { localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(data)); }
-
-    function loadAdvances() {
-      try { return JSON.parse(localStorage.getItem(ADVANCES_KEY)) || []; } catch(e) { return []; }
-    }
-    function saveAdvances(data) { localStorage.setItem(ADVANCES_KEY, JSON.stringify(data)); }
+    // Load/save functions are now defined in the API layer above (in-memory cache).
+    // These storage keys are kept for reference but localStorage is no longer used for these.
 
     function generateDayBookId() {
       return 'DB-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -5139,32 +6258,37 @@
     }
 
     // ========== DAY BOOK FUNCTIONS ==========
-    function renderDayBook() {
-      renderDayBookBalances();
-      renderDayBookIncome();
-      renderDayBookExpenses();
-      renderDayBookClosing();
+    async function renderDayBook() {
+      var date = getDayBookDate();
+      try {
+        var results = await Promise.all([
+          loadDayBookEntriesForDate(date),
+          loadDayBookClosingForDate(date)
+        ]);
+        var entries = results[0];
+        var closing = results[1];
+
+        renderDayBookBalancesWithData(closing);
+        renderDayBookIncomeWithData(entries.filter(function(e) { return e.type === 'income'; }));
+        renderDayBookExpensesWithData(entries.filter(function(e) { return e.type === 'expense'; }));
+        renderDayBookClosingWithData(closing);
+      } catch(e) {
+        // toast shown by apiFetch
+      }
     }
 
     function getDayBookDate() {
       return document.getElementById('daybookDate').value || getToday();
     }
 
-    function renderDayBookBalances() {
-      var date = getDayBookDate();
-      var balances = loadDayBookBalances();
-      var bal = balances[date] || { cashOpening: 0, bankSbiOpening: 0 };
-      var closing = calculateDayClosing(date);
-
-      document.getElementById('dbCashOpening').textContent = formatCurrency(bal.cashOpening);
-      document.getElementById('dbBankOpening').textContent = formatCurrency(bal.bankSbiOpening);
-      document.getElementById('dbCashClosing').textContent = formatCurrency(closing.cashClosing);
-      document.getElementById('dbBankClosing').textContent = formatCurrency(closing.bankClosing);
+    function renderDayBookBalancesWithData(closing) {
+      document.getElementById('dbCashOpening').textContent = formatCurrency(closing.cashOpening || 0);
+      document.getElementById('dbBankOpening').textContent = formatCurrency(closing.bankOpening || 0);
+      document.getElementById('dbCashClosing').textContent = formatCurrency(closing.cashClosing || 0);
+      document.getElementById('dbBankClosing').textContent = formatCurrency(closing.bankClosing || 0);
     }
 
-    function renderDayBookIncome() {
-      var date = getDayBookDate();
-      var entries = loadDayBook().filter(function(e) { return e.date === date && e.type === 'income'; });
+    function renderDayBookIncomeWithData(entries) {
       var tbody = document.getElementById('dayBookIncomeTable');
       var total = 0;
 
@@ -5189,9 +6313,7 @@
       document.getElementById('dbTotalIncome').textContent = formatCurrency(total);
     }
 
-    function renderDayBookExpenses() {
-      var date = getDayBookDate();
-      var entries = loadDayBook().filter(function(e) { return e.date === date && e.type === 'expense'; });
+    function renderDayBookExpensesWithData(entries) {
       var tbody = document.getElementById('dayBookExpenseTable');
       var total = 0;
 
@@ -5215,156 +6337,75 @@
       document.getElementById('dbTotalExpense').textContent = formatCurrency(total);
     }
 
-    function calculateDayClosing(date) {
-      var balances = loadDayBookBalances();
-      var bal = balances[date] || { cashOpening: 0, bankSbiOpening: 0 };
-      var entries = loadDayBook().filter(function(e) { return e.date === date; });
-
-      var cashIncome = 0, bankIncome = 0, cashExpense = 0, bankExpense = 0;
-
-      entries.forEach(function(e) {
-        var amt = parseFloat(e.amount) || 0;
-        var src = e.type === 'income' ? (e.receivedIn || e.paymentSource || 'Cash') : (e.paymentSource || 'Cash');
-        if (e.type === 'income') {
-          if (src === 'Cash') cashIncome += amt;
-          else bankIncome += amt;
-        } else {
-          if (src === 'Cash') cashExpense += amt;
-          else bankExpense += amt;
-        }
-      });
-
-      return {
-        cashOpening: bal.cashOpening,
-        bankOpening: bal.bankSbiOpening,
-        cashIncome: cashIncome,
-        bankIncome: bankIncome,
-        cashExpense: cashExpense,
-        bankExpense: bankExpense,
-        cashClosing: bal.cashOpening + cashIncome - cashExpense,
-        bankClosing: bal.bankSbiOpening + bankIncome - bankExpense
-      };
-    }
-
-    function renderDayBookClosing() {
-      var date = getDayBookDate();
-      var c = calculateDayClosing(date);
+    function renderDayBookClosingWithData(c) {
       var tbody = document.getElementById('dayBookClosingBody');
 
       tbody.innerHTML =
         '<tr><td><strong>Opening Balance</strong></td>' +
           '<td class="amount">' + formatCurrency(c.cashOpening) + '</td>' +
           '<td class="amount">' + formatCurrency(c.bankOpening) + '</td>' +
-          '<td class="amount" style="font-weight:700">' + formatCurrency(c.cashOpening + c.bankOpening) + '</td></tr>' +
+          '<td class="amount" style="font-weight:700">' + formatCurrency((c.cashOpening || 0) + (c.bankOpening || 0)) + '</td></tr>' +
         '<tr style="color:#10b981"><td><strong>+ Income</strong></td>' +
           '<td class="amount">' + formatCurrency(c.cashIncome) + '</td>' +
           '<td class="amount">' + formatCurrency(c.bankIncome) + '</td>' +
-          '<td class="amount" style="font-weight:700">' + formatCurrency(c.cashIncome + c.bankIncome) + '</td></tr>' +
+          '<td class="amount" style="font-weight:700">' + formatCurrency((c.cashIncome || 0) + (c.bankIncome || 0)) + '</td></tr>' +
         '<tr style="color:#ef4444"><td><strong>- Expenses</strong></td>' +
           '<td class="amount">' + formatCurrency(c.cashExpense) + '</td>' +
           '<td class="amount">' + formatCurrency(c.bankExpense) + '</td>' +
-          '<td class="amount" style="font-weight:700">' + formatCurrency(c.cashExpense + c.bankExpense) + '</td></tr>' +
+          '<td class="amount" style="font-weight:700">' + formatCurrency((c.cashExpense || 0) + (c.bankExpense || 0)) + '</td></tr>' +
         '<tr style="background:#f0f4f8;font-weight:700"><td><strong>Closing Balance</strong></td>' +
           '<td class="amount" style="color:#1e3a5f">' + formatCurrency(c.cashClosing) + '</td>' +
           '<td class="amount" style="color:#1e3a5f">' + formatCurrency(c.bankClosing) + '</td>' +
-          '<td class="amount" style="color:#1e3a5f;font-size:16px">' + formatCurrency(c.cashClosing + c.bankClosing) + '</td></tr>';
+          '<td class="amount" style="color:#1e3a5f;font-size:16px">' + formatCurrency((c.cashClosing || 0) + (c.bankClosing || 0)) + '</td></tr>';
     }
 
-    function autoCollectDayBookIncome() {
+    async function autoCollectDayBookIncome() {
       var date = getDayBookDate();
-      var dayBookEntries = loadDayBook();
-      var existingBookingIds = {};
-      dayBookEntries.forEach(function(e) {
-        if (e.bookingId && e.date === date) existingBookingIds[e.bookingId + '-' + (e.incomeSource || '')] = true;
-      });
-
-      var added = 0;
-      bookings.forEach(function(b) {
-        if (b.status === 'CANCELLED') return;
-
-        // Check advance payment date
-        var advAmt = parseFloat(b.advanceReceived) || 0;
-        if (advAmt > 0 && b.advanceDate === date) {
-          var key = b.id + '-Room Rent (Advance)';
-          if (!existingBookingIds[key]) {
-            dayBookEntries.push({
-              id: generateDayBookId(),
-              date: date,
-              type: 'income',
-              category: 'Room Rent',
-              incomeSource: 'Room Rent (Advance)',
-              description: 'Advance - ' + b.guestName,
-              amount: advAmt,
-              paymentSource: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank SBI',
-              paymentMode: b.paymentMode || 'Cash',
-              receivedIn: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank SBI',
-              bookingId: b.id,
-              guestName: b.guestName,
-              createdAt: new Date().toISOString()
-            });
-            added++;
-          }
-        }
-
-        // Check balance payment date
-        var balAmt = parseFloat(b.balanceReceived) || 0;
-        if (balAmt > 0 && b.balanceDate === date) {
-          var key2 = b.id + '-Room Rent (Balance)';
-          if (!existingBookingIds[key2]) {
-            dayBookEntries.push({
-              id: generateDayBookId(),
-              date: date,
-              type: 'income',
-              category: 'Room Rent',
-              incomeSource: 'Room Rent (Balance)',
-              description: 'Balance - ' + b.guestName,
-              amount: balAmt,
-              paymentSource: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank SBI',
-              paymentMode: b.balancePaymentMode || 'Cash',
-              receivedIn: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank SBI',
-              bookingId: b.id,
-              guestName: b.guestName,
-              createdAt: new Date().toISOString()
-            });
-            added++;
-          }
-        }
-      });
-
-      saveDayBook(dayBookEntries);
-      renderDayBook();
-      showToast(added > 0 ? added + ' income entries collected from bookings' : 'No new entries to collect', added > 0 ? 'success' : 'error');
+      try {
+        var result = await apiFetch('/daybook/auto-collect?date=' + encodeURIComponent(date), { method: 'POST' });
+        await renderDayBook();
+        var added = result && result.added ? result.added : 0;
+        showToast(added > 0 ? added + ' income entries collected from bookings' : 'No new entries to collect', added > 0 ? 'success' : 'error');
+      } catch(e) { /* toast shown */ }
     }
 
-    function deleteDayBookEntry(id) {
+    async function deleteDayBookEntry(id) {
       if (!confirm('Delete this entry?')) return;
-      var entries = loadDayBook().filter(function(e) { return e.id !== id; });
-      saveDayBook(entries);
-      renderDayBook();
-      showToast('Entry deleted', 'success');
+      try {
+        await apiFetch('/daybook/entries/' + id, { method: 'DELETE' });
+        await renderDayBook();
+        showToast('Entry deleted', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // Opening Balance Modal
-    function openSetBalanceModal() {
+    async function openSetBalanceModal() {
       var date = getDayBookDate();
-      var balances = loadDayBookBalances();
-      var bal = balances[date] || { cashOpening: 0, bankSbiOpening: 0 };
+      var bal = { cashOpening: 0, bankSbiOpening: 0 };
+      try {
+        bal = await loadDayBookBalanceForDate(date);
+        if (!bal) bal = { cashOpening: 0, bankSbiOpening: 0 };
+      } catch(e) { /* use defaults */ }
       document.getElementById('balanceModalDate').textContent = formatDate(date);
       document.getElementById('balCashOpening').value = bal.cashOpening || '';
       document.getElementById('balBankOpening').value = bal.bankSbiOpening || '';
       document.getElementById('setBalanceModal').classList.add('active');
     }
 
-    function saveOpeningBalance() {
+    async function saveOpeningBalance() {
       var date = getDayBookDate();
       var cash = parseFloat(document.getElementById('balCashOpening').value) || 0;
       var bank = parseFloat(document.getElementById('balBankOpening').value) || 0;
-      var balances = loadDayBookBalances();
-      balances[date] = { cashOpening: cash, bankSbiOpening: bank };
-      saveDayBookBalances(balances);
-      closeModal('setBalanceModal');
-      renderDayBook();
-      showToast('Opening balance saved', 'success');
+
+      try {
+        await apiFetch('/daybook/balance', {
+          method: 'PUT',
+          body: { date: date, cashOpening: cash, bankSbiOpening: bank }
+        });
+        closeModal('setBalanceModal');
+        await renderDayBook();
+        showToast('Opening balance saved', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // Add Expense Modal
@@ -5415,7 +6456,7 @@
       }
     }
 
-    function saveExpense() {
+    async function saveExpense() {
       var cat = document.getElementById('expenseCategory').value;
       var subItem = document.getElementById('expenseSubItem').value;
       var amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
@@ -5428,33 +6469,36 @@
       }
 
       var empId = '', empName = '';
+      var backendEmpId = null;
       if (cat === 'Salary') {
         empId = document.getElementById('expenseEmployee').value;
         if (empId) {
           var staff = loadStaffData();
           var emp = staff.find(function(s) { return s.id === empId; });
           empName = emp ? emp.name : '';
+          backendEmpId = getBackendStaffId(empId);
         }
       }
 
-      var entries = loadDayBook();
-      entries.push({
-        id: generateDayBookId(),
-        date: getDayBookDate(),
-        type: 'expense',
-        category: cat,
-        subItem: subItem,
-        description: desc,
-        amount: amount,
-        paymentSource: payFrom,
-        employeeId: empId,
-        employeeName: empName,
-        createdAt: new Date().toISOString()
-      });
-      saveDayBook(entries);
-      closeModal('addExpenseModal');
-      renderDayBook();
-      showToast('Expense added', 'success');
+      try {
+        await apiFetch('/daybook/entries', {
+          method: 'POST',
+          body: {
+            date: getDayBookDate(),
+            type: 'expense',
+            category: cat,
+            subItem: subItem,
+            description: desc,
+            amount: amount,
+            paymentSource: payFrom,
+            employeeId: backendEmpId || undefined,
+            employeeName: empName || undefined
+          }
+        });
+        closeModal('addExpenseModal');
+        await renderDayBook();
+        showToast('Expense added', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // Manual Income Modal
@@ -5467,7 +6511,7 @@
       document.getElementById('addIncomeModal').classList.add('active');
     }
 
-    function saveManualIncome() {
+    async function saveManualIncome() {
       var source = document.getElementById('incomeSource').value;
       var amount = parseFloat(document.getElementById('incomeAmount').value) || 0;
       var mode = document.getElementById('incomePayMode').value;
@@ -5479,28 +6523,29 @@
         return;
       }
 
-      var entries = loadDayBook();
-      entries.push({
-        id: generateDayBookId(),
-        date: getDayBookDate(),
-        type: 'income',
-        category: source,
-        incomeSource: source,
-        description: desc,
-        amount: amount,
-        paymentMode: mode,
-        receivedIn: receivedIn,
-        paymentSource: receivedIn,
-        createdAt: new Date().toISOString()
-      });
-      saveDayBook(entries);
-      closeModal('addIncomeModal');
-      renderDayBook();
-      showToast('Income added', 'success');
+      try {
+        await apiFetch('/daybook/entries', {
+          method: 'POST',
+          body: {
+            date: getDayBookDate(),
+            type: 'income',
+            category: source,
+            incomeSource: source,
+            description: desc,
+            amount: amount,
+            paymentMode: mode,
+            receivedIn: receivedIn,
+            paymentSource: receivedIn
+          }
+        });
+        closeModal('addIncomeModal');
+        await renderDayBook();
+        showToast('Income added', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // ========== SALARY TAB FUNCTIONS ==========
-    function initSalaryTab() {
+    async function initSalaryTab() {
       var now = new Date();
       var cm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
       if (!document.getElementById('attMonth').value) {
@@ -5511,9 +6556,9 @@
       }
       renderStaffList();
       populateEmployeeDropdowns();
-      renderAttendance();
+      await renderAttendance();
       renderAdvanceList();
-      renderSalaryCalculation();
+      await renderSalaryCalculation();
     }
 
     function populateEmployeeDropdowns() {
@@ -5584,7 +6629,7 @@
       document.getElementById('addStaffModal').classList.add('active');
     }
 
-    function saveStaffMember() {
+    async function saveStaffMember() {
       var editId = document.getElementById('editStaffId').value;
       var name = document.getElementById('staffName').value.trim();
       var designation = document.getElementById('staffDesignation').value;
@@ -5596,35 +6641,30 @@
         return;
       }
 
-      var staff = loadStaffData();
-      if (editId) {
-        var idx = staff.findIndex(function(s) { return s.id === editId; });
-        if (idx !== -1) {
-          staff[idx].name = name;
-          staff[idx].designation = designation;
-          staff[idx].salary = salary;
-          staff[idx].doj = doj;
+      try {
+        if (editId) {
+          var backendId = getBackendStaffId(editId);
+          if (!backendId) { showToast('Staff not found', 'error'); return; }
+          await apiFetch('/staff/' + backendId, {
+            method: 'PUT',
+            body: { name: name, designation: designation, salary: salary, doj: doj }
+          });
+        } else {
+          await apiFetch('/staff', {
+            method: 'POST',
+            body: { name: name, designation: designation, salary: salary, doj: doj }
+          });
         }
-      } else {
-        staff.push({
-          id: generateStaffId(),
-          name: name,
-          designation: designation,
-          salary: salary,
-          doj: doj,
-          status: 'active',
-          createdAt: new Date().toISOString()
-        });
-      }
-      saveStaffData(staff);
-      closeModal('addStaffModal');
-      renderStaffList();
-      populateEmployeeDropdowns();
-      showToast(editId ? 'Staff updated' : 'Staff added', 'success');
+        await loadStaffFromAPI();
+        closeModal('addStaffModal');
+        renderStaffList();
+        populateEmployeeDropdowns();
+        showToast(editId ? 'Staff updated' : 'Staff added', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // Attendance
-    function renderAttendance() {
+    async function renderAttendance() {
       var empId = document.getElementById('attEmployee').value;
       var monthStr = document.getElementById('attMonth').value;
       var container = document.getElementById('attendanceCalendar');
@@ -5647,9 +6687,14 @@
       var firstDayOfWeek = new Date(year, month, 1).getDay(); // 0=Sun
       var today = getToday();
 
+      var empAtt = {};
+      try {
+        empAtt = await loadAttendanceForEmployee(empId, monthStr);
+      } catch(e) { /* toast shown */ }
+
+      // Update cache
       var attKey = empId + '-' + monthStr;
-      var attendance = loadAttendance();
-      var empAtt = attendance[attKey] || {};
+      _attendanceCache[attKey] = empAtt;
 
       var html = '<div class="attendance-calendar">';
       // Headers
@@ -5715,34 +6760,36 @@
       document.getElementById('markAbsentModal').classList.add('active');
     }
 
-    function saveAbsent() {
+    async function saveAbsent() {
       var empId = document.getElementById('absentEmpId').value;
       var dateStr = document.getElementById('absentDate').value;
       var remark = document.getElementById('absentRemark').value.trim();
-      var monthStr = dateStr.substring(0, 7);
 
-      var attendance = loadAttendance();
-      var attKey = empId + '-' + monthStr;
-      if (!attendance[attKey]) attendance[attKey] = {};
-      attendance[attKey][dateStr] = { absent: true, remark: remark };
-      saveAttendance(attendance);
+      var backendStaffId = getBackendStaffId(empId);
+      if (!backendStaffId) { showToast('Staff not found', 'error'); return; }
 
-      closeModal('markAbsentModal');
-      renderAttendance();
-      showToast('Marked absent', 'success');
+      try {
+        await apiFetch('/attendance', {
+          method: 'POST',
+          body: { staffId: backendStaffId, date: dateStr, absent: true, remark: remark }
+        });
+        closeModal('markAbsentModal');
+        await renderAttendance();
+        showToast('Marked absent', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
-    function removeAbsent(empId, dateStr) {
+    async function removeAbsent(empId, dateStr) {
       if (!confirm('Remove absence for ' + formatDate(dateStr) + '?')) return;
-      var monthStr = dateStr.substring(0, 7);
-      var attendance = loadAttendance();
-      var attKey = empId + '-' + monthStr;
-      if (attendance[attKey] && attendance[attKey][dateStr]) {
-        delete attendance[attKey][dateStr];
-        saveAttendance(attendance);
-        renderAttendance();
+
+      var backendStaffId = getBackendStaffId(empId);
+      if (!backendStaffId) { showToast('Staff not found', 'error'); return; }
+
+      try {
+        await apiFetch('/attendance?staffId=' + backendStaffId + '&date=' + encodeURIComponent(dateStr), { method: 'DELETE' });
+        await renderAttendance();
         showToast('Absence removed', 'success');
-      }
+      } catch(e) { /* toast shown */ }
     }
 
     // Salary Advances
@@ -5788,7 +6835,7 @@
       document.getElementById('addAdvanceModal').classList.add('active');
     }
 
-    function saveAdvance() {
+    async function saveAdvance() {
       var empId = document.getElementById('advanceEmployee').value;
       var amount = parseFloat(document.getElementById('advanceAmount').value) || 0;
       var date = document.getElementById('advanceDate').value;
@@ -5800,120 +6847,82 @@
         return;
       }
 
-      var advances = loadAdvances();
-      advances.push({
-        id: generateAdvanceId(),
-        employeeId: empId,
-        amount: amount,
-        date: date,
-        deductMonth: deductMonth,
-        remarks: remarks,
-        deducted: false,
-        createdAt: new Date().toISOString()
-      });
-      saveAdvances(advances);
-      closeModal('addAdvanceModal');
-      renderAdvanceList();
-      showToast('Advance recorded', 'success');
+      var backendStaffId = getBackendStaffId(empId);
+      if (!backendStaffId) { showToast('Staff not found', 'error'); return; }
+
+      try {
+        await apiFetch('/advances', {
+          method: 'POST',
+          body: {
+            staffId: backendStaffId,
+            amount: amount,
+            date: date,
+            deductMonth: deductMonth,
+            remarks: remarks
+          }
+        });
+        await loadAdvancesFromAPI();
+        closeModal('addAdvanceModal');
+        renderAdvanceList();
+        showToast('Advance recorded', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
-    function deleteAdvance(id) {
+    async function deleteAdvance(id) {
       if (!confirm('Delete this advance record?')) return;
-      var advances = loadAdvances().filter(function(a) { return a.id !== id; });
-      saveAdvances(advances);
-      renderAdvanceList();
-      showToast('Advance deleted', 'success');
+
+      var backendId = getBackendAdvanceId(id);
+      if (!backendId) { showToast('Advance not found', 'error'); return; }
+
+      try {
+        await apiFetch('/advances/' + backendId, { method: 'DELETE' });
+        await loadAdvancesFromAPI();
+        renderAdvanceList();
+        showToast('Advance deleted', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
     // Salary Calculation
-    function renderSalaryCalculation() {
+    async function renderSalaryCalculation() {
       var monthStr = document.getElementById('salaryCalcMonth').value;
       if (!monthStr) return;
 
-      var staff = loadStaffData().filter(function(s) { return s.status !== 'left'; });
-      var attendance = loadAttendance();
-      var advances = loadAdvances();
       var tbody = document.getElementById('salaryCalcTable');
-      var today = getToday();
 
-      var parts = monthStr.split('-');
-      var year = parseInt(parts[0]);
-      var month = parseInt(parts[1]) - 1;
-      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      try {
+        var data = await apiFetch('/reports/salary?month=' + encodeURIComponent(monthStr));
 
-      // Check salary payments in Day Book
-      var dayBookEntries = loadDayBook();
-      var paidSalaries = {};
-      dayBookEntries.forEach(function(e) {
-        if (e.type === 'expense' && e.category === 'Salary' && e.employeeId) {
-          var payMonth = e.date ? e.date.substring(0, 7) : '';
-          var key = e.employeeId + '-' + payMonth;
-          // We check if there's a salary payment for this employee in any month
-          // but associate it based on date
-          if (!paidSalaries[e.employeeId]) paidSalaries[e.employeeId] = {};
-          paidSalaries[e.employeeId][payMonth] = (paidSalaries[e.employeeId][payMonth] || 0) + (parseFloat(e.amount) || 0);
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:20px;">No active staff</td></tr>';
+          return;
         }
-      });
 
-      if (staff.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:20px;">No active staff</td></tr>';
-        return;
+        tbody.innerHTML = data.map(function(row) {
+          var s = row.staff;
+          var staffCode = s.staffCode || ('EMP-TEMP-' + s.id);
+          var statusBadge = row.isPaid ? '<span class="salary-paid">Paid</span>' : '<span class="salary-unpaid">Unpaid</span>';
+          var payBtn = !row.isPaid && row.net > 0
+            ? '<button class="btn btn-primary btn-small" onclick="paySalaryViaDayBook(\'' + escapeHtml(staffCode) + '\',' + row.net + ',\'' + monthStr + '\')">Pay</button>'
+            : '';
+
+          return '<tr>' +
+            '<td><strong>' + escapeHtml(s.name) + '</strong></td>' +
+            '<td>' + escapeHtml(s.designation) + '</td>' +
+            '<td class="amount">' + formatCurrency(s.salary) + '</td>' +
+            '<td>' + row.daysInMonth + '</td>' +
+            '<td style="color:#065f46;font-weight:600">' + row.presentDays + '</td>' +
+            '<td style="color:#991b1b;font-weight:600">' + row.absentDays + '</td>' +
+            '<td class="amount">' + formatCurrency(row.perDay) + '</td>' +
+            '<td class="amount">' + formatCurrency(row.gross) + '</td>' +
+            '<td class="amount" style="color:#ef4444">' + formatCurrency(row.totalAdvance) + '</td>' +
+            '<td class="amount" style="font-weight:700">' + formatCurrency(row.net) + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + payBtn + '</td>' +
+            '</tr>';
+        }).join('');
+      } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#ef4444;padding:20px;">Failed to load salary data</td></tr>';
       }
-
-      tbody.innerHTML = staff.map(function(s) {
-        var attKey = s.id + '-' + monthStr;
-        var empAtt = attendance[attKey] || {};
-
-        // Count days up to today or end of month
-        var lastCountDay = monthStr + '-' + String(daysInMonth).padStart(2, '0');
-        if (lastCountDay > today) lastCountDay = today;
-
-        var countableDays = 0;
-        var absentDays = 0;
-        for (var d = 1; d <= daysInMonth; d++) {
-          var ds = monthStr + '-' + String(d).padStart(2, '0');
-          if (ds <= lastCountDay) {
-            countableDays++;
-            if (empAtt[ds] && empAtt[ds].absent) absentDays++;
-          }
-        }
-        var presentDays = countableDays - absentDays;
-        var perDay = Math.round(s.salary / daysInMonth);
-        var gross = Math.round(perDay * presentDays);
-
-        // Advances for this month
-        var totalAdvance = 0;
-        advances.forEach(function(adv) {
-          if (adv.employeeId === s.id && adv.deductMonth === monthStr && !adv.deducted) {
-            totalAdvance += parseFloat(adv.amount) || 0;
-          }
-        });
-
-        var net = gross - totalAdvance;
-        if (net < 0) net = 0;
-
-        // Check if paid
-        var isPaid = paidSalaries[s.id] && paidSalaries[s.id][monthStr] && paidSalaries[s.id][monthStr] >= net;
-        var statusBadge = isPaid ? '<span class="salary-paid">Paid</span>' : '<span class="salary-unpaid">Unpaid</span>';
-        var payBtn = !isPaid && net > 0
-          ? '<button class="btn btn-primary btn-small" onclick="paySalaryViaDayBook(\'' + s.id + '\',' + net + ',\'' + monthStr + '\')">Pay</button>'
-          : '';
-
-        return '<tr>' +
-          '<td><strong>' + escapeHtml(s.name) + '</strong></td>' +
-          '<td>' + escapeHtml(s.designation) + '</td>' +
-          '<td class="amount">' + formatCurrency(s.salary) + '</td>' +
-          '<td>' + daysInMonth + '</td>' +
-          '<td style="color:#065f46;font-weight:600">' + presentDays + '</td>' +
-          '<td style="color:#991b1b;font-weight:600">' + absentDays + '</td>' +
-          '<td class="amount">' + formatCurrency(perDay) + '</td>' +
-          '<td class="amount">' + formatCurrency(gross) + '</td>' +
-          '<td class="amount" style="color:#ef4444">' + formatCurrency(totalAdvance) + '</td>' +
-          '<td class="amount" style="font-weight:700">' + formatCurrency(net) + '</td>' +
-          '<td>' + statusBadge + '</td>' +
-          '<td>' + payBtn + '</td>' +
-          '</tr>';
-      }).join('');
     }
 
     function paySalaryViaDayBook(empId, netAmount, monthStr) {
@@ -5929,14 +6938,7 @@
       openAddExpenseModal('Salary', empId, netAmount);
       document.getElementById('expenseDescription').value = 'Salary for ' + monthStr + ' - ' + emp.name;
 
-      // Mark advances as deducted
-      var advances = loadAdvances();
-      advances.forEach(function(adv) {
-        if (adv.employeeId === empId && adv.deductMonth === monthStr && !adv.deducted) {
-          adv.deducted = true;
-        }
-      });
-      saveAdvances(advances);
+      // Note: advance deduction is handled by the backend when FnF is processed
     }
 
     // FnF
@@ -6004,37 +7006,35 @@
           '<span>Net Payable:</span><strong style="color:#1e3a5f">' + formatCurrency(netPayable) + '</strong></div>';
     }
 
-    function processFnf() {
+    async function processFnf() {
       var empId = document.getElementById('fnfEmpId').value;
       var lastDate = document.getElementById('fnfLastDate').value;
       if (!empId || !lastDate) return;
 
       if (!confirm('Process Full & Final settlement? This will mark the employee as Left.')) return;
 
-      var staff = loadStaffData();
-      var idx = staff.findIndex(function(s) { return s.id === empId; });
-      if (idx === -1) return;
+      var backendId = getBackendStaffId(empId);
+      if (!backendId) { showToast('Staff not found', 'error'); return; }
 
-      staff[idx].status = 'left';
-      staff[idx].lastWorkingDate = lastDate;
-      saveStaffData(staff);
-
-      // Mark all pending advances as deducted
-      var advances = loadAdvances();
-      advances.forEach(function(adv) {
-        if (adv.employeeId === empId && !adv.deducted) {
-          adv.deducted = true;
-        }
-      });
-      saveAdvances(advances);
-
-      closeModal('fnfModal');
-      renderStaffList();
-      populateEmployeeDropdowns();
-      renderSalaryCalculation();
-      showToast('FnF processed. Employee marked as Left.', 'success');
+      try {
+        await apiFetch('/staff/' + backendId + '/fnf', {
+          method: 'POST',
+          body: { lastWorkingDate: lastDate }
+        });
+        await Promise.all([loadStaffFromAPI(), loadAdvancesFromAPI()]);
+        closeModal('fnfModal');
+        renderStaffList();
+        populateEmployeeDropdowns();
+        await renderSalaryCalculation();
+        showToast('FnF processed. Employee marked as Left.', 'success');
+      } catch(e) { /* toast shown */ }
     }
 
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
   </script>
 </body>
 </html>
