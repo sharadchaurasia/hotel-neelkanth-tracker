@@ -56,6 +56,12 @@ export class ReportsController {
     return this.reportsService.getPnlReport(from, to);
   }
 
+  @Get('pnl-table')
+  @RequirePermissions('reports', 'view')
+  getPnlTable(@Query('from') from: string, @Query('to') to: string) {
+    return this.reportsService.getPnlTable(from, to);
+  }
+
   @Get('summary')
   @RequirePermissions('reports', 'view')
   getSummaryData(@Query('from') from: string, @Query('to') to: string) {

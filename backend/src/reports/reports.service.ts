@@ -436,6 +436,134 @@ export class ReportsService {
     return { totalLease, monthlyBreakdown: breakdown };
   }
 
+  async getPnlTable(from: string, to: string) {
+    const ALL_ROOMS = [
+      '101','102','103','104','105',
+      '201','202','203','204','205','206',
+      '301','302','303','304','305','306',
+      '401','402','403',
+    ];
+    const ROOM_COUNT = ALL_ROOMS.length;
+
+    const bookings = await this.bookingRepo.find({ relations: ['addOns'] });
+    const daybookEntries = await this.daybookRepo.find();
+
+    // Build list of months in range
+    const startDate = new Date(from + 'T00:00:00');
+    const endDate = new Date(to + 'T00:00:00');
+    const months: string[] = [];
+    const cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (cur <= endDate) {
+      months.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`);
+      cur.setMonth(cur.getMonth() + 1);
+    }
+
+    const EXPENSE_DISPLAY = ['Grocery', 'Electricity', 'Cylinder', 'Salary', 'Maintenance', 'Fuel', 'Laundry', 'Others'];
+    const EXPENSE_OTHERS_GROUP = ['Recharges', 'Garbage', 'Deco Items', 'Staff Meal', 'Bakery', 'Housekeeping', 'Butchery', 'Others'];
+
+    const result = [];
+
+    for (const monthStr of months) {
+      const [yr, mo] = monthStr.split('-').map(Number);
+      const daysInMonth = new Date(yr, mo, 0).getDate();
+      const firstDay = `${monthStr}-01`;
+      const lastDay = `${monthStr}-${String(daysInMonth).padStart(2, '0')}`;
+      const totalRoomNights = ROOM_COUNT * daysInMonth;
+
+      // --- OCCUPANCY ---
+      let occupiedNights = 0;
+      let totalPaxNights = 0;
+
+      for (const b of bookings) {
+        if (b.status === 'CANCELLED') continue;
+        if (!b.checkIn || !b.checkOut) continue;
+        if (b.checkOut <= firstDay || b.checkIn > lastDay) continue;
+
+        const rooms = (b.roomNo || '').split(',').map(r => r.trim()).filter(r => r);
+        const roomCount = rooms.length || 1;
+
+        // Overlap: nights where checkIn <= day < checkOut, within this month
+        const overlapStart = b.checkIn > firstDay ? b.checkIn : firstDay;
+        const overlapEnd = b.checkOut <= lastDay ? b.checkOut : `${yr}-${String(mo + 1 > 12 ? 1 : mo + 1).padStart(2, '0')}-01`;
+
+        const s = new Date(overlapStart + 'T00:00:00');
+        const e = new Date(overlapEnd + 'T00:00:00');
+        const nightsInMonth = Math.max(0, Math.round((e.getTime() - s.getTime()) / 86400000));
+
+        occupiedNights += nightsInMonth * roomCount;
+        totalPaxNights += nightsInMonth * (b.pax || 1);
+      }
+
+      // --- INCOME from daybook ---
+      const monthEntries = daybookEntries.filter(
+        e => e.date && e.date >= firstDay && e.date <= lastDay,
+      );
+
+      let roomSale = 0, kotIncome = 0, otherIncome = 0;
+      for (const e of monthEntries) {
+        if (e.type !== 'income') continue;
+        const amt = Number(e.amount) || 0;
+        if (e.category === 'Room Rent') roomSale += amt;
+        else if (e.category === 'KOT') kotIncome += amt;
+        else otherIncome += amt;
+      }
+      const totalIncome = roomSale + kotIncome + otherIncome;
+
+      // --- EXPENSES from daybook ---
+      const expenseMap: Record<string, number> = {};
+      for (const cat of EXPENSE_DISPLAY) expenseMap[cat] = 0;
+
+      for (const e of monthEntries) {
+        if (e.type !== 'expense') continue;
+        const amt = Number(e.amount) || 0;
+        const cat = e.category || 'Others';
+        if (EXPENSE_OTHERS_GROUP.includes(cat)) {
+          expenseMap['Others'] = (expenseMap['Others'] || 0) + amt;
+        } else if (expenseMap.hasOwnProperty(cat)) {
+          expenseMap[cat] += amt;
+        } else {
+          expenseMap['Others'] = (expenseMap['Others'] || 0) + amt;
+        }
+      }
+
+      let totalExpenses = 0;
+      for (const cat of Object.keys(expenseMap)) totalExpenses += expenseMap[cat];
+
+      // --- LEASE ---
+      let fyStart: number;
+      if (mo >= 4) fyStart = yr;
+      else fyStart = yr - 1;
+      const lease = fyStart <= 2026 ? 350000 : 375000;
+
+      const grandTotalExpense = totalExpenses + lease;
+      const profitLoss = totalIncome - grandTotalExpense;
+      const arr = occupiedNights > 0 ? Math.round(roomSale / occupiedNights) : 0;
+      const perPersonMealCost = totalPaxNights > 0 ? Math.round(expenseMap['Grocery'] / totalPaxNights) : 0;
+
+      result.push({
+        month: monthStr,
+        totalRooms: totalRoomNights,
+        occupancy: occupiedNights,
+        vacant: totalRoomNights - occupiedNights,
+        occupancyPct: totalRoomNights > 0 ? Math.round((occupiedNights / totalRoomNights) * 100) : 0,
+        roomSale,
+        kotIncome,
+        otherIncome,
+        totalIncome,
+        expenses: expenseMap,
+        totalExpenses,
+        lease,
+        grandTotalExpense,
+        profitLoss,
+        arr,
+        totalPaxNights,
+        perPersonMealCost,
+      });
+    }
+
+    return result;
+  }
+
   async getInventoryData(month: string) {
     const ALL_ROOMS = [
       '101','102','103','104','105',

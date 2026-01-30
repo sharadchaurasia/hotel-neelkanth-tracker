@@ -1998,19 +1998,14 @@
         </div>
         <div class="report-filters" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
           <div class="filter-group">
-            <label>Filter Type</label>
+            <label>View</label>
             <select id="pnlFilterType" onchange="updatePnlFilterInputs()">
-              <option value="month">Specific Month</option>
               <option value="calendar">Calendar Year (Jan-Dec)</option>
               <option value="financial">Financial Year (Apr-Mar)</option>
               <option value="custom">Custom Range</option>
             </select>
           </div>
-          <div class="filter-group" id="pnlMonthGroup">
-            <label>Month</label>
-            <input type="month" id="pnlMonth">
-          </div>
-          <div class="filter-group" id="pnlCalYearGroup" style="display:none;">
+          <div class="filter-group" id="pnlCalYearGroup">
             <label>Calendar Year</label>
             <select id="pnlCalYear">
               <option value="2025">2025</option>
@@ -2043,7 +2038,7 @@
             <span class="material-icons" style="font-size:14px">search</span> Generate
           </button>
         </div>
-        <div id="pnlReportContent"></div>
+        <div id="pnlReportContent" style="overflow-x:auto;"></div>
       </div>
 
     </div><!-- end tab-reports -->
@@ -3602,7 +3597,6 @@
         document.getElementById('inventoryMonth').value = currentMonth;
         document.getElementById('inventoryDate').value = getToday();
         document.getElementById('reportMonth').value = currentMonth;
-        document.getElementById('pnlMonth').value = currentMonth;
 
         // Set report date range to current month
         var firstDay = currentMonth + '-01';
@@ -5655,7 +5649,6 @@
     // ========== PROFIT & LOSS REPORT ==========
     function updatePnlFilterInputs() {
       var type = document.getElementById('pnlFilterType').value;
-      document.getElementById('pnlMonthGroup').style.display = type === 'month' ? '' : 'none';
       document.getElementById('pnlCalYearGroup').style.display = type === 'calendar' ? '' : 'none';
       document.getElementById('pnlFYGroup').style.display = type === 'financial' ? '' : 'none';
       document.getElementById('pnlCustomFromGroup').style.display = type === 'custom' ? '' : 'none';
@@ -5665,15 +5658,7 @@
     function getPnlDateRange() {
       var type = document.getElementById('pnlFilterType').value;
       var from, to;
-      if (type === 'month') {
-        var m = document.getElementById('pnlMonth').value;
-        if (!m) return null;
-        var parts = m.split('-');
-        var y = parseInt(parts[0]), mo = parseInt(parts[1]);
-        from = m + '-01';
-        var lastDay = new Date(y, mo, 0).getDate();
-        to = m + '-' + String(lastDay).padStart(2, '0');
-      } else if (type === 'calendar') {
+      if (type === 'calendar') {
         var yr = document.getElementById('pnlCalYear').value;
         from = yr + '-01-01';
         to = yr + '-12-31';
@@ -5700,123 +5685,130 @@
       container.innerHTML = '<p style="text-align:center;padding:20px;color:#6b7280;">Loading...</p>';
 
       try {
-        var data = await apiFetch('/reports/pnl?from=' + encodeURIComponent(range.from) + '&to=' + encodeURIComponent(range.to));
+        var rows = await apiFetch('/reports/pnl-table?from=' + encodeURIComponent(range.from) + '&to=' + encodeURIComponent(range.to));
 
-        var html = '<table class="report-table">';
-        html += '<thead><tr><th style="width:40%">Particulars</th><th style="text-align:right">Cash</th><th style="text-align:right">Bank</th><th style="text-align:right">Total</th></tr></thead>';
+        var monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var expCols = ['Grocery','Electricity','Cylinder','Salary','Maintenance','Fuel','Laundry','Others'];
+
+        // Build table
+        var html = '<table class="report-table" style="font-size:12px;white-space:nowrap;">';
+
+        // Header row 1 - group headers
+        html += '<thead><tr style="background:rgba(28,32,56,0.9);color:#d4b87a;">' +
+          '<th rowspan="2" style="color:#d4b87a;position:sticky;left:0;background:rgba(28,32,56,0.95);z-index:2;">Sr</th>' +
+          '<th rowspan="2" style="color:#d4b87a;position:sticky;left:32px;background:rgba(28,32,56,0.95);z-index:2;">Month</th>' +
+          '<th colspan="4" style="color:#d4b87a;text-align:center;border-bottom:1px solid #b8943e;">OCCUPANCY</th>' +
+          '<th colspan="4" style="color:#90ee90;text-align:center;border-bottom:1px solid #90ee90;">INCOME</th>' +
+          '<th colspan="' + expCols.length + '" style="color:#ff9999;text-align:center;border-bottom:1px solid #ff9999;">EXPENSES</th>' +
+          '<th rowspan="2" style="color:#ff9999;text-align:right;">Total Exp</th>' +
+          '<th rowspan="2" style="color:#ffa500;text-align:right;">Lease</th>' +
+          '<th rowspan="2" style="color:#ff6666;text-align:right;">Grand Exp</th>' +
+          '<th rowspan="2" style="color:#d4b87a;text-align:right;">P&L</th>' +
+          '<th rowspan="2" style="color:#87ceeb;text-align:right;">ARR</th>' +
+          '<th rowspan="2" style="color:#dda0dd;text-align:right;">Meal/Person</th>' +
+          '</tr>';
+
+        // Header row 2 - sub headers
+        html += '<tr style="background:rgba(28,32,56,0.85);color:#ccc;">' +
+          '<th style="text-align:right;color:#ccc;">Rooms</th>' +
+          '<th style="text-align:right;color:#ccc;">Occ</th>' +
+          '<th style="text-align:right;color:#ccc;">Vacant</th>' +
+          '<th style="text-align:right;color:#ccc;">Occ%</th>' +
+          '<th style="text-align:right;color:#90ee90;">Room Sale</th>' +
+          '<th style="text-align:right;color:#90ee90;">KOT</th>' +
+          '<th style="text-align:right;color:#90ee90;">Other</th>' +
+          '<th style="text-align:right;color:#90ee90;font-weight:700;">Total Inc</th>';
+        for (var ei = 0; ei < expCols.length; ei++) {
+          html += '<th style="text-align:right;color:#ff9999;">' + expCols[ei] + '</th>';
+        }
+        html += '</tr></thead>';
+
+        // Body
         html += '<tbody>';
+        var totals = {
+          totalRooms:0, occupancy:0, vacant:0,
+          roomSale:0, kotIncome:0, otherIncome:0, totalIncome:0,
+          totalExpenses:0, lease:0, grandTotalExpense:0, profitLoss:0,
+          totalPaxNights:0
+        };
+        var expTotals = {};
+        for (var ti = 0; ti < expCols.length; ti++) expTotals[expCols[ti]] = 0;
 
-        // INCOME header
-        html += '<tr style="background:rgba(16,185,129,0.08);"><td colspan="4" style="font-weight:700;color:#0d7a54;font-size:15px;padding:12px 16px;">INCOME</td></tr>';
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          var mp = r.month.split('-');
+          var mLabel = monthNames[parseInt(mp[1])] + ' ' + mp[0];
 
-        var incomeKeys = Object.keys(data.income);
-        for (var i = 0; i < incomeKeys.length; i++) {
-          var cat = incomeKeys[i];
-          var inc = data.income[cat];
-          if (inc.cash === 0 && inc.bank === 0) continue;
+          totals.totalRooms += r.totalRooms;
+          totals.occupancy += r.occupancy;
+          totals.vacant += r.vacant;
+          totals.roomSale += r.roomSale;
+          totals.kotIncome += r.kotIncome;
+          totals.otherIncome += r.otherIncome;
+          totals.totalIncome += r.totalIncome;
+          totals.totalExpenses += r.totalExpenses;
+          totals.lease += r.lease;
+          totals.grandTotalExpense += r.grandTotalExpense;
+          totals.profitLoss += r.profitLoss;
+          totals.totalPaxNights += r.totalPaxNights;
+
+          var plColor = r.profitLoss >= 0 ? '#0d7a54' : '#c53030';
+
           html += '<tr>' +
-            '<td style="padding-left:32px;">' + escapeHtml(cat) + '</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(inc.cash) + '</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(inc.bank) + '</td>' +
-            '<td class="amount" style="text-align:right;font-weight:600">' + formatCurrency(inc.cash + inc.bank) + '</td>' +
-            '</tr>';
-        }
+            '<td style="position:sticky;left:0;background:#fff;z-index:1;font-weight:600;">' + (i+1) + '</td>' +
+            '<td style="position:sticky;left:32px;background:#fff;z-index:1;font-weight:600;">' + mLabel + '</td>' +
+            '<td class="amount" style="text-align:right">' + r.totalRooms + '</td>' +
+            '<td class="amount" style="text-align:right">' + r.occupancy + '</td>' +
+            '<td class="amount" style="text-align:right">' + r.vacant + '</td>' +
+            '<td class="amount" style="text-align:right;font-weight:600;color:' + (r.occupancyPct >= 70 ? '#0d7a54' : r.occupancyPct >= 40 ? '#b45309' : '#c53030') + ';">' + r.occupancyPct + '%</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(r.roomSale) + '</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(r.kotIncome) + '</td>' +
+            '<td class="amount" style="text-align:right">' + formatCurrency(r.otherIncome) + '</td>' +
+            '<td class="amount" style="text-align:right;font-weight:700;color:#0d7a54;">' + formatCurrency(r.totalIncome) + '</td>';
 
-        // Total Income
-        html += '<tr class="total-row" style="background:rgba(16,185,129,0.12);">' +
-          '<td style="font-weight:700;">Total Income</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalIncome.cash) + '</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalIncome.bank) + '</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalIncome.total) + '</td>' +
-          '</tr>';
-
-        // Spacer
-        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
-
-        // EXPENSES header
-        html += '<tr style="background:rgba(239,68,68,0.08);"><td colspan="4" style="font-weight:700;color:#c53030;font-size:15px;padding:12px 16px;">OPERATIONAL EXPENSES</td></tr>';
-
-        var expKeys = Object.keys(data.expenses);
-        for (var j = 0; j < expKeys.length; j++) {
-          var eCat = expKeys[j];
-          var exp = data.expenses[eCat];
-          if (exp.cash === 0 && exp.bank === 0) continue;
-          html += '<tr>' +
-            '<td style="padding-left:32px;">' + escapeHtml(eCat) + '</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(exp.cash) + '</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(exp.bank) + '</td>' +
-            '<td class="amount" style="text-align:right;font-weight:600">' + formatCurrency(exp.cash + exp.bank) + '</td>' +
-            '</tr>';
-        }
-
-        // Total Operational Expense
-        html += '<tr class="total-row" style="background:rgba(239,68,68,0.12);">' +
-          '<td style="font-weight:700;">Total Operational Expense</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalOperationalExpense.cash) + '</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalOperationalExpense.bank) + '</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.totalOperationalExpense.total) + '</td>' +
-          '</tr>';
-
-        // Spacer
-        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
-
-        // LEASE
-        html += '<tr style="background:rgba(245,158,11,0.08);"><td colspan="4" style="font-weight:700;color:#b45309;font-size:15px;padding:12px 16px;">LEASE RENT</td></tr>';
-        if (data.lease && data.lease.monthlyBreakdown) {
-          for (var k = 0; k < data.lease.monthlyBreakdown.length; k++) {
-            var lb = data.lease.monthlyBreakdown[k];
-            var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            var lParts = lb.month.split('-');
-            var lLabel = monthNames[parseInt(lParts[1]) - 1] + ' ' + lParts[0];
-            html += '<tr>' +
-              '<td style="padding-left:32px;">' + lLabel + '</td>' +
-              '<td class="amount" style="text-align:right">-</td>' +
-              '<td class="amount" style="text-align:right">-</td>' +
-              '<td class="amount" style="text-align:right;font-weight:600">' + formatCurrency(lb.amount) + '</td>' +
-              '</tr>';
+          for (var ej = 0; ej < expCols.length; ej++) {
+            var expVal = (r.expenses && r.expenses[expCols[ej]]) || 0;
+            expTotals[expCols[ej]] += expVal;
+            html += '<td class="amount" style="text-align:right">' + (expVal ? formatCurrency(expVal) : '-') + '</td>';
           }
+
+          html += '<td class="amount" style="text-align:right;font-weight:600;color:#c53030;">' + formatCurrency(r.totalExpenses) + '</td>' +
+            '<td class="amount" style="text-align:right;color:#b45309;">' + formatCurrency(r.lease) + '</td>' +
+            '<td class="amount" style="text-align:right;font-weight:600;color:#c53030;">' + formatCurrency(r.grandTotalExpense) + '</td>' +
+            '<td class="amount" style="text-align:right;font-weight:700;color:' + plColor + ';">' + formatCurrency(r.profitLoss) + '</td>' +
+            '<td class="amount" style="text-align:right;color:#4338ca;">' + formatCurrency(r.arr) + '</td>' +
+            '<td class="amount" style="text-align:right">' + (r.perPersonMealCost ? formatCurrency(r.perPersonMealCost) : '-') + '</td>' +
+            '</tr>';
         }
-        html += '<tr class="total-row" style="background:rgba(245,158,11,0.12);">' +
-          '<td style="font-weight:700;">Total Lease</td>' +
-          '<td class="amount" style="text-align:right">-</td>' +
-          '<td class="amount" style="text-align:right">-</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700">' + formatCurrency(data.lease.totalLease) + '</td>' +
-          '</tr>';
 
-        // Spacer
-        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
+        // TOTALS row
+        var tPlColor = totals.profitLoss >= 0 ? '#0d7a54' : '#c53030';
+        var tOccPct = totals.totalRooms > 0 ? Math.round((totals.occupancy / totals.totalRooms) * 100) : 0;
+        var tArr = totals.occupancy > 0 ? Math.round(totals.roomSale / totals.occupancy) : 0;
+        var tMeal = totals.totalPaxNights > 0 ? Math.round((expTotals['Grocery'] || 0) / totals.totalPaxNights) : 0;
 
-        // Grand Total Expense
-        html += '<tr class="total-row" style="background:rgba(107,114,128,0.1);">' +
-          '<td style="font-weight:700;font-size:15px;">Grand Total Expense</td>' +
-          '<td class="amount" style="text-align:right">-</td>' +
-          '<td class="amount" style="text-align:right">-</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700;font-size:15px;">' + formatCurrency(data.grandTotalExpense) + '</td>' +
-          '</tr>';
+        html += '<tr class="total-row" style="background:rgba(28,32,56,0.08);font-weight:700;">' +
+          '<td style="position:sticky;left:0;background:rgba(240,237,230,0.98);z-index:1;"></td>' +
+          '<td style="position:sticky;left:32px;background:rgba(240,237,230,0.98);z-index:1;font-size:13px;">TOTAL</td>' +
+          '<td class="amount" style="text-align:right">' + totals.totalRooms + '</td>' +
+          '<td class="amount" style="text-align:right">' + totals.occupancy + '</td>' +
+          '<td class="amount" style="text-align:right">' + totals.vacant + '</td>' +
+          '<td class="amount" style="text-align:right">' + tOccPct + '%</td>' +
+          '<td class="amount" style="text-align:right">' + formatCurrency(totals.roomSale) + '</td>' +
+          '<td class="amount" style="text-align:right">' + formatCurrency(totals.kotIncome) + '</td>' +
+          '<td class="amount" style="text-align:right">' + formatCurrency(totals.otherIncome) + '</td>' +
+          '<td class="amount" style="text-align:right;color:#0d7a54;">' + formatCurrency(totals.totalIncome) + '</td>';
 
-        // Spacer
-        html += '<tr><td colspan="4" style="height:16px;border:none;"></td></tr>';
+        for (var ek = 0; ek < expCols.length; ek++) {
+          html += '<td class="amount" style="text-align:right">' + formatCurrency(expTotals[expCols[ek]]) + '</td>';
+        }
 
-        // PROFIT / LOSS
-        var plColor = data.profitLoss >= 0 ? '#0d7a54' : '#c53030';
-        var plBg = data.profitLoss >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-        var plLabel = data.profitLoss >= 0 ? 'PROFIT' : 'LOSS';
-        html += '<tr style="background:' + plBg + ';">' +
-          '<td style="font-weight:700;font-size:16px;color:' + plColor + ';">' + plLabel + '</td>' +
-          '<td class="amount" style="text-align:right">-</td>' +
-          '<td class="amount" style="text-align:right">-</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700;font-size:16px;color:' + plColor + ';">' + formatCurrency(Math.abs(data.profitLoss)) + '</td>' +
-          '</tr>';
-
-        // Spacer
-        html += '<tr><td colspan="4" style="height:12px;border:none;"></td></tr>';
-
-        // ARR
-        html += '<tr style="background:rgba(99,102,241,0.08);">' +
-          '<td style="font-weight:700;color:#4338ca;">ARR (Avg Room Rate)</td>' +
-          '<td class="amount" style="text-align:right;color:#6b7280;">' + data.totalRoomNightsSold + ' nights</td>' +
-          '<td class="amount" style="text-align:right;color:#6b7280;">' + formatCurrency(data.totalRoomRevenue) + ' rev</td>' +
-          '<td class="amount" style="text-align:right;font-weight:700;color:#4338ca;">' + formatCurrency(data.arr) + '</td>' +
+        html += '<td class="amount" style="text-align:right;color:#c53030;">' + formatCurrency(totals.totalExpenses) + '</td>' +
+          '<td class="amount" style="text-align:right;color:#b45309;">' + formatCurrency(totals.lease) + '</td>' +
+          '<td class="amount" style="text-align:right;color:#c53030;">' + formatCurrency(totals.grandTotalExpense) + '</td>' +
+          '<td class="amount" style="text-align:right;color:' + tPlColor + ';">' + formatCurrency(totals.profitLoss) + '</td>' +
+          '<td class="amount" style="text-align:right;color:#4338ca;">' + formatCurrency(tArr) + '</td>' +
+          '<td class="amount" style="text-align:right">' + (tMeal ? formatCurrency(tMeal) : '-') + '</td>' +
           '</tr>';
 
         html += '</tbody></table>';
