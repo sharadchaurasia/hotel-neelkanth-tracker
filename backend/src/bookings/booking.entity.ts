@@ -99,6 +99,9 @@ export class Booking {
   @Column({ name: 'rescheduled_from', nullable: true })
   rescheduledFrom: string;
 
+  @Column({ name: 'last_modified_by', nullable: true })
+  lastModifiedBy: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

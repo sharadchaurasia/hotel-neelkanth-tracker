@@ -1,17 +1,21 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto } from './dto/create-booking.dto';
+import { RequirePermissions, CurrentUser } from '../auth/decorators';
+import { User } from '../auth/entities/user.entity';
 
 @Controller('api/bookings')
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Get('dashboard/stats')
+  @RequirePermissions('dashboard', 'view')
   getDashboardStats() {
     return this.bookingsService.getDashboardStats();
   }
 
   @Get()
+  @RequirePermissions('bookings', 'view')
   findAll(
     @Query('date') date?: string,
     @Query('status') status?: string,
@@ -24,47 +28,56 @@ export class BookingsController {
   }
 
   @Get(':id')
+  @RequirePermissions('bookings', 'view')
   findOne(@Param('id') id: string) {
     return this.bookingsService.findOne(+id);
   }
 
   @Post()
+  @RequirePermissions('bookings', 'create')
   create(@Body() dto: CreateBookingDto) {
     return this.bookingsService.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: Partial<CreateBookingDto>) {
-    return this.bookingsService.update(+id, dto);
+  @RequirePermissions('bookings', 'edit')
+  update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: Partial<CreateBookingDto>) {
+    return this.bookingsService.update(+id, dto, user.name);
   }
 
   @Delete(':id')
+  @RequirePermissions('bookings', 'delete')
   delete(@Param('id') id: string) {
     return this.bookingsService.delete(+id);
   }
 
   @Post(':id/collect')
-  collectPayment(@Param('id') id: string, @Body() dto: CollectPaymentDto) {
-    return this.bookingsService.collectPayment(+id, dto);
+  @RequirePermissions('bookings', 'edit')
+  collectPayment(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: CollectPaymentDto) {
+    return this.bookingsService.collectPayment(+id, dto, user.name);
   }
 
   @Post(':id/checkin')
-  checkin(@Param('id') id: string, @Body() dto: CheckinDto) {
-    return this.bookingsService.checkin(+id, dto);
+  @RequirePermissions('bookings', 'edit')
+  checkin(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: CheckinDto) {
+    return this.bookingsService.checkin(+id, dto, user.name);
   }
 
   @Post(':id/checkout')
-  checkout(@Param('id') id: string, @Body() dto: CheckoutDto) {
-    return this.bookingsService.checkout(+id, dto);
+  @RequirePermissions('bookings', 'edit')
+  checkout(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: CheckoutDto) {
+    return this.bookingsService.checkout(+id, dto, user.name);
   }
 
   @Post(':id/cancel')
-  cancel(@Param('id') id: string) {
-    return this.bookingsService.cancel(+id);
+  @RequirePermissions('bookings', 'edit')
+  cancel(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.bookingsService.cancel(+id, user.name);
   }
 
   @Post(':id/reschedule')
-  reschedule(@Param('id') id: string, @Body() dto: RescheduleDto) {
-    return this.bookingsService.reschedule(+id, dto);
+  @RequirePermissions('bookings', 'edit')
+  reschedule(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: RescheduleDto) {
+    return this.bookingsService.reschedule(+id, dto, user.name);
   }
 }

@@ -1,0 +1,253 @@
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import * as nodemailer from 'nodemailer';
+import { User } from './entities/user.entity';
+import { Otp } from './entities/otp.entity';
+
+@Injectable()
+export class AuthService implements OnModuleInit {
+  private transporter: nodemailer.Transporter;
+
+  constructor(
+    @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(Otp) private otpRepo: Repository<Otp>,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {
+    const smtpHost = this.configService.get('SMTP_HOST');
+    if (smtpHost) {
+      this.transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: parseInt(this.configService.get('SMTP_PORT', '587')),
+        secure: false,
+        auth: {
+          user: this.configService.get('SMTP_USER'),
+          pass: this.configService.get('SMTP_PASS'),
+        },
+      });
+    }
+  }
+
+  async onModuleInit() {
+    const count = await this.userRepo.count();
+    if (count === 0) {
+      const hash = await bcrypt.hash('1234', 12);
+      const admin = this.userRepo.create({
+        name: 'Admin',
+        email: this.configService.get('ADMIN_EMAIL', 'admin@hotel.com'),
+        phone: '',
+        role: 'admin',
+        passwordHash: hash,
+        mustChangePassword: true,
+        isActive: true,
+        permissions: {},
+      });
+      await this.userRepo.save(admin);
+      console.log('Default admin created. Email:', admin.email, 'Default PIN: 1234');
+    }
+  }
+
+  verifyPasskey(passkey: string): boolean {
+    const appPasskey = this.configService.get('APP_PASSKEY', '7890');
+    return passkey === appPasskey;
+  }
+
+  async login(emailOrPhone: string, password: string) {
+    const user = await this.userRepo.findOne({
+      where: [{ email: emailOrPhone }, { phone: emailOrPhone }],
+    });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Password not set. Contact admin.');
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const token = this.generateToken(user);
+    return {
+      token,
+      user: this.sanitizeUser(user),
+      mustChangePassword: user.mustChangePassword,
+    };
+  }
+
+  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const valid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.mustChangePassword = false;
+    await this.userRepo.save(user);
+    return { success: true };
+  }
+
+  // Forgot password: send OTP to email
+  async forgotPassword(email: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user || !user.isActive) {
+      return { success: true, message: 'If that email exists, OTP has been sent.' };
+    }
+    await this.sendOtp(user.id);
+    return { success: true, userId: user.id, message: 'OTP sent to your email.' };
+  }
+
+  async sendOtp(userId: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.otpRepo.save(
+      this.otpRepo.create({ userId, code, type: 'reset', expiresAt }),
+    );
+
+    if (this.transporter && user.email) {
+      try {
+        await this.transporter.sendMail({
+          from: this.configService.get('SMTP_USER'),
+          to: user.email,
+          subject: 'Hotel Neelkanth CRM - Password Reset OTP',
+          html: `
+            <h2>Hotel Neelkanth CRM</h2>
+            <p>Your OTP code is: <strong>${code}</strong></p>
+            <p>This code expires in 10 minutes.</p>
+            <p>If you did not request this, please ignore this email.</p>
+          `,
+        });
+      } catch (err) {
+        console.error('Failed to send OTP email:', err.message);
+      }
+    }
+
+    console.log(`OTP for user ${user.email}: ${code}`);
+    return { success: true };
+  }
+
+  async verifyOtpAndResetPassword(userId: number, code: string, newPassword: string) {
+    const otp = await this.otpRepo.findOne({
+      where: { userId, code, used: false },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!otp) throw new BadRequestException('Invalid OTP');
+    if (new Date() > otp.expiresAt) throw new BadRequestException('OTP expired');
+
+    otp.used = true;
+    await this.otpRepo.save(otp);
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.mustChangePassword = false;
+    await this.userRepo.save(user);
+
+    const token = this.generateToken(user);
+    return { token, user: this.sanitizeUser(user) };
+  }
+
+  async getProfile(userId: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    return this.sanitizeUser(user);
+  }
+
+  // User management (admin only)
+  async findAllUsers() {
+    const users = await this.userRepo.find({ order: { createdAt: 'ASC' } });
+    return users.map((u) => this.sanitizeUser(u));
+  }
+
+  async createUser(dto: { name: string; email: string; phone?: string; role?: string; permissions?: Record<string, string[]> }) {
+    const existing = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (existing) throw new ConflictException('User with this email already exists');
+
+    const hash = await bcrypt.hash('1234', 12);
+    const user = this.userRepo.create({
+      name: dto.name,
+      email: dto.email,
+      phone: dto.phone || '',
+      role: dto.role || 'staff',
+      passwordHash: hash,
+      mustChangePassword: true,
+      permissions: dto.permissions || {},
+      isActive: true,
+    });
+    const saved = await this.userRepo.save(user);
+    return this.sanitizeUser(saved);
+  }
+
+  async updateUser(id: number, dto: { name?: string; email?: string; phone?: string; role?: string; permissions?: Record<string, string[]>; isActive?: boolean }) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (dto.name !== undefined) user.name = dto.name;
+    if (dto.email !== undefined) user.email = dto.email;
+    if (dto.phone !== undefined) user.phone = dto.phone;
+    if (dto.role !== undefined) user.role = dto.role;
+    if (dto.permissions !== undefined) user.permissions = dto.permissions;
+    if (dto.isActive !== undefined) user.isActive = dto.isActive;
+
+    const saved = await this.userRepo.save(user);
+    return this.sanitizeUser(saved);
+  }
+
+  async deleteUser(id: number) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.role === 'admin') throw new BadRequestException('Cannot delete admin user');
+    await this.userRepo.remove(user);
+    return { success: true };
+  }
+
+  async resetUserPassword(id: number) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    user.passwordHash = await bcrypt.hash('1234', 12);
+    user.mustChangePassword = true;
+    await this.userRepo.save(user);
+    return { success: true };
+  }
+
+  private generateToken(user: User): string {
+    return this.jwtService.sign({
+      sub: user.id,
+      role: user.role,
+      name: user.name,
+    });
+  }
+
+  private sanitizeUser(user: User) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      permissions: user.permissions,
+      isActive: user.isActive,
+      mustChangePassword: user.mustChangePassword,
+      createdAt: user.createdAt,
+    };
+  }
+}

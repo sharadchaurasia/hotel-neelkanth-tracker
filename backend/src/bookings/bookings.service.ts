@@ -108,7 +108,7 @@ export class BookingsService {
     return this.bookingRepo.save(booking) as Promise<Booking>;
   }
 
-  async update(id: number, dto: Partial<CreateBookingDto>): Promise<Booking> {
+  async update(id: number, dto: Partial<CreateBookingDto>, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
 
     Object.assign(booking, {
@@ -131,6 +131,7 @@ export class BookingsService {
       advanceReceived: dto.advanceReceived ?? booking.advanceReceived,
       paymentMode: dto.paymentMode ?? booking.paymentMode,
       remarks: dto.remarks ?? booking.remarks,
+      lastModifiedBy: userName || booking.lastModifiedBy,
     });
 
     // Recalculate status
@@ -148,11 +149,12 @@ export class BookingsService {
     await this.bookingRepo.remove(booking);
   }
 
-  async collectPayment(id: number, dto: CollectPaymentDto): Promise<Booking> {
+  async collectPayment(id: number, dto: CollectPaymentDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
     booking.balanceReceived = Number(booking.balanceReceived || 0) + dto.amount;
     booking.balancePaymentMode = dto.paymentMode || booking.balancePaymentMode;
     booking.balanceDate = new Date().toISOString().split('T')[0];
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
     const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
     const pending = Number(booking.totalAmount || 0) - totalReceived;
@@ -161,21 +163,23 @@ export class BookingsService {
     return this.bookingRepo.save(booking);
   }
 
-  async checkin(id: number, dto: CheckinDto): Promise<Booking> {
+  async checkin(id: number, dto: CheckinDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
     booking.roomNo = dto.roomNo;
     booking.noOfRooms = dto.noOfRooms || booking.noOfRooms;
     booking.checkedIn = true;
     booking.checkedInTime = new Date();
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
     return this.bookingRepo.save(booking);
   }
 
-  async checkout(id: number, dto: CheckoutDto): Promise<Booking> {
+  async checkout(id: number, dto: CheckoutDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
     const kotAmt = dto.kotAmount || 0;
     booking.kotAmount = kotAmt;
     booking.checkedOut = true;
     booking.checkedOutTime = new Date();
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
     // Handle add-ons
     if (dto.addOns && dto.addOns.length > 0) {
@@ -213,17 +217,19 @@ export class BookingsService {
     return this.bookingRepo.save(booking);
   }
 
-  async cancel(id: number): Promise<Booking> {
+  async cancel(id: number, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
     booking.status = 'CANCELLED';
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
     return this.bookingRepo.save(booking);
   }
 
-  async reschedule(id: number, dto: RescheduleDto): Promise<Booking> {
+  async reschedule(id: number, dto: RescheduleDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
     booking.rescheduledFrom = booking.checkOut;
     booking.checkOut = dto.newCheckOut;
     booking.status = 'RESCHEDULED';
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
     return this.bookingRepo.save(booking);
   }
 
