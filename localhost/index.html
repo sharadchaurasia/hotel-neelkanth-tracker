@@ -5688,38 +5688,38 @@
         var rows = await apiFetch('/reports/pnl-table?from=' + encodeURIComponent(range.from) + '&to=' + encodeURIComponent(range.to));
 
         var monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var expCols = ['Grocery','Electricity','Cylinder','Salary','Maintenance','Fuel','Laundry','Others'];
+        var expCols = ['Grocery','Electricity','Cylinder','Salary','Maintenance','Fuel','Laundry','Recharges','Garbage','Deco Items','Staff Meal','Bakery','Housekeeping','Butchery'];
 
         // Build table
         var html = '<table class="report-table" style="font-size:12px;white-space:nowrap;">';
 
         // Header row 1 - group headers
-        html += '<thead><tr style="background:rgba(28,32,56,0.9);color:#d4b87a;">' +
-          '<th rowspan="2" style="color:#d4b87a;position:sticky;left:0;background:rgba(28,32,56,0.95);z-index:2;">Sr</th>' +
-          '<th rowspan="2" style="color:#d4b87a;position:sticky;left:32px;background:rgba(28,32,56,0.95);z-index:2;">Month</th>' +
-          '<th colspan="4" style="color:#d4b87a;text-align:center;border-bottom:1px solid #b8943e;">OCCUPANCY</th>' +
-          '<th colspan="4" style="color:#90ee90;text-align:center;border-bottom:1px solid #90ee90;">INCOME</th>' +
-          '<th colspan="' + expCols.length + '" style="color:#ff9999;text-align:center;border-bottom:1px solid #ff9999;">EXPENSES</th>' +
-          '<th rowspan="2" style="color:#ff9999;text-align:right;">Total Exp</th>' +
-          '<th rowspan="2" style="color:#ffa500;text-align:right;">Lease</th>' +
-          '<th rowspan="2" style="color:#ff6666;text-align:right;">Grand Exp</th>' +
-          '<th rowspan="2" style="color:#d4b87a;text-align:right;">P&L</th>' +
-          '<th rowspan="2" style="color:#87ceeb;text-align:right;">ARR</th>' +
-          '<th rowspan="2" style="color:#dda0dd;text-align:right;">Meal/Person</th>' +
+        html += '<thead><tr style="background:#1e293b;color:#fff;">' +
+          '<th rowspan="2" style="position:sticky;left:0;background:#1e293b;z-index:2;padding:8px 6px;">Sr</th>' +
+          '<th rowspan="2" style="position:sticky;left:32px;background:#1e293b;z-index:2;padding:8px 6px;">Month</th>' +
+          '<th colspan="4" style="text-align:center;border-bottom:2px solid #60a5fa;padding:8px 6px;color:#93c5fd;">OCCUPANCY</th>' +
+          '<th colspan="4" style="text-align:center;border-bottom:2px solid #34d399;padding:8px 6px;color:#6ee7b7;">INCOME</th>' +
+          '<th colspan="' + expCols.length + '" style="text-align:center;border-bottom:2px solid #f87171;padding:8px 6px;color:#fca5a5;">EXPENSES</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#fca5a5;">Total Exp</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#fdba74;">Lease</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#f87171;">Grand Exp</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#fbbf24;">P&L</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#7dd3fc;">ARR</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#c4b5fd;">Meal/Person</th>' +
           '</tr>';
 
         // Header row 2 - sub headers
-        html += '<tr style="background:rgba(28,32,56,0.85);color:#ccc;">' +
-          '<th style="text-align:right;color:#ccc;">Rooms</th>' +
-          '<th style="text-align:right;color:#ccc;">Occ</th>' +
-          '<th style="text-align:right;color:#ccc;">Vacant</th>' +
-          '<th style="text-align:right;color:#ccc;">Occ%</th>' +
-          '<th style="text-align:right;color:#90ee90;">Room Sale</th>' +
-          '<th style="text-align:right;color:#90ee90;">KOT</th>' +
-          '<th style="text-align:right;color:#90ee90;">Other</th>' +
-          '<th style="text-align:right;color:#90ee90;font-weight:700;">Total Inc</th>';
+        html += '<tr style="background:#334155;color:#e2e8f0;font-size:11px;">' +
+          '<th style="text-align:right;padding:6px 4px;">Rooms</th>' +
+          '<th style="text-align:right;padding:6px 4px;">Occ</th>' +
+          '<th style="text-align:right;padding:6px 4px;">Vacant</th>' +
+          '<th style="text-align:right;padding:6px 4px;">Occ%</th>' +
+          '<th style="text-align:right;padding:6px 4px;">Room Sale</th>' +
+          '<th style="text-align:right;padding:6px 4px;">KOT</th>' +
+          '<th style="text-align:right;padding:6px 4px;">Other</th>' +
+          '<th style="text-align:right;padding:6px 4px;font-weight:700;">Total Inc</th>';
         for (var ei = 0; ei < expCols.length; ei++) {
-          html += '<th style="text-align:right;color:#ff9999;">' + expCols[ei] + '</th>';
+          html += '<th style="text-align:right;padding:6px 4px;">' + expCols[ei] + '</th>';
         }
         html += '</tr></thead>';
 
@@ -5787,9 +5787,9 @@
         var tArr = totals.occupancy > 0 ? Math.round(totals.roomSale / totals.occupancy) : 0;
         var tMeal = totals.totalPaxNights > 0 ? Math.round((expTotals['Grocery'] || 0) / totals.totalPaxNights) : 0;
 
-        html += '<tr class="total-row" style="background:rgba(28,32,56,0.08);font-weight:700;">' +
-          '<td style="position:sticky;left:0;background:rgba(240,237,230,0.98);z-index:1;"></td>' +
-          '<td style="position:sticky;left:32px;background:rgba(240,237,230,0.98);z-index:1;font-size:13px;">TOTAL</td>' +
+        html += '<tr class="total-row" style="background:#f1f5f9;font-weight:700;border-top:2px solid #334155;">' +
+          '<td style="position:sticky;left:0;background:#f1f5f9;z-index:1;"></td>' +
+          '<td style="position:sticky;left:32px;background:#f1f5f9;z-index:1;font-size:13px;">TOTAL</td>' +
           '<td class="amount" style="text-align:right">' + totals.totalRooms + '</td>' +
           '<td class="amount" style="text-align:right">' + totals.occupancy + '</td>' +
           '<td class="amount" style="text-align:right">' + totals.vacant + '</td>' +

@@ -458,8 +458,8 @@ export class ReportsService {
       cur.setMonth(cur.getMonth() + 1);
     }
 
-    const EXPENSE_DISPLAY = ['Grocery', 'Electricity', 'Cylinder', 'Salary', 'Maintenance', 'Fuel', 'Laundry', 'Others'];
-    const EXPENSE_OTHERS_GROUP = ['Recharges', 'Garbage', 'Deco Items', 'Staff Meal', 'Bakery', 'Housekeeping', 'Butchery', 'Others'];
+    const EXPENSE_CATS = ['Grocery', 'Electricity', 'Cylinder', 'Salary', 'Maintenance', 'Fuel', 'Laundry',
+      'Recharges', 'Garbage', 'Deco Items', 'Staff Meal', 'Bakery', 'Housekeeping', 'Butchery'];
 
     const result = [];
 
@@ -511,18 +511,17 @@ export class ReportsService {
 
       // --- EXPENSES from daybook ---
       const expenseMap: Record<string, number> = {};
-      for (const cat of EXPENSE_DISPLAY) expenseMap[cat] = 0;
+      for (const cat of EXPENSE_CATS) expenseMap[cat] = 0;
 
       for (const e of monthEntries) {
         if (e.type !== 'expense') continue;
         const amt = Number(e.amount) || 0;
-        const cat = e.category || 'Others';
-        if (EXPENSE_OTHERS_GROUP.includes(cat)) {
-          expenseMap['Others'] = (expenseMap['Others'] || 0) + amt;
-        } else if (expenseMap.hasOwnProperty(cat)) {
+        const cat = e.category || 'Maintenance';
+        if (expenseMap.hasOwnProperty(cat)) {
           expenseMap[cat] += amt;
         } else {
-          expenseMap['Others'] = (expenseMap['Others'] || 0) + amt;
+          // Unknown category — add as its own entry
+          expenseMap[cat] = (expenseMap[cat] || 0) + amt;
         }
       }
 
