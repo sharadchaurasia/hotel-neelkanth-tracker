@@ -1650,6 +1650,20 @@
     .search-result-phone { color: #6b7280; font-size: 12px; }
     .search-result-meta { text-align: right; font-size: 12px; color: #6b7280; }
     .search-no-results { padding: 24px; text-align: center; color: #6b7280; font-size: 14px; }
+    .search-results-panel {
+      background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); border-radius: 16px;
+      padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      border: 2px solid rgba(153,107,47,0.25);
+    }
+    .search-results-panel .panel-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+    }
+    .search-results-panel .panel-header h3 { font-family: inherit; font-size: 16px; color: #1c2038; display: flex; align-items: center; gap: 8px; }
+    .search-results-panel .panel-close {
+      background: none; border: 1px solid #e0ddd8; border-radius: 8px; padding: 6px 12px;
+      cursor: pointer; font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 4px;
+    }
+    .search-results-panel .panel-close:hover { background: #f5f3ef; }
 
     /* Occupancy Chart */
     .chart-section {
@@ -1844,7 +1858,7 @@
         <div class="global-search-wrap">
           <div class="global-search-box">
             <span class="material-icons">search</span>
-            <input type="text" id="globalSearchInput" placeholder="Search guest name or phone..." oninput="onGlobalSearch()" onfocus="onGlobalSearchFocus()" autocomplete="off">
+            <input type="text" id="globalSearchInput" placeholder="Search guest name or phone..." oninput="onGlobalSearch()" onfocus="onGlobalSearchFocus()" onkeydown="if(event.key==='Enter'){showSearchResultsPanel();}" autocomplete="off">
             <button class="global-search-clear" id="globalSearchClear" onclick="clearGlobalSearch()" style="display:none;">
               <span class="material-icons">close</span>
             </button>
@@ -1898,6 +1912,9 @@
 
       <!-- Low Inventory Alerts -->
       <div id="inventoryAlertBar" style="display:none;"></div>
+
+      <!-- Search Results Panel -->
+      <div id="searchResultsPanel" style="display:none;"></div>
 
       <!-- Dashboard Guest Lists -->
       <div class="guest-lists">
@@ -7926,10 +7943,96 @@
     }
 
     function selectSearchResult(id) {
+      // Show single booking in results panel
+      var b = bookings.find(function(bk) { return bk.id === id; });
+      if (b) showSearchResultsPanel([b]);
       document.getElementById('globalSearchResults').style.display = 'none';
-      document.getElementById('globalSearchInput').value = '';
-      document.getElementById('globalSearchClear').style.display = 'none';
-      openEditModalById(id);
+    }
+
+    function showSearchResultsPanel(filteredResults) {
+      var query = document.getElementById('globalSearchInput').value.trim().toLowerCase();
+      document.getElementById('globalSearchResults').style.display = 'none';
+
+      var results = filteredResults;
+      if (!results) {
+        if (query.length < 2) return;
+        results = bookings.filter(function(b) {
+          var nameMatch = b.guestName && b.guestName.toLowerCase().indexOf(query) !== -1;
+          var phoneMatch = b.phone && b.phone.replace(/[\s\-]/g, '').indexOf(query.replace(/[\s\-]/g, '')) !== -1;
+          return nameMatch || phoneMatch;
+        });
+        var today = getToday();
+        results.sort(function(a, b) {
+          var aActive = a.status !== 'CANCELLED' && a.checkOut >= today ? 0 : 1;
+          var bActive = b.status !== 'CANCELLED' && b.checkOut >= today ? 0 : 1;
+          if (aActive !== bActive) return aActive - bActive;
+          return new Date(b.checkIn) - new Date(a.checkIn);
+        });
+      }
+
+      // Switch to dashboard tab to show results
+      var dashTab = document.getElementById('tab-dashboard');
+      if (dashTab && !dashTab.classList.contains('active')) {
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+        dashTab.classList.add('active');
+        var btns = document.querySelectorAll('.nav-tabs button');
+        btns.forEach(function(btn) { btn.classList.remove('active'); });
+        if (btns[0]) btns[0].classList.add('active');
+      }
+
+      var panel = document.getElementById('searchResultsPanel');
+      if (results.length === 0) {
+        panel.innerHTML = '<div class="search-results-panel">' +
+          '<div class="panel-header"><h3><span class="material-icons">search_off</span> No results found</h3>' +
+          '<button class="panel-close" onclick="closeSearchPanel()"><span class="material-icons" style="font-size:16px">close</span> Close</button></div>' +
+          '<p style="color:#6b7280;text-align:center;padding:20px;">No bookings found for "' + escapeHtml(query) + '"</p></div>';
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      var html = '<div class="search-results-panel">' +
+        '<div class="panel-header"><h3><span class="material-icons">search</span> Search Results (' + results.length + ' booking' + (results.length !== 1 ? 's' : '') + ')</h3>' +
+        '<button class="panel-close" onclick="closeSearchPanel()"><span class="material-icons" style="font-size:16px">close</span> Close</button></div>' +
+        '<div style="overflow-x:auto;"><table class="guest-list-table"><thead><tr>' +
+        '<th>Booking ID</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Nights</th>' +
+        '<th>Source</th><th>Total</th><th>Received</th><th>Pending</th><th>Status</th>' +
+        '</tr></thead><tbody>';
+
+      results.forEach(function(b) {
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var nights = calculateNights(b.checkIn, b.checkOut);
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
+                          b.status === 'PARTIAL' ? 'badge-partial' :
+                          b.status === 'CANCELLED' ? 'badge-cancelled' : 'badge-pending';
+        html += '<tr>' +
+          '<td><strong>' + escapeHtml(b.id) + '</strong></td>' +
+          '<td><strong>' + escapeHtml(b.guestName) + '</strong>' +
+            (b.phone ? '<br><small style="color:#6b7280">' + escapeHtml(b.phone) + '</small>' : '') +
+          '</td>' +
+          '<td>' + formatRoomDisplay(b.roomNo) + '</td>' +
+          '<td>' + formatDate(b.checkIn) + '</td>' +
+          '<td>' + formatDate(b.checkOut) + '</td>' +
+          '<td><strong>' + nights + '</strong></td>' +
+          '<td>' + escapeHtml(b.source || '') + (b.sourceName ? '<br><small>' + escapeHtml(b.sourceName) + '</small>' : '') + '</td>' +
+          '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
+          '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
+          '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '</tr>';
+      });
+
+      html += '</tbody></table></div></div>';
+      panel.innerHTML = html;
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeSearchPanel() {
+      var panel = document.getElementById('searchResultsPanel');
+      panel.style.display = 'none';
+      panel.innerHTML = '';
     }
 
     function clearGlobalSearch() {
