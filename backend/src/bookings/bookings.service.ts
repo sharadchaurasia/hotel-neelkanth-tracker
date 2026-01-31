@@ -227,9 +227,13 @@ export class BookingsService {
     return this.findOne(saved.id);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
-    await this.bookingRepo.remove(booking);
+    booking.status = 'DELETED';
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
+    booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+      `[DELETED by ${userName || 'unknown'} on ${new Date().toISOString().split('T')[0]}]`;
+    return this.bookingRepo.save(booking);
   }
 
   async collectPayment(id: number, dto: CollectPaymentDto, userName?: string): Promise<Booking> {
@@ -408,7 +412,7 @@ export class BookingsService {
     const ledgerByAgent: Record<string, number> = {};
 
     for (const b of allBookings) {
-      if (b.status === 'CANCELLED') continue;
+      if (b.status === 'CANCELLED' || b.status === 'DELETED') continue;
       const totalReceived = Number(b.advanceReceived || 0) + Number(b.balanceReceived || 0);
       const pending = Number(b.totalAmount || 0) - totalReceived;
 

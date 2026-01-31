@@ -30,6 +30,7 @@ export class AuditInterceptor implements NestInterceptor {
           entityType: this.extractEntityType(url),
           entityId: this.extractEntityId(url) || responseData?.id?.toString() || responseData?.bookingId,
           description: this.buildDescription(method, url, request.body, responseData),
+          oldValue: method === 'DELETE' ? responseData : undefined,
           newValue: method !== 'DELETE' ? request.body : undefined,
           ipAddress: request.headers['x-real-ip'] || request.headers['x-forwarded-for'] || request.ip,
         });
@@ -95,6 +96,12 @@ export class AuditInterceptor implements NestInterceptor {
         if (entityType === 'user') return `User #${id} updated`;
         return `Updated ${entityType} #${id}`;
       case 'DELETE':
+        if (entityType === 'booking') {
+          const guest = response?.guestName || '';
+          const bkId = response?.bookingId || id;
+          const amt = response?.totalAmount || 0;
+          return `Booking ${bkId} soft-deleted. Guest: ${guest}, Amount: ₹${amt}`;
+        }
         return `Deleted ${entityType} #${id}`;
       default:
         return `${action} on ${entityType} #${id}`;

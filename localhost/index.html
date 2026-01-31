@@ -5623,9 +5623,9 @@
       } catch(e) { /* toast shown */ }
     }
 
-    // ========== DELETE BOOKING ==========
+    // ========== DELETE BOOKING (soft-delete — admin only) ==========
     async function deleteBooking(id) {
-      if (!confirm('Permanently delete this booking? This cannot be undone.')) return;
+      if (!confirm('Mark this booking as DELETED? (Admin only)\n\nThe booking will be hidden from dashboard but preserved in audit trail.')) return;
 
       var backendId = getBackendBookingId(id);
       if (!backendId) { showToast('Booking not found', 'error'); return; }
@@ -5635,7 +5635,7 @@
         await loadBookingsFromAPI();
         renderBookings();
         updateDashboard();
-        showToast('Booking deleted', 'success');
+        showToast('Booking soft-deleted (marked as DELETED)', 'success');
       } catch(e) { /* toast shown */ }
     }
 

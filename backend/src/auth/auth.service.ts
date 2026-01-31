@@ -182,6 +182,7 @@ export class AuthService implements OnModuleInit {
     const existing = await this.userRepo.findOne({ where: { email: dto.email } });
     if (existing) throw new ConflictException('User with this email already exists');
 
+    const perms = this.stripProtectedPermissions(dto.permissions || {}, dto.role || 'staff');
     const hash = await bcrypt.hash('1234', 12);
     const user = this.userRepo.create({
       name: dto.name,
@@ -190,7 +191,7 @@ export class AuthService implements OnModuleInit {
       role: dto.role || 'staff',
       passwordHash: hash,
       mustChangePassword: true,
-      permissions: dto.permissions || {},
+      permissions: perms,
       isActive: true,
     });
     const saved = await this.userRepo.save(user);
@@ -205,7 +206,10 @@ export class AuthService implements OnModuleInit {
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phone !== undefined) user.phone = dto.phone;
     if (dto.role !== undefined) user.role = dto.role;
-    if (dto.permissions !== undefined) user.permissions = dto.permissions;
+    if (dto.permissions !== undefined) {
+      const role = dto.role ?? user.role;
+      user.permissions = this.stripProtectedPermissions(dto.permissions, role);
+    }
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
 
     const saved = await this.userRepo.save(user);
@@ -227,6 +231,19 @@ export class AuthService implements OnModuleInit {
     user.mustChangePassword = true;
     await this.userRepo.save(user);
     return { success: true };
+  }
+
+  // Staff users must never have bookings:delete or daybook:delete
+  private stripProtectedPermissions(perms: Record<string, string[]>, role: string): Record<string, string[]> {
+    if (role === 'admin') return perms;
+    const result = { ...perms };
+    if (result.bookings) {
+      result.bookings = result.bookings.filter(p => p !== 'delete');
+    }
+    if (result.daybook) {
+      result.daybook = result.daybook.filter(p => p !== 'delete');
+    }
+    return result;
   }
 
   private generateToken(user: User): string {

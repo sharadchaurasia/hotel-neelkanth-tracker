@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, Res, ForbiddenException } from '@nestjs/common';
 import type { Response } from 'express';
 import { BookingsService } from './bookings.service';
 import { InvoiceService } from './invoice.service';
@@ -58,8 +58,11 @@ export class BookingsController {
 
   @Delete(':id')
   @RequirePermissions('bookings', 'delete')
-  delete(@Param('id') id: string) {
-    return this.bookingsService.delete(+id);
+  delete(@CurrentUser() user: User, @Param('id') id: string) {
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only admin can delete bookings');
+    }
+    return this.bookingsService.delete(+id, user.name);
   }
 
   @Post(':id/collect')
