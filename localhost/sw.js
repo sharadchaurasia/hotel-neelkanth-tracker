@@ -1,5 +1,5 @@
-var CACHE_NAME = 'neelkanth-v5';
-var PRECACHE = ['/', '/index.html'];
+var CACHE_NAME = 'neelkanth-v6';
+var PRECACHE = ['/', '/index.html', '/book.html'];
 
 self.addEventListener('install', function(e) {
   e.waitUntil(

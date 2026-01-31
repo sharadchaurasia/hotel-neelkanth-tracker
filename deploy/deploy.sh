@@ -50,6 +50,7 @@ echo "[2/5] Syncing frontend..."
 rsync -avz \
     -e "${RSYNC_SSH}" \
     "${PROJECT_ROOT}/localhost/index.html" \
+    "${PROJECT_ROOT}/localhost/book.html" \
     "${PROJECT_ROOT}/localhost/sw.js" \
     "${PROJECT_ROOT}/localhost/manifest.json" \
     "${PROJECT_ROOT}/localhost/icon-192.png" \

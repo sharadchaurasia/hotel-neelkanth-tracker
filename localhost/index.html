@@ -12,6 +12,7 @@
   <title>The Neelkanth Grand - CRM</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <style>
     * {
@@ -1618,6 +1619,88 @@
     }
     .btn-whatsapp:hover { background: #1da851; }
 
+    /* Global Guest Search */
+    .global-search-wrap { position: relative; flex-shrink: 0; }
+    .global-search-box {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px; padding: 8px 14px; min-width: 220px; transition: all 0.2s;
+    }
+    .global-search-box:focus-within { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); min-width: 300px; }
+    .global-search-box .material-icons { color: rgba(255,255,255,0.6); font-size: 20px; }
+    .global-search-box input {
+      background: transparent; border: none; color: #f5f3ef; font-size: 14px;
+      font-family: inherit; outline: none; width: 100%;
+    }
+    .global-search-box input::placeholder { color: rgba(255,255,255,0.5); }
+    .global-search-clear { background: none; border: none; cursor: pointer; padding: 2px; display: flex; align-items: center; }
+    .global-search-clear .material-icons { color: rgba(255,255,255,0.5); font-size: 18px; }
+    .global-search-results {
+      position: absolute; top: calc(100% + 8px); left: 0; right: 0; min-width: 420px;
+      max-height: 400px; overflow-y: auto; background: #ffffff; border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid rgba(153,107,47,0.2); z-index: 500;
+    }
+    .search-result-item {
+      padding: 12px 16px; border-bottom: 1px solid #f0ede8; cursor: pointer;
+      transition: background 0.15s; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .search-result-item:hover { background: rgba(153,107,47,0.06); }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-guest { font-weight: 600; color: #1c2038; font-size: 14px; }
+    .search-result-phone { color: #6b7280; font-size: 12px; }
+    .search-result-meta { text-align: right; font-size: 12px; color: #6b7280; }
+    .search-no-results { padding: 24px; text-align: center; color: #6b7280; font-size: 14px; }
+
+    /* Occupancy Chart */
+    .chart-section {
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); border-radius: 16px;
+      padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153,107,47,0.2);
+    }
+
+    /* Rate Calendar */
+    .peak-season-row {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 8px;
+      padding: 8px 12px; background: rgba(153,107,47,0.05); border-radius: 8px; border: 1px solid rgba(153,107,47,0.15);
+    }
+    .peak-season-row input { padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-family: inherit; }
+    .peak-season-row input[type="text"] { flex: 1; min-width: 100px; }
+    .peak-season-row input[type="date"] { min-width: 130px; }
+    .rate-input { width: 120px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; text-align: right; }
+    .rate-input:focus { border-color: #b8943e; outline: none; }
+    .rate-suggest-badge {
+      display: inline-block; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.2));
+      color: #059669; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      margin-top: 4px; cursor: pointer;
+    }
+    .rate-suggest-badge:hover { background: rgba(16,185,129,0.25); }
+
+    /* Housekeeping Status */
+    .hk-toggle { display: inline-flex; gap: 4px; margin-top: 6px; }
+    .hk-btn {
+      padding: 3px 8px; border: none; border-radius: 6px; font-size: 10px;
+      font-weight: 600; cursor: pointer; transition: all 0.15s; opacity: 0.5;
+    }
+    .hk-btn.active { opacity: 1; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    .hk-btn.hk-clean { background: #dbeafe; color: #1d4ed8; }
+    .hk-btn.hk-clean.active { background: #3b82f6; color: white; }
+    .hk-btn.hk-dirty { background: #fee2e2; color: #dc2626; }
+    .hk-btn.hk-dirty.active { background: #dc2626; color: white; }
+    .hk-btn.hk-inspected { background: #ede9fe; color: #7c3aed; }
+    .hk-btn.hk-inspected.active { background: #7c3aed; color: white; }
+
+    /* Low Inventory Alerts */
+    .inventory-alert {
+      display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+      border-radius: 12px; margin-bottom: 20px;
+    }
+    .inventory-alert.warning { background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #f59e0b; color: #92400e; }
+    .inventory-alert.critical { background: linear-gradient(135deg, #fee2e2, #fecaca); border: 1px solid #ef4444; color: #991b1b; }
+    .inventory-alert .material-icons { font-size: 28px; }
+    .inventory-alert-content { flex: 1; }
+    .inventory-alert-content h4 { font-size: 15px; margin-bottom: 2px; font-family: inherit; }
+    .inventory-alert-content p { font-size: 13px; opacity: 0.85; }
+
     /* Gantt Calendar */
     .gantt-controls {
       display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
@@ -1752,6 +1835,22 @@
         <button class="btn btn-secondary" onclick="window.print()">
           <span class="material-icons">print</span>
         </button>
+        <button class="btn btn-secondary" onclick="openRateCalendar()" title="Rate Calendar" style="padding:10px 12px;">
+          <span class="material-icons">price_change</span>
+        </button>
+        <button class="btn btn-secondary" onclick="openShareableBookingLink()" title="Shareable Booking Page" style="padding:10px 12px;">
+          <span class="material-icons">share</span>
+        </button>
+        <div class="global-search-wrap">
+          <div class="global-search-box">
+            <span class="material-icons">search</span>
+            <input type="text" id="globalSearchInput" placeholder="Search guest name or phone..." oninput="onGlobalSearch()" onfocus="onGlobalSearchFocus()" autocomplete="off">
+            <button class="global-search-clear" id="globalSearchClear" onclick="clearGlobalSearch()" style="display:none;">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+          <div class="global-search-results" id="globalSearchResults" style="display:none;"></div>
+        </div>
         <div class="header-user" id="headerUser">
           <span class="user-name" id="headerUserName"></span>
           <button class="logout-btn" onclick="openChangePassword()">Change PIN</button>
@@ -1796,6 +1895,9 @@
 
     <!-- ==================== DASHBOARD TAB ==================== -->
     <div class="tab-content active" id="tab-dashboard">
+
+      <!-- Low Inventory Alerts -->
+      <div id="inventoryAlertBar" style="display:none;"></div>
 
       <!-- Dashboard Guest Lists -->
       <div class="guest-lists">
@@ -1853,6 +1955,23 @@
         <div>
           <h4>Attention Required</h4>
           <p id="alertText"></p>
+        </div>
+      </div>
+
+      <!-- Occupancy Chart -->
+      <div class="chart-section" id="occupancyChartSection">
+        <div class="section-header">
+          <h3><span class="material-icons">bar_chart</span> Occupancy Chart</h3>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="month" id="occChartMonth" onchange="renderOccupancyChart()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
+            <select id="occChartType" onchange="renderOccupancyChart()" style="padding:8px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;">
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+            </select>
+          </div>
+        </div>
+        <div style="position:relative;height:320px;background:white;border-radius:12px;padding:16px;border:1px solid rgba(153,107,47,0.15);">
+          <canvas id="occupancyChartCanvas"></canvas>
         </div>
       </div>
 
@@ -2509,6 +2628,10 @@
           <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#10b981;display:inline-block"></span> Vacant</div>
           <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#ef4444;display:inline-block"></span> Occupied</div>
           <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#f59e0b;display:inline-block"></span> Checkout Today</div>
+          <span style="margin:0 4px;color:#d0cdc8">|</span>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#3b82f6;display:inline-block"></span> Clean</div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#dc2626;display:inline-block"></span> Dirty</div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#7c3aed;display:inline-block"></span> Inspected</div>
         </div>
         <div id="roomDashboardGrid"></div>
       </div>
@@ -2591,6 +2714,40 @@
       </div>
     </div>
 
+    <!-- Rate Calendar Modal -->
+    <div class="modal-overlay" id="rateCalendarModal">
+      <div class="modal" style="max-width:700px;">
+        <div class="modal-header">
+          <h3><span class="material-icons" style="vertical-align:middle;margin-right:6px">price_change</span>Rate Calendar</h3>
+          <button class="modal-close" onclick="closeModal('rateCalendarModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:20px;">
+            <h4 style="color:#996b2f;margin-bottom:12px;font-family:inherit;">
+              <span class="material-icons" style="vertical-align:middle;font-size:18px;">date_range</span> Peak Seasons
+            </h4>
+            <div id="peakSeasonsList"></div>
+            <button class="btn btn-secondary btn-small" onclick="addPeakSeason()" style="margin-top:8px;">
+              <span class="material-icons" style="font-size:14px;">add</span> Add Peak Season
+            </button>
+          </div>
+          <h4 style="color:#996b2f;margin-bottom:12px;font-family:inherit;">
+            <span class="material-icons" style="vertical-align:middle;font-size:18px;">currency_rupee</span> Room Rates (per night)
+          </h4>
+          <div style="overflow-x:auto;">
+            <table class="guest-list-table" style="min-width:auto;">
+              <thead><tr><th>Room Type</th><th>Off-Peak Rate</th><th>Peak Rate</th></tr></thead>
+              <tbody id="rateTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('rateCalendarModal')">Close</button>
+          <button class="btn btn-primary" onclick="saveRateCalendar()"><span class="material-icons" style="font-size:16px">save</span> Save Rates</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Booking Modal -->
@@ -2641,7 +2798,7 @@
           </div>
           <div class="form-group">
             <label>Room Category</label>
-            <select id="roomCategory">
+            <select id="roomCategory" onchange="updateRateSuggestion()">
               <option value="">Select</option>
               <option value="Non-Balcony">Non-Balcony</option>
               <option value="Balcony">Balcony</option>
@@ -4182,6 +4339,8 @@
       }
 
       updateMonthlySummary();
+      updateInventoryAlerts();
+      renderOccupancyChart();
     }
 
     // === CHECK-IN LIST: with Check-in Done + Room Allot ===
@@ -5710,10 +5869,12 @@
             paymentMode: payMode || undefined
           }
         });
+        var checkoutBooking = bookings.find(function(b) { return b.id === id; });
         await loadBookingsFromAPI();
         closeCheckoutModal();
         renderBookings();
         updateDashboard();
+        if (checkoutBooking) markRoomDirtyOnCheckout(checkoutBooking.roomNo);
         showToast('Guest checked out! ' + (kotAmt > 0 || addOnTotal > 0 ? 'Extra charges added.' : ''), 'success');
       } catch(e) { /* toast shown */ }
     }
@@ -6409,6 +6570,7 @@
       } else {
         el.textContent = '-';
       }
+      updateRateSuggestion();
     }
 
     async function generateBill(id) {
@@ -7508,6 +7670,13 @@
               '<div style="font-size:11px;color:#6b7280">C/O: ' + formatDate(rs.checkOut) + '</div>';
           }
 
+          var hkStatus = getHousekeepingStatus(room);
+          html += '<div class="hk-toggle">' +
+            '<button class="hk-btn hk-clean' + (hkStatus === 'clean' ? ' active' : '') + '" onclick="event.stopPropagation();setHousekeepingStatus(\'' + room + '\',\'clean\')">Clean</button>' +
+            '<button class="hk-btn hk-dirty' + (hkStatus === 'dirty' ? ' active' : '') + '" onclick="event.stopPropagation();setHousekeepingStatus(\'' + room + '\',\'dirty\')">Dirty</button>' +
+            '<button class="hk-btn hk-inspected' + (hkStatus === 'inspected' ? ' active' : '') + '" onclick="event.stopPropagation();setHousekeepingStatus(\'' + room + '\',\'inspected\')">Inspected</button>' +
+          '</div>';
+
           html += '</div>';
         });
 
@@ -7695,6 +7864,375 @@
       if (btn7) btn7.classList.toggle('active', days === 7);
       if (btn14) btn14.classList.toggle('active', days === 14);
       renderGanttCalendar();
+    }
+
+    // ========== GLOBAL GUEST SEARCH ==========
+    var searchDebounceTimer = null;
+
+    function onGlobalSearch() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(performGlobalSearch, 250);
+      var val = document.getElementById('globalSearchInput').value.trim();
+      document.getElementById('globalSearchClear').style.display = val ? 'flex' : 'none';
+    }
+
+    function onGlobalSearchFocus() {
+      var val = document.getElementById('globalSearchInput').value.trim();
+      if (val.length >= 2) performGlobalSearch();
+    }
+
+    function performGlobalSearch() {
+      var query = document.getElementById('globalSearchInput').value.trim().toLowerCase();
+      var container = document.getElementById('globalSearchResults');
+      if (query.length < 2) { container.style.display = 'none'; return; }
+
+      var results = bookings.filter(function(b) {
+        var nameMatch = b.guestName && b.guestName.toLowerCase().indexOf(query) !== -1;
+        var phoneMatch = b.phone && b.phone.replace(/[\s\-]/g, '').indexOf(query.replace(/[\s\-]/g, '')) !== -1;
+        return nameMatch || phoneMatch;
+      });
+
+      var today = getToday();
+      results.sort(function(a, b) {
+        var aActive = a.status !== 'CANCELLED' && a.checkOut >= today ? 0 : 1;
+        var bActive = b.status !== 'CANCELLED' && b.checkOut >= today ? 0 : 1;
+        if (aActive !== bActive) return aActive - bActive;
+        return new Date(b.checkIn) - new Date(a.checkIn);
+      });
+      results = results.slice(0, 20);
+
+      if (results.length === 0) {
+        container.innerHTML = '<div class="search-no-results"><span class="material-icons" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3">search_off</span>No guests found</div>';
+        container.style.display = 'block';
+        return;
+      }
+
+      var html = results.map(function(b) {
+        var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
+                          b.status === 'PARTIAL' ? 'badge-partial' :
+                          b.status === 'CANCELLED' ? 'badge-cancelled' : 'badge-pending';
+        return '<div class="search-result-item" onclick="selectSearchResult(\'' + b.id + '\')">' +
+          '<div><div class="search-result-guest">' + escapeHtml(b.guestName) + '</div>' +
+          '<div class="search-result-phone">' + escapeHtml(b.phone || 'No phone') +
+            ' &bull; Room ' + (b.roomNo || 'TBA') + '</div></div>' +
+          '<div class="search-result-meta">' +
+            formatDate(b.checkIn) + ' - ' + formatDate(b.checkOut) + '<br>' +
+            '<span class="badge ' + statusClass + '" style="font-size:10px;padding:2px 8px;">' + escapeHtml(b.status) + '</span> ' +
+            formatCurrency(b.totalAmount) +
+          '</div></div>';
+      }).join('');
+      container.innerHTML = html;
+      container.style.display = 'block';
+    }
+
+    function selectSearchResult(id) {
+      document.getElementById('globalSearchResults').style.display = 'none';
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('globalSearchClear').style.display = 'none';
+      openEditModalById(id);
+    }
+
+    function clearGlobalSearch() {
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('globalSearchResults').style.display = 'none';
+      document.getElementById('globalSearchClear').style.display = 'none';
+    }
+
+    document.addEventListener('click', function(e) {
+      var wrap = document.querySelector('.global-search-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('globalSearchResults').style.display = 'none';
+      }
+    });
+
+    // ========== OCCUPANCY CHART ==========
+    var occupancyChartInstance = null;
+
+    function renderOccupancyChart() {
+      if (typeof Chart === 'undefined') return;
+      var monthInput = document.getElementById('occChartMonth');
+      if (!monthInput) return;
+      if (!monthInput.value) {
+        var now = new Date();
+        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      }
+
+      var chartType = (document.getElementById('occChartType') || {}).value || 'bar';
+      var parts = monthInput.value.split('-');
+      var year = parseInt(parts[0]);
+      var month = parseInt(parts[1]);
+      var daysInMonth = new Date(year, month, 0).getDate();
+
+      var labels = [];
+      var data = [];
+      var backgroundColors = [];
+      var borderColors = [];
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        labels.push(d);
+        var occupiedCount = 0;
+        ALL_ROOMS.forEach(function(rm) { if (isRoomOccupied(rm, dateStr)) occupiedCount++; });
+        var pct = Math.round((occupiedCount / ALL_ROOMS.length) * 1000) / 10;
+        data.push(pct);
+
+        if (pct >= 80) {
+          backgroundColors.push('rgba(239, 68, 68, 0.7)'); borderColors.push('rgba(239, 68, 68, 1)');
+        } else if (pct >= 60) {
+          backgroundColors.push('rgba(245, 158, 11, 0.7)'); borderColors.push('rgba(245, 158, 11, 1)');
+        } else {
+          backgroundColors.push('rgba(16, 185, 129, 0.7)'); borderColors.push('rgba(16, 185, 129, 1)');
+        }
+      }
+
+      if (occupancyChartInstance) occupancyChartInstance.destroy();
+
+      var ctx = document.getElementById('occupancyChartCanvas');
+      if (!ctx) return;
+      occupancyChartInstance = new Chart(ctx.getContext('2d'), {
+        type: chartType,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Occupancy %',
+            data: data,
+            backgroundColor: chartType === 'bar' ? backgroundColors : 'rgba(153, 107, 47, 0.1)',
+            borderColor: chartType === 'bar' ? borderColors : '#996b2f',
+            borderWidth: chartType === 'bar' ? 1 : 2,
+            fill: chartType === 'line',
+            tension: 0.3,
+            pointBackgroundColor: chartType === 'line' ? borderColors : undefined,
+            pointRadius: chartType === 'line' ? 4 : undefined
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function(items) {
+                  var day = items[0].label;
+                  var ds = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                  return new Date(ds + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' });
+                },
+                label: function(item) {
+                  var roomsOcc = Math.round(item.raw * ALL_ROOMS.length / 100);
+                  return item.raw + '% (' + roomsOcc + '/' + ALL_ROOMS.length + ' rooms)';
+                }
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: function(v) { return v + '%'; }, stepSize: 20 }, title: { display: true, text: 'Occupancy %', font: { size: 12 } } },
+            x: { title: { display: true, text: 'Day of Month', font: { size: 12 } } }
+          }
+        }
+      });
+    }
+
+    // ========== LOW INVENTORY ALERTS ==========
+    function updateInventoryAlerts() {
+      var today = getToday();
+      var tomorrowDate = new Date();
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      var tomorrow = toLocalDateStr(tomorrowDate);
+
+      var availableToday = 0;
+      var availableTomorrow = 0;
+      ALL_ROOMS.forEach(function(rm) {
+        if (!isRoomOccupied(rm, today)) availableToday++;
+        if (!isRoomOccupied(rm, tomorrow)) availableTomorrow++;
+      });
+
+      var container = document.getElementById('inventoryAlertBar');
+      if (!container) return;
+      var alertsHtml = '';
+
+      if (availableToday < 5) {
+        var level = availableToday < 3 ? 'critical' : 'warning';
+        var icon = availableToday < 3 ? 'error' : 'warning';
+        var title = availableToday < 3 ? 'Critical: Very Low Availability!' : 'Low Availability Today';
+        alertsHtml += '<div class="inventory-alert ' + level + '">' +
+          '<span class="material-icons">' + icon + '</span>' +
+          '<div class="inventory-alert-content"><h4>' + title + '</h4>' +
+          '<p>Only <strong>' + availableToday + ' room' + (availableToday !== 1 ? 's' : '') + '</strong> available today (' +
+          (ALL_ROOMS.length - availableToday) + ' of ' + ALL_ROOMS.length + ' occupied)</p></div>' +
+          '<div style="text-align:center;min-width:60px;">' +
+          '<div style="font-size:32px;font-weight:800;">' + availableToday + '</div>' +
+          '<div style="font-size:11px;font-weight:600;opacity:0.7;">Available</div></div></div>';
+      }
+
+      if (availableTomorrow < 5) {
+        var level2 = availableTomorrow < 3 ? 'critical' : 'warning';
+        alertsHtml += '<div class="inventory-alert ' + level2 + '">' +
+          '<span class="material-icons">upcoming</span>' +
+          '<div class="inventory-alert-content"><h4>Tomorrow: Low Availability</h4>' +
+          '<p>Only <strong>' + availableTomorrow + ' room' + (availableTomorrow !== 1 ? 's' : '') + '</strong> available tomorrow</p></div>' +
+          '<div style="text-align:center;min-width:60px;">' +
+          '<div style="font-size:32px;font-weight:800;">' + availableTomorrow + '</div>' +
+          '<div style="font-size:11px;font-weight:600;opacity:0.7;">Tomorrow</div></div></div>';
+      }
+
+      if (alertsHtml) { container.innerHTML = alertsHtml; container.style.display = 'block'; }
+      else { container.style.display = 'none'; }
+    }
+
+    // ========== HOUSEKEEPING STATUS ==========
+    var HK_STORAGE_KEY = 'neelkanth_housekeeping';
+
+    function loadHousekeepingStatus() {
+      try { var s = localStorage.getItem(HK_STORAGE_KEY); if (s) return JSON.parse(s); } catch(e) {}
+      return {};
+    }
+    function saveHousekeepingStatus(hkMap) { localStorage.setItem(HK_STORAGE_KEY, JSON.stringify(hkMap)); }
+
+    function setHousekeepingStatus(room, status) {
+      var hkMap = loadHousekeepingStatus();
+      hkMap[room] = { status: status, updatedAt: new Date().toISOString() };
+      saveHousekeepingStatus(hkMap);
+      renderRoomDashboard();
+    }
+
+    function getHousekeepingStatus(room) {
+      var hkMap = loadHousekeepingStatus();
+      return (hkMap[room] && hkMap[room].status) || 'clean';
+    }
+
+    function markRoomDirtyOnCheckout(roomNo) {
+      if (!roomNo) return;
+      var rooms = roomNo.split(',').map(function(r) { return r.trim(); });
+      var hkMap = loadHousekeepingStatus();
+      rooms.forEach(function(r) { hkMap[r] = { status: 'dirty', updatedAt: new Date().toISOString() }; });
+      saveHousekeepingStatus(hkMap);
+    }
+
+    // ========== RATE CALENDAR ==========
+    var RATE_CALENDAR_KEY = 'neelkanth_rate_calendar';
+    var DEFAULT_RATES = {
+      'Non-Balcony': { offPeak: 2500, peak: 3500 },
+      'Balcony': { offPeak: 3000, peak: 4500 },
+      'Mini Family': { offPeak: 4000, peak: 5500 },
+      'Royal Suite Duplex': { offPeak: 6000, peak: 8500 }
+    };
+
+    function loadRateCalendar() {
+      try { var s = localStorage.getItem(RATE_CALENDAR_KEY); if (s) return JSON.parse(s); } catch(e) {}
+      return { rates: DEFAULT_RATES, peakSeasons: [] };
+    }
+
+    function saveRateCalendar() {
+      var config = { rates: {}, peakSeasons: [] };
+      var types = ['Non-Balcony', 'Balcony', 'Mini Family', 'Royal Suite Duplex'];
+      types.forEach(function(type) {
+        var offId = 'rate_off_' + type.replace(/\s+/g, '_');
+        var peakId = 'rate_peak_' + type.replace(/\s+/g, '_');
+        config.rates[type] = {
+          offPeak: parseFloat(document.getElementById(offId).value) || 0,
+          peak: parseFloat(document.getElementById(peakId).value) || 0
+        };
+      });
+      var rows = document.getElementById('peakSeasonsList').children;
+      for (var i = 0; i < rows.length; i++) {
+        var inputs = rows[i].querySelectorAll('input');
+        if (inputs.length >= 3 && inputs[1].value && inputs[2].value) {
+          config.peakSeasons.push({ name: inputs[0].value || ('Season ' + (i + 1)), from: inputs[1].value, to: inputs[2].value });
+        }
+      }
+      localStorage.setItem(RATE_CALENDAR_KEY, JSON.stringify(config));
+      showToast('Rates saved', 'success');
+      closeModal('rateCalendarModal');
+    }
+
+    function openRateCalendar() {
+      var config = loadRateCalendar();
+      document.getElementById('rateCalendarModal').classList.add('active');
+      var types = ['Non-Balcony', 'Balcony', 'Mini Family', 'Royal Suite Duplex'];
+      var tbody = document.getElementById('rateTableBody');
+      tbody.innerHTML = types.map(function(type) {
+        var r = config.rates[type] || DEFAULT_RATES[type] || { offPeak: 0, peak: 0 };
+        var offId = 'rate_off_' + type.replace(/\s+/g, '_');
+        var peakId = 'rate_peak_' + type.replace(/\s+/g, '_');
+        return '<tr><td><strong>' + escapeHtml(type) + '</strong></td>' +
+          '<td><input type="number" class="rate-input" id="' + offId + '" value="' + r.offPeak + '" min="0"></td>' +
+          '<td><input type="number" class="rate-input" id="' + peakId + '" value="' + r.peak + '" min="0"></td></tr>';
+      }).join('');
+      var container = document.getElementById('peakSeasonsList');
+      container.innerHTML = '';
+      if (config.peakSeasons.length === 0) { addPeakSeason(); }
+      else { config.peakSeasons.forEach(function(s) { addPeakSeason(s.name, s.from, s.to); }); }
+    }
+
+    function addPeakSeason(name, from, to) {
+      var container = document.getElementById('peakSeasonsList');
+      var row = document.createElement('div');
+      row.className = 'peak-season-row';
+      row.innerHTML =
+        '<input type="text" placeholder="Season name" value="' + escapeHtml(name || '') + '">' +
+        '<input type="date" value="' + (from || '') + '">' +
+        '<span style="color:#6b7280">to</span>' +
+        '<input type="date" value="' + (to || '') + '">' +
+        '<button class="btn btn-danger btn-small" onclick="this.parentNode.remove()" style="padding:4px 8px;">' +
+          '<span class="material-icons" style="font-size:14px">delete</span></button>';
+      container.appendChild(row);
+    }
+
+    function isDateInPeakSeason(dateStr) {
+      var config = loadRateCalendar();
+      return config.peakSeasons.some(function(s) { return dateStr >= s.from && dateStr <= s.to; });
+    }
+
+    function getSuggestedRate(roomType, checkIn, checkOut) {
+      var config = loadRateCalendar();
+      var rates = config.rates[roomType];
+      if (!rates) return null;
+      var nights = calculateNights(checkIn, checkOut);
+      if (nights <= 0) return null;
+      var totalRate = 0;
+      var dt = new Date(checkIn + 'T00:00:00');
+      for (var i = 0; i < nights; i++) {
+        var ds = toLocalDateStr(dt);
+        totalRate += isDateInPeakSeason(ds) ? rates.peak : rates.offPeak;
+        dt.setDate(dt.getDate() + 1);
+      }
+      return totalRate;
+    }
+
+    function updateRateSuggestion() {
+      var oldBadge = document.getElementById('rateSuggestBadge');
+      if (oldBadge) oldBadge.remove();
+
+      var checkIn = document.getElementById('checkIn').value;
+      var checkOut = document.getElementById('checkOut').value;
+      var roomCat = document.getElementById('roomCategory').value;
+      var noOfRooms = parseInt(document.getElementById('noOfRooms').value) || 1;
+      if (!checkIn || !checkOut || !roomCat) return;
+
+      var suggestedPerRoom = getSuggestedRate(roomCat, checkIn, checkOut);
+      if (!suggestedPerRoom) return;
+
+      var totalSuggested = suggestedPerRoom * noOfRooms;
+      var badge = document.createElement('div');
+      badge.id = 'rateSuggestBadge';
+      badge.className = 'rate-suggest-badge';
+      badge.textContent = 'Suggested: ' + formatCurrency(totalSuggested) + ' (' + formatCurrency(suggestedPerRoom) + ' x ' + noOfRooms + ' room' + (noOfRooms > 1 ? 's' : '') + ')';
+      badge.onclick = function() {
+        document.getElementById('totalAmount').value = totalSuggested;
+      };
+      var totalAmountField = document.getElementById('totalAmount');
+      if (totalAmountField && totalAmountField.parentNode) totalAmountField.parentNode.appendChild(badge);
+    }
+
+    // ========== SHAREABLE BOOKING LINK ==========
+    function openShareableBookingLink() {
+      var url = window.location.origin + '/book.html';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function() {
+          showToast('Booking page link copied!', 'success');
+        }).catch(function() {});
+      }
+      window.open(url, '_blank');
     }
 
   </script>
