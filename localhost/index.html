@@ -1609,6 +1609,81 @@
       font-weight: 600;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* WhatsApp Button */
+    .btn-whatsapp {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #25D366; color: white; border: none; border-radius: 6px;
+      padding: 6px 10px; cursor: pointer; text-decoration: none; font-size: 13px; gap: 4px;
+    }
+    .btn-whatsapp:hover { background: #1da851; }
+
+    /* Gantt Calendar */
+    .gantt-controls {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .gantt-controls button {
+      background: #1c2038; color: white; border: none; border-radius: 8px;
+      padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .gantt-controls button:hover { opacity: 0.85; }
+    .gantt-controls .gantt-period-btn {
+      background: #e0ddd8; color: #2c2a26;
+    }
+    .gantt-controls .gantt-period-btn.active {
+      background: #996b2f; color: white;
+    }
+    .gantt-date-range {
+      font-weight: 600; font-size: 15px; color: #1c2038; min-width: 200px; text-align: center;
+    }
+    .gantt-wrap {
+      overflow-x: auto; border: 1px solid #e0ddd8; border-radius: 10px; background: white;
+    }
+    .gantt-table {
+      border-collapse: collapse; table-layout: fixed; min-width: 100%;
+    }
+    .gantt-table th, .gantt-table td {
+      border: 1px solid #e8e5e0; padding: 0; text-align: center; font-size: 12px;
+      height: 44px; vertical-align: middle;
+    }
+    .gantt-table th {
+      background: #f5f3ef; font-weight: 600; color: #1c2038; position: sticky; top: 0; z-index: 2;
+    }
+    .gantt-table th.gantt-day-header {
+      min-width: 56px; width: 56px; padding: 4px 2px;
+    }
+    .gantt-table th.gantt-day-header .day-name { font-size: 10px; color: #6b7280; text-transform: uppercase; }
+    .gantt-table th.gantt-day-header .day-num { font-size: 14px; font-weight: 700; }
+    .gantt-table .gantt-room-cell {
+      position: sticky; left: 0; z-index: 3; background: #f9f8f5; text-align: left;
+      padding: 6px 10px; min-width: 120px; width: 120px; font-weight: 600; white-space: nowrap;
+    }
+    .gantt-table th.gantt-room-cell { z-index: 4; background: #f5f3ef; }
+    .gantt-table td.gantt-day-cell {
+      position: relative; min-width: 56px; width: 56px; padding: 2px;
+    }
+    .gantt-table td.gantt-today { background: rgba(153,107,47,0.08); }
+    .gantt-bar {
+      position: absolute; top: 4px; bottom: 4px; border-radius: 5px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600; color: white; overflow: hidden;
+      white-space: nowrap; text-overflow: ellipsis; padding: 0 6px;
+      z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      transition: filter 0.15s;
+    }
+    .gantt-bar:hover { filter: brightness(1.12); z-index: 5; }
+    .gantt-bar-confirmed { background: #3b82f6; }
+    .gantt-bar-checkedin { background: #10b981; }
+    .gantt-bar-checkout { background: #f59e0b; }
+    .gantt-bar-cancelled { background: #9ca3af; border: 1.5px dashed #6b7280; }
+    .gantt-bar .gantt-tooltip {
+      display: none; position: absolute; top: -48px; left: 50%; transform: translateX(-50%);
+      background: #1c2038; color: white; padding: 6px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 400; white-space: nowrap; z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25); pointer-events: none;
+    }
+    .gantt-bar:hover .gantt-tooltip { display: block; }
   </style>
 </head>
 
@@ -1707,6 +1782,9 @@
       </button>
       <button onclick="switchTab('roomdash')">
         <span class="material-icons">grid_view</span> Rooms
+      </button>
+      <button onclick="switchTab('calendar')">
+        <span class="material-icons">calendar_month</span> Calendar
       </button>
       <button id="tab-btn-users" onclick="switchTab('users')" style="display:none">
         <span class="material-icons">people</span> Users
@@ -2433,6 +2511,29 @@
           <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#f59e0b;display:inline-block"></span> Checkout Today</div>
         </div>
         <div id="roomDashboardGrid"></div>
+      </div>
+    </div>
+
+    <!-- ==================== CALENDAR (GANTT) TAB ==================== -->
+    <div class="tab-content" id="tab-calendar">
+      <div class="section-card" style="padding:24px">
+        <h2 style="margin-bottom:16px"><span class="material-icons" style="vertical-align:middle">calendar_month</span> Booking Calendar</h2>
+        <div class="gantt-controls">
+          <button onclick="navigateGantt(-1)"><span class="material-icons" style="font-size:18px">chevron_left</span> Prev</button>
+          <span class="gantt-date-range" id="ganttDateRange"></span>
+          <button onclick="navigateGantt(1)">Next <span class="material-icons" style="font-size:18px">chevron_right</span></button>
+          <span style="margin-left:auto;display:flex;gap:6px;">
+            <button class="gantt-period-btn active" id="ganttBtn7" onclick="toggleGanttPeriod(7)">7 Days</button>
+            <button class="gantt-period-btn" id="ganttBtn14" onclick="toggleGanttPeriod(14)">14 Days</button>
+          </span>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;font-size:12px;">
+          <div style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:8px;border-radius:3px;background:#3b82f6;display:inline-block"></span> Confirmed</div>
+          <div style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:8px;border-radius:3px;background:#10b981;display:inline-block"></span> Checked In</div>
+          <div style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:8px;border-radius:3px;background:#f59e0b;display:inline-block"></span> Checkout Today</div>
+          <div style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:8px;border-radius:3px;background:#9ca3af;display:inline-block;border:1px dashed #6b7280"></span> Cancelled</div>
+        </div>
+        <div class="gantt-wrap" id="ganttContainer"></div>
       </div>
     </div>
 
@@ -3821,6 +3922,9 @@
       if (tab === 'roomdash') {
         renderRoomDashboard();
       }
+      if (tab === 'calendar') {
+        renderGanttCalendar();
+      }
     }
 
     // Dashboard view toggle removed - now shows 3 colored guest lists
@@ -4112,6 +4216,7 @@
             '<button class="btn btn-primary btn-small" onclick="markCheckedIn(\'' + b.id + '\')" title="Check-in &amp; Allot Room">' +
               '<span class="material-icons" style="font-size:14px">login</span> Check-in &amp; Room</button>' +
             (pending > 0 ? '<button class="btn btn-secondary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
+            (b.phone ? '<a href="https://wa.me/' + formatWhatsAppPhone(b.phone) + '?text=' + encodeURIComponent('Hello ' + (b.guestName || '') + ', welcome to The Neelkanth Grand! \uD83C\uDFE8\nYour room ' + (b.roomNo || 'TBA') + ' is ready. Check-in: ' + formatDate(b.checkIn) + ', Check-out: ' + formatDate(b.checkOut) + '.\nFor assistance, call us anytime.\n\u2014 The Neelkanth Grand, Manali') + '" target="_blank" class="btn-whatsapp" title="WhatsApp"><span class="material-icons" style="font-size:16px">chat</span></a>' : '') +
           '</div></td>' +
           '<td><small style="color:#6b7280;font-style:italic;">' + escapeHtml(b.remarks || '-') + '</small></td>' +
           '</tr>';
@@ -4129,7 +4234,7 @@
       }
       var html = '<div style="overflow-x:auto;"><table class="guest-list-table"><thead><tr>' +
         '<th>Guest</th><th>Pax</th><th>Room</th><th>Source</th><th>Check-in</th><th>Checkout</th>' +
-        '<th>Collection</th><th>Received</th><th>Pending</th><th>Status</th>' +
+        '<th>Collection</th><th>Received</th><th>Pending</th><th>Status</th><th>Actions</th>' +
         '</tr></thead><tbody>';
 
       guests.forEach(function(b) {
@@ -4151,6 +4256,7 @@
           '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
           '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
           '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td>' + (b.phone ? '<a href="https://wa.me/' + formatWhatsAppPhone(b.phone) + '?text=' + encodeURIComponent('Hello ' + (b.guestName || '') + ', hope you\'re enjoying your stay at The Neelkanth Grand! \uD83D\uDE0A\nRoom: ' + (b.roomNo || 'TBA') + ', Checkout: ' + formatDate(b.checkOut) + '.\nNeed anything? Just let us know.\n\u2014 The Neelkanth Grand, Manali') + '" target="_blank" class="btn-whatsapp" title="WhatsApp"><span class="material-icons" style="font-size:16px">chat</span></a>' : '') + '</td>' +
           '</tr>';
       });
       html += '</tbody></table></div>';
@@ -4195,6 +4301,7 @@
             '<button class="btn btn-secondary btn-small" onclick="generateBill(\'' + b.id + '\')" title="Generate Bill">' +
               '<span class="material-icons" style="font-size:14px">receipt</span> Bill</button>' +
             (pending > 0 ? '<button class="btn btn-primary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
+            (b.phone ? '<a href="https://wa.me/' + formatWhatsAppPhone(b.phone) + '?text=' + encodeURIComponent('Hello ' + (b.guestName || '') + ', thank you for staying at The Neelkanth Grand! \uD83D\uDE4F\nYour checkout is scheduled for today.\nTotal: \u20B9' + (parseFloat(b.totalAmount) || 0).toLocaleString('en-IN') + ', Received: \u20B9' + totalReceived.toLocaleString('en-IN') + ', Balance: \u20B9' + (pending > 0 ? pending : 0).toLocaleString('en-IN') + '.\nWe hope to see you again!\n\u2014 The Neelkanth Grand, Manali') + '" target="_blank" class="btn-whatsapp" title="WhatsApp"><span class="material-icons" style="font-size:16px">chat</span></a>' : '') +
           '</div></td>' +
           '</tr>';
       });
@@ -7423,6 +7530,171 @@
         '</div>';
 
       container.innerHTML = summaryHtml + html;
+    }
+
+    // ========== WHATSAPP PHONE HELPER ==========
+    function formatWhatsAppPhone(phone) {
+      if (!phone) return '';
+      var cleaned = String(phone).replace(/[\s\-\(\)]/g, '');
+      // Strip leading +91 or 91 or 0
+      if (cleaned.indexOf('+91') === 0) cleaned = cleaned.substring(3);
+      else if (cleaned.indexOf('91') === 0 && cleaned.length > 10) cleaned = cleaned.substring(2);
+      if (cleaned.indexOf('0') === 0) cleaned = cleaned.substring(1);
+      return '91' + cleaned;
+    }
+
+    // ========== BOOKING CALENDAR (GANTT) ==========
+    var ganttStartDate = null;
+    var ganttPeriod = 7;
+
+    function renderGanttCalendar(startDate) {
+      var today = getToday();
+      if (!startDate) {
+        if (ganttStartDate) {
+          startDate = ganttStartDate;
+        } else {
+          // Default to Monday of current week
+          var d = new Date(today + 'T00:00:00');
+          var day = d.getDay();
+          var diff = day === 0 ? 6 : day - 1; // Monday=0 offset
+          d.setDate(d.getDate() - diff);
+          startDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+      }
+      ganttStartDate = startDate;
+
+      var days = [];
+      var sd = new Date(startDate + 'T00:00:00');
+      for (var i = 0; i < ganttPeriod; i++) {
+        var dd = new Date(sd);
+        dd.setDate(dd.getDate() + i);
+        var dateStr = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0');
+        days.push({
+          date: dateStr,
+          dayName: dd.toLocaleDateString('en-IN', { weekday: 'short' }),
+          dayNum: dd.getDate(),
+          isToday: dateStr === today,
+          isSunday: dd.getDay() === 0
+        });
+      }
+
+      var endDate = days[days.length - 1].date;
+
+      // Update date range display
+      var rangeEl = document.getElementById('ganttDateRange');
+      if (rangeEl) {
+        var sdFmt = new Date(startDate + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        var edFmt = new Date(endDate + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        rangeEl.textContent = sdFmt + ' \u2013 ' + edFmt;
+      }
+
+      // Build table header
+      var html = '<table class="gantt-table"><thead><tr>';
+      html += '<th class="gantt-room-cell">Room</th>';
+      for (var i = 0; i < days.length; i++) {
+        html += '<th class="gantt-day-header' + (days[i].isToday ? ' gantt-today' : '') + '">' +
+          '<div class="day-name">' + days[i].dayName + '</div>' +
+          '<div class="day-num">' + days[i].dayNum + '</div></th>';
+      }
+      html += '</tr></thead><tbody>';
+
+      // For each room
+      ALL_ROOMS.forEach(function(room) {
+        var roomType = ROOM_TYPE[room] || '';
+        html += '<tr>';
+        html += '<td class="gantt-room-cell"><div style="font-size:13px;font-weight:700">' + room + '</div>' +
+          '<div style="font-size:10px;color:#6b7280">' + escapeHtml(roomType) + '</div></td>';
+
+        // Get bookings for this room in this date range
+        var roomBookings = getGanttBookingsForRoom(room, startDate, endDate);
+
+        // Build a cell map to track which cells are consumed by bars
+        var cellUsed = {};
+        var cellBars = {};
+
+        roomBookings.forEach(function(rb) {
+          // rb = { booking, startCol, spanCols }
+          cellBars[rb.startCol] = rb;
+          for (var c = rb.startCol; c < rb.startCol + rb.spanCols; c++) {
+            cellUsed[c] = true;
+          }
+        });
+
+        for (var d = 0; d < days.length; d++) {
+          if (cellUsed[d] && !cellBars[d]) {
+            // This cell is consumed by a bar starting earlier — skip
+            continue;
+          }
+
+          var todayClass = days[d].isToday ? ' gantt-today' : '';
+
+          if (cellBars[d]) {
+            var rb = cellBars[d];
+            var b = rb.booking;
+            var barClass = 'gantt-bar-confirmed';
+            if (b.status === 'CANCELLED') barClass = 'gantt-bar-cancelled';
+            else if (b.checkedIn && !b.checkedOut) {
+              barClass = (b.checkOut === today) ? 'gantt-bar-checkout' : 'gantt-bar-checkedin';
+            }
+
+            html += '<td class="gantt-day-cell' + todayClass + '" colspan="' + rb.spanCols + '" style="position:relative;padding:0">' +
+              '<div class="gantt-bar ' + barClass + '" onclick="openEditModalById(\'' + b.id + '\')" style="left:2px;right:2px;">' +
+                escapeHtml(b.guestName || '').substring(0, 12) +
+                '<span class="gantt-tooltip">' + escapeHtml(b.guestName) + ' | ' + (b.roomNo || room) + '<br>' + formatDate(b.checkIn) + ' \u2192 ' + formatDate(b.checkOut) + '</span>' +
+              '</div></td>';
+          } else {
+            html += '<td class="gantt-day-cell' + todayClass + '"></td>';
+          }
+        }
+
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+
+      var container = document.getElementById('ganttContainer');
+      if (container) container.innerHTML = html;
+    }
+
+    function getGanttBookingsForRoom(room, rangeStart, rangeEnd) {
+      var results = [];
+      bookings.forEach(function(b) {
+        if (!b.roomNo || !b.checkIn || !b.checkOut) return;
+        var bRooms = b.roomNo.split(',').map(function(r) { return r.trim(); });
+        if (bRooms.indexOf(room) === -1) return;
+
+        // Check date overlap: booking overlaps range if checkIn < rangeEnd+1 AND checkOut > rangeStart
+        if (b.checkIn > rangeEnd || b.checkOut <= rangeStart) return;
+
+        // Calculate startCol and spanCols
+        var sd = new Date(rangeStart + 'T00:00:00');
+        var bStart = new Date(b.checkIn + 'T00:00:00');
+        var bEnd = new Date(b.checkOut + 'T00:00:00');
+
+        var startCol = Math.max(0, Math.round((bStart - sd) / 86400000));
+        var endCol = Math.min(ganttPeriod, Math.round((bEnd - sd) / 86400000));
+        var spanCols = endCol - startCol;
+        if (spanCols < 1) spanCols = 1;
+
+        results.push({ booking: b, startCol: startCol, spanCols: spanCols });
+      });
+      return results;
+    }
+
+    function navigateGantt(direction) {
+      var sd = new Date(ganttStartDate + 'T00:00:00');
+      sd.setDate(sd.getDate() + (direction * ganttPeriod));
+      var newStart = sd.getFullYear() + '-' + String(sd.getMonth() + 1).padStart(2, '0') + '-' + String(sd.getDate()).padStart(2, '0');
+      renderGanttCalendar(newStart);
+    }
+
+    function toggleGanttPeriod(days) {
+      ganttPeriod = days;
+      var btn7 = document.getElementById('ganttBtn7');
+      var btn14 = document.getElementById('ganttBtn14');
+      if (btn7) btn7.classList.toggle('active', days === 7);
+      if (btn14) btn14.classList.toggle('active', days === 14);
+      renderGanttCalendar();
     }
 
   </script>
