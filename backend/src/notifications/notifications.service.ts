@@ -21,8 +21,8 @@ export class NotificationsService {
     return '\u20B9' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // 21:00 UTC = 2:30 AM IST
-  @Cron('0 21 * * *')
+  // 16:30 UTC = 10:00 PM IST
+  @Cron('30 16 * * *')
   async sendDailySummary(): Promise<void> {
     const recipients = process.env.SUMMARY_EMAILS;
     if (!recipients) {
