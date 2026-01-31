@@ -50,14 +50,32 @@ echo "[2/5] Syncing frontend..."
 rsync -avz \
     -e "${RSYNC_SSH}" \
     "${PROJECT_ROOT}/localhost/index.html" \
+    "${PROJECT_ROOT}/localhost/sw.js" \
+    "${PROJECT_ROOT}/localhost/manifest.json" \
+    "${PROJECT_ROOT}/localhost/icon-192.png" \
+    "${PROJECT_ROOT}/localhost/icon-512.png" \
     "${EC2_HOST}:${REMOTE_DIR}/frontend/"
 
-# ---- 3. Sync nginx config ----
-echo "[3/5] Syncing nginx config..."
-rsync -avz \
-    -e "${RSYNC_SSH}" \
-    "${PROJECT_ROOT}/deploy/nginx.conf" \
-    "${EC2_HOST}:~/nginx.conf"
+# ---- 3. Nginx config (skip by default — Certbot manages SSL on server) ----
+if [[ "${SYNC_NGINX:-no}" == "yes" ]]; then
+    echo "[3/5] Syncing nginx config..."
+    rsync -avz \
+        -e "${RSYNC_SSH}" \
+        "${PROJECT_ROOT}/deploy/nginx.conf" \
+        "${EC2_HOST}:~/nginx.conf"
+else
+    echo "[3/5] Skipping nginx config (Certbot-managed). Use SYNC_NGINX=yes to force."
+fi
+
+# ---- 3b. Sync backup script ----
+if [ -f "${PROJECT_ROOT}/deploy/backup-db.sh" ]; then
+    echo "[3b] Syncing backup script..."
+    rsync -avz \
+        -e "${RSYNC_SSH}" \
+        "${PROJECT_ROOT}/deploy/backup-db.sh" \
+        "${EC2_HOST}:/home/ubuntu/backup-db.sh"
+    ${SSH_CMD} "${EC2_HOST}" 'chmod +x /home/ubuntu/backup-db.sh'
+fi
 
 # ---- 4. Sync .env.production → .env ----
 echo "[4/5] Syncing environment file..."
@@ -93,11 +111,16 @@ pm2 start ecosystem.config.js
 
 pm2 save
 
-# Update nginx config if changed
-echo "  Updating Nginx config..."
-sudo cp ~/nginx.conf /etc/nginx/sites-available/hotel-neelkanth
-sudo ln -sf /etc/nginx/sites-available/hotel-neelkanth /etc/nginx/sites-enabled/hotel-neelkanth
-sudo nginx -t && sudo systemctl reload nginx
+# Update nginx config only if synced
+if [ -f ~/nginx.conf ] && [ ~/nginx.conf -nt /etc/nginx/sites-available/hotel-neelkanth ]; then
+    echo "  Updating Nginx config..."
+    sudo cp ~/nginx.conf /etc/nginx/sites-available/hotel-neelkanth
+    sudo ln -sf /etc/nginx/sites-available/hotel-neelkanth /etc/nginx/sites-enabled/hotel-neelkanth
+    sudo nginx -t && sudo systemctl reload nginx
+else
+    echo "  Nginx config unchanged, skipping."
+    sudo nginx -t && sudo systemctl reload nginx
+fi
 
 echo ""
 echo "  Deploy complete!"
@@ -106,5 +129,5 @@ REMOTE
 echo ""
 echo "============================================"
 echo "  Deployment successful!"
-echo "  App: http://${EC2_HOST#*@}"
+echo "  App: https://neelkanth.akshospitality.in"
 echo "============================================"

@@ -265,11 +265,11 @@ export class ReportsService {
     const bookings = await this.bookingRepo.find({ relations: ['addOns'] });
     const daybookEntries = await this.daybookRepo.find();
 
-    const incomeCategories: Record<string, { cash: number; bank: number }> = {
-      'Room Rent': { cash: 0, bank: 0 },
-      'KOT': { cash: 0, bank: 0 },
-      'Add-On': { cash: 0, bank: 0 },
-      'Other': { cash: 0, bank: 0 },
+    const incomeCategories: Record<string, { cash: number; card: number; bank: number }> = {
+      'Room Rent': { cash: 0, card: 0, bank: 0 },
+      'KOT': { cash: 0, card: 0, bank: 0 },
+      'Add-On': { cash: 0, card: 0, bank: 0 },
+      'Other': { cash: 0, card: 0, bank: 0 },
     };
 
     // Income from daybook entries in the date range
@@ -280,7 +280,6 @@ export class ReportsService {
       const amt = Number(e.amount) || 0;
       let src = e.receivedIn || e.paymentSource || 'Cash';
       if (src === 'UPI' || src === 'SBI Neelkanth') src = 'Bank Transfer';
-      const isCash = src === 'Cash';
 
       let cat = e.category || 'Other';
       if (cat === 'Room Rent') {
@@ -293,8 +292,9 @@ export class ReportsService {
         cat = 'Other';
       }
 
-      if (!incomeCategories[cat]) incomeCategories[cat] = { cash: 0, bank: 0 };
-      if (isCash) incomeCategories[cat].cash += amt;
+      if (!incomeCategories[cat]) incomeCategories[cat] = { cash: 0, card: 0, bank: 0 };
+      if (src === 'Cash') incomeCategories[cat].cash += amt;
+      else if (src === 'Card') incomeCategories[cat].card += amt;
       else incomeCategories[cat].bank += amt;
     }
 
@@ -307,11 +307,10 @@ export class ReportsService {
         for (const addon of b.addOns) {
           const amt = Number(addon.amount) || 0;
           if (amt > 0) {
-            // Add-on payment mode follows the last payment mode of booking
             let mode = b.balancePaymentMode || b.paymentMode || 'Cash';
             if (mode === 'UPI' || mode === 'SBI Neelkanth') mode = 'Bank Transfer';
-            const isCash = mode === 'Cash';
-            if (isCash) incomeCategories['Add-On'].cash += amt;
+            if (mode === 'Cash') incomeCategories['Add-On'].cash += amt;
+            else if (mode === 'Card') incomeCategories['Add-On'].card += amt;
             else incomeCategories['Add-On'].bank += amt;
           }
         }
@@ -319,9 +318,10 @@ export class ReportsService {
     }
 
     // Calculate total income
-    let totalIncomeCash = 0, totalIncomeBank = 0;
+    let totalIncomeCash = 0, totalIncomeCard = 0, totalIncomeBank = 0;
     for (const cat of Object.keys(incomeCategories)) {
       totalIncomeCash += incomeCategories[cat].cash;
+      totalIncomeCard += incomeCategories[cat].card;
       totalIncomeBank += incomeCategories[cat].bank;
     }
 
@@ -382,12 +382,12 @@ export class ReportsService {
 
     const totalOperationalExpense = totalExpenseCash + totalExpenseBank;
     const grandTotalExpense = totalOperationalExpense + leasePerMonth.totalLease;
-    const totalIncome = totalIncomeCash + totalIncomeBank;
+    const totalIncome = totalIncomeCash + totalIncomeCard + totalIncomeBank;
     const profitLoss = totalIncome - grandTotalExpense;
 
     return {
       income: incomeCategories,
-      totalIncome: { cash: totalIncomeCash, bank: totalIncomeBank, total: totalIncome },
+      totalIncome: { cash: totalIncomeCash, card: totalIncomeCard, bank: totalIncomeBank, total: totalIncome },
       expenses: expenseCategories,
       totalOperationalExpense: { cash: totalExpenseCash, bank: totalExpenseBank, total: totalOperationalExpense },
       lease: leasePerMonth,
@@ -500,14 +500,52 @@ export class ReportsService {
       );
 
       let roomSale = 0, kotIncome = 0, otherIncome = 0;
+      let totalIncomeCash = 0, totalIncomeBank = 0, totalIncomeCard = 0;
       for (const e of monthEntries) {
         if (e.type !== 'income') continue;
         const amt = Number(e.amount) || 0;
         if (e.category === 'Room Rent') roomSale += amt;
         else if (e.category === 'KOT') kotIncome += amt;
         else otherIncome += amt;
+
+        // Cash/Card/Bank split based on receivedIn field
+        let src = e.receivedIn || e.paymentSource || 'Cash';
+        if (src === 'UPI' || src === 'SBI Neelkanth') src = 'Bank Transfer';
+        if (src === 'Cash') totalIncomeCash += amt;
+        else if (src === 'Card') totalIncomeCard += amt;
+        else totalIncomeBank += amt;
       }
-      const totalIncome = roomSale + kotIncome + otherIncome;
+
+      // --- ADD-ON income from bookings (checkout in this month) ---
+      let addOnIncome = 0;
+      for (const b of bookings) {
+        if (b.status === 'CANCELLED') continue;
+        if (!b.checkOut || b.checkOut < firstDay || b.checkOut > lastDay) continue;
+        if (b.addOns && b.addOns.length > 0) {
+          for (const addon of b.addOns) {
+            const amt = Number(addon.amount) || 0;
+            if (amt > 0) {
+              addOnIncome += amt;
+              let mode = b.balancePaymentMode || b.paymentMode || 'Cash';
+              if (mode === 'UPI' || mode === 'SBI Neelkanth') mode = 'Bank Transfer';
+              if (mode === 'Cash') totalIncomeCash += amt;
+              else if (mode === 'Card') totalIncomeCard += amt;
+              else totalIncomeBank += amt;
+            }
+          }
+        }
+        if ((!b.addOns || b.addOns.length === 0) && Number(b.addOnAmount) > 0) {
+          const amt = Number(b.addOnAmount);
+          addOnIncome += amt;
+          let mode = b.balancePaymentMode || b.paymentMode || 'Cash';
+          if (mode === 'UPI' || mode === 'SBI Neelkanth') mode = 'Bank Transfer';
+          if (mode === 'Cash') totalIncomeCash += amt;
+          else if (mode === 'Card') totalIncomeCard += amt;
+          else totalIncomeBank += amt;
+        }
+      }
+
+      const totalIncome = roomSale + kotIncome + addOnIncome + otherIncome;
 
       // --- EXPENSES from daybook ---
       const expenseMap: Record<string, number> = {};
@@ -547,8 +585,12 @@ export class ReportsService {
         occupancyPct: totalRoomNights > 0 ? Math.round((occupiedNights / totalRoomNights) * 100) : 0,
         roomSale,
         kotIncome,
+        addOnIncome,
         otherIncome,
         totalIncome,
+        totalIncomeCash,
+        totalIncomeCard,
+        totalIncomeBank,
         expenses: expenseMap,
         totalExpenses,
         lease,

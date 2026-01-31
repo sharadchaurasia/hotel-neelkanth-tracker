@@ -1114,6 +1114,95 @@
       gap: 8px;
     }
 
+    /* Accordion styles for report sections */
+    .report-accordion-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 16px;
+      margin-bottom: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(153, 107, 47, 0.2);
+      transition: all 0.3s ease;
+    }
+    .report-accordion-header:hover {
+      background: rgba(153, 107, 47, 0.06);
+      border-color: rgba(153, 107, 47, 0.4);
+    }
+    .report-accordion-header h3 {
+      font-size: 16px;
+      color: #996b2f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+    }
+    .report-accordion-header .accordion-arrow {
+      transition: transform 0.3s ease;
+      color: #996b2f;
+      font-size: 24px;
+    }
+    .report-accordion-header.expanded .accordion-arrow {
+      transform: rotate(180deg);
+    }
+    .report-accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+    .report-accordion-body.expanded {
+      max-height: 100000px;
+    }
+    .report-accordion-body > .reports-section {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      margin-top: 0;
+      border-top: none;
+    }
+    .report-accordion-item {
+      margin-bottom: 16px;
+    }
+    .report-accordion-item .report-accordion-header.expanded {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      margin-bottom: 0;
+    }
+
+    /* ARR Card */
+    .arr-card {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      border-radius: 16px;
+      padding: 28px 36px;
+      margin-top: 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .arr-card .arr-label {
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .arr-card .arr-value {
+      color: #fbbf24;
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .arr-card .arr-detail {
+      color: #64748b;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
     .report-filters {
       display: flex;
       gap: 12px;
@@ -1616,6 +1705,9 @@
       <button onclick="switchTab('salary')">
         <span class="material-icons">badge</span> Salary
       </button>
+      <button onclick="switchTab('roomdash')">
+        <span class="material-icons">grid_view</span> Rooms
+      </button>
       <button id="tab-btn-users" onclick="switchTab('users')" style="display:none">
         <span class="material-icons">people</span> Users
       </button>
@@ -1954,92 +2046,124 @@
     <!-- ==================== REPORTS TAB ==================== -->
     <div class="tab-content" id="tab-reports">
 
-      <!-- Source-wise Report -->
-      <div class="reports-section">
-        <div class="section-header">
-          <h3><span class="material-icons">pie_chart</span> Source-wise Report</h3>
-          <div class="report-filters">
-            <input type="date" id="reportDateFrom" onchange="renderSourceReport()">
-            <span style="color:#6b7280;font-size:13px;">to</span>
-            <input type="date" id="reportDateTo" onchange="renderSourceReport()">
-          </div>
-        </div>
-        <div id="sourceReportContent"></div>
-      </div>
-
-      <!-- Day-wise Payment Report -->
-      <div class="reports-section">
-        <div class="section-header">
-          <h3><span class="material-icons">payments</span> Day-wise Payment Collection</h3>
-          <div class="report-filters">
-            <input type="date" id="payReportFrom" onchange="renderPaymentReport()">
-            <span style="color:#6b7280;font-size:13px;">to</span>
-            <input type="date" id="payReportTo" onchange="renderPaymentReport()">
-          </div>
-        </div>
-        <div id="paymentReportContent"></div>
-      </div>
-
-      <!-- Monthly Report -->
-      <div class="reports-section">
-        <div class="section-header">
-          <h3><span class="material-icons">calendar_month</span> Monthly Report</h3>
-          <div class="report-filters">
-            <input type="month" id="reportMonth" onchange="renderMonthlyReport()">
-          </div>
-        </div>
-        <div id="monthlyReportContent"></div>
-      </div>
-
-      <!-- Profit & Loss Report -->
-      <div class="reports-section">
-        <div class="section-header">
+      <!-- P&L Report — always expanded at top -->
+      <div class="report-accordion-item">
+        <div class="report-accordion-header expanded" onclick="toggleReportAccordion(this)">
           <h3><span class="material-icons">account_balance</span> Monthly Profit & Loss</h3>
+          <span class="material-icons accordion-arrow">expand_more</span>
         </div>
-        <div class="report-filters" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
-          <div class="filter-group">
-            <label>View</label>
-            <select id="pnlFilterType" onchange="updatePnlFilterInputs()">
-              <option value="calendar">Calendar Year (Jan-Dec)</option>
-              <option value="financial">Financial Year (Apr-Mar)</option>
-              <option value="custom">Custom Range</option>
-            </select>
+        <div class="report-accordion-body expanded">
+          <div class="reports-section">
+            <div class="report-filters" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+              <div class="filter-group">
+                <label>View</label>
+                <select id="pnlFilterType" onchange="updatePnlFilterInputs()">
+                  <option value="calendar">Calendar Year (Jan-Dec)</option>
+                  <option value="financial">Financial Year (Apr-Mar)</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+              </div>
+              <div class="filter-group" id="pnlCalYearGroup">
+                <label>Calendar Year</label>
+                <select id="pnlCalYear">
+                  <option value="2025">2025</option>
+                  <option value="2026" selected>2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                  <option value="2029">2029</option>
+                  <option value="2030">2030</option>
+                </select>
+              </div>
+              <div class="filter-group" id="pnlFYGroup" style="display:none;">
+                <label>Financial Year</label>
+                <select id="pnlFY">
+                  <option value="2025">FY 2025-26</option>
+                  <option value="2026" selected>FY 2026-27</option>
+                  <option value="2027">FY 2027-28</option>
+                  <option value="2028">FY 2028-29</option>
+                  <option value="2029">FY 2029-30</option>
+                </select>
+              </div>
+              <div class="filter-group" id="pnlCustomFromGroup" style="display:none;">
+                <label>From</label>
+                <input type="date" id="pnlCustomFrom">
+              </div>
+              <div class="filter-group" id="pnlCustomToGroup" style="display:none;">
+                <label>To</label>
+                <input type="date" id="pnlCustomTo">
+              </div>
+              <button class="btn btn-primary btn-small" onclick="renderPnlReport()">
+                <span class="material-icons" style="font-size:14px">search</span> Generate
+              </button>
+            </div>
+            <div id="pnlReportContent" style="overflow-x:auto;"></div>
           </div>
-          <div class="filter-group" id="pnlCalYearGroup">
-            <label>Calendar Year</label>
-            <select id="pnlCalYear">
-              <option value="2025">2025</option>
-              <option value="2026" selected>2026</option>
-              <option value="2027">2027</option>
-              <option value="2028">2028</option>
-              <option value="2029">2029</option>
-              <option value="2030">2030</option>
-            </select>
-          </div>
-          <div class="filter-group" id="pnlFYGroup" style="display:none;">
-            <label>Financial Year</label>
-            <select id="pnlFY">
-              <option value="2025">FY 2025-26</option>
-              <option value="2026" selected>FY 2026-27</option>
-              <option value="2027">FY 2027-28</option>
-              <option value="2028">FY 2028-29</option>
-              <option value="2029">FY 2029-30</option>
-            </select>
-          </div>
-          <div class="filter-group" id="pnlCustomFromGroup" style="display:none;">
-            <label>From</label>
-            <input type="date" id="pnlCustomFrom">
-          </div>
-          <div class="filter-group" id="pnlCustomToGroup" style="display:none;">
-            <label>To</label>
-            <input type="date" id="pnlCustomTo">
-          </div>
-          <button class="btn btn-primary btn-small" onclick="renderPnlReport()">
-            <span class="material-icons" style="font-size:14px">search</span> Generate
-          </button>
         </div>
-        <div id="pnlReportContent" style="overflow-x:auto;"></div>
       </div>
+
+      <!-- Show More / Show Less toggle for other reports -->
+      <div style="text-align:center;margin:20px 0 8px;">
+        <button class="btn btn-secondary" id="showMoreReportsBtn" onclick="toggleMoreReports()" style="padding:10px 28px;border-radius:24px;font-weight:600;font-size:14px;">
+          <span class="material-icons" style="font-size:18px;vertical-align:middle;">expand_more</span>
+          Show More Reports
+        </button>
+      </div>
+
+      <div id="moreReportsContainer" style="display:none;">
+
+        <!-- Source-wise Report — collapsed by default -->
+        <div class="report-accordion-item">
+          <div class="report-accordion-header" onclick="toggleReportAccordion(this)">
+            <h3><span class="material-icons">pie_chart</span> Source-wise Report</h3>
+            <span class="material-icons accordion-arrow">expand_more</span>
+          </div>
+          <div class="report-accordion-body">
+            <div class="reports-section">
+              <div class="report-filters" style="margin-bottom:16px;">
+                <input type="date" id="reportDateFrom" onchange="renderSourceReport()">
+                <span style="color:#6b7280;font-size:13px;">to</span>
+                <input type="date" id="reportDateTo" onchange="renderSourceReport()">
+              </div>
+              <div id="sourceReportContent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day-wise Payment Report — collapsed by default -->
+        <div class="report-accordion-item">
+          <div class="report-accordion-header" onclick="toggleReportAccordion(this)">
+            <h3><span class="material-icons">payments</span> Day-wise Payment Collection</h3>
+            <span class="material-icons accordion-arrow">expand_more</span>
+          </div>
+          <div class="report-accordion-body">
+            <div class="reports-section">
+              <div class="report-filters" style="margin-bottom:16px;">
+                <input type="date" id="payReportFrom" onchange="renderPaymentReport()">
+                <span style="color:#6b7280;font-size:13px;">to</span>
+                <input type="date" id="payReportTo" onchange="renderPaymentReport()">
+              </div>
+              <div id="paymentReportContent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Report — collapsed by default -->
+        <div class="report-accordion-item">
+          <div class="report-accordion-header" onclick="toggleReportAccordion(this)">
+            <h3><span class="material-icons">calendar_month</span> Monthly Report</h3>
+            <span class="material-icons accordion-arrow">expand_more</span>
+          </div>
+          <div class="report-accordion-body">
+            <div class="reports-section">
+              <div class="report-filters" style="margin-bottom:16px;">
+                <input type="month" id="reportMonth" onchange="renderMonthlyReport()">
+              </div>
+              <div id="monthlyReportContent"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end moreReportsContainer -->
 
     </div><!-- end tab-reports -->
 
@@ -2081,9 +2205,6 @@
         <div class="section-header">
           <h3><span class="material-icons">arrow_downward</span> Income</h3>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-small" onclick="autoCollectDayBookIncome()">
-              <span class="material-icons" style="font-size:14px">sync</span> Auto-Collect from Bookings
-            </button>
             <button class="btn btn-secondary btn-small" onclick="openManualIncomeModal()">
               <span class="material-icons" style="font-size:14px">add</span> Add Manual Income
             </button>
@@ -2302,6 +2423,19 @@
       </div>
     </div>
 
+    <!-- ==================== ROOM DASHBOARD TAB ==================== -->
+    <div class="tab-content" id="tab-roomdash">
+      <div class="section-card" style="padding:24px">
+        <h2 style="margin-bottom:16px"><span class="material-icons" style="vertical-align:middle">grid_view</span> Room Dashboard</h2>
+        <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#10b981;display:inline-block"></span> Vacant</div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#ef4444;display:inline-block"></span> Occupied</div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#f59e0b;display:inline-block"></span> Checkout Today</div>
+        </div>
+        <div id="roomDashboardGrid"></div>
+      </div>
+    </div>
+
     <!-- User Modal -->
     <div class="modal-overlay" id="userModal">
       <div class="modal" style="max-width:500px">
@@ -2375,9 +2509,16 @@
             <label>Guest Name *</label>
             <input type="text" id="guestName" placeholder="Enter guest name">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="position:relative">
             <label>Phone</label>
-            <input type="tel" id="guestPhone" placeholder="Mobile number">
+            <input type="tel" id="guestPhone" placeholder="Mobile number" oninput="debouncedGuestHistory()">
+            <div id="guestHistoryBadge" style="display:none;margin-top:4px">
+              <span style="background:#10b981;color:white;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600" id="repeatGuestBadge"></span>
+            </div>
+            <div id="guestHistoryPanel" style="display:none;margin-top:8px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:12px;max-height:120px;overflow-y:auto">
+              <div style="font-weight:600;color:#1e3a5f;margin-bottom:4px;cursor:pointer" onclick="toggleGuestHistory()">Previous Stays <span id="guestHistoryToggle">&#9660;</span></div>
+              <div id="guestHistoryList"></div>
+            </div>
           </div>
           <div class="form-group">
             <label>Pax</label>
@@ -2481,7 +2622,7 @@
           </div>
           <div class="form-group">
             <label>Add-On</label>
-            <select id="complimentary">
+            <select id="complimentary" onchange="toggleAddOnAmount()">
               <option value="">None</option>
               <option value="HM">HM (Honeymoon)</option>
               <option value="BF">BF (Birthday)</option>
@@ -2492,6 +2633,10 @@
               <option value="BJ">BJ (Bonfire + Jalebi)</option>
             </select>
           </div>
+          <div class="form-group" id="addOnAmountGroup" style="display:none;">
+            <label>Add-On Amount</label>
+            <input type="number" id="addOnAmount" placeholder="&#8377;" min="0" value="0" oninput="updateBookingTotal()">
+          </div>
         </div>
 
         <div class="form-row">
@@ -2501,7 +2646,7 @@
           </div>
           <div class="form-group">
             <label>Collection Amount *</label>
-            <input type="number" id="totalAmount" placeholder="&#8377;" min="0">
+            <input type="number" id="totalAmount" placeholder="&#8377;" min="0" oninput="updateBookingTotal()">
           </div>
           <div class="form-group">
             <label>Payment Type *</label>
@@ -2527,6 +2672,13 @@
               <option value="Card">Card</option>
               <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
             </select>
+          </div>
+        </div>
+
+        <div id="bookingTotalDisplay" style="display:none;padding:12px 16px;background:linear-gradient(135deg,rgba(153,107,47,0.08),rgba(153,107,47,0.15));border-radius:10px;margin-bottom:12px;border:1px solid rgba(153,107,47,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:600;color:#996b2f;font-size:14px;">Estimated Total (Room + Add-On)</span>
+            <span id="bookingTotalValue" style="font-weight:800;color:#1e293b;font-size:18px;">&#8377;0</span>
           </div>
         </div>
 
@@ -3665,6 +3817,9 @@
       }
       if (tab === 'audit') {
         loadAuditLogs();
+      }
+      if (tab === 'roomdash') {
+        renderRoomDashboard();
       }
     }
 
@@ -4876,6 +5031,9 @@
       document.getElementById('sourceNameOther').value = '';
       document.getElementById('sourceNameOther').style.display = 'none';
       document.getElementById('complimentary').value = '';
+      document.getElementById('addOnAmount').value = '0';
+      document.getElementById('addOnAmountGroup').style.display = 'none';
+      document.getElementById('bookingTotalDisplay').style.display = 'none';
       document.getElementById('actualRoomRent').value = '';
       document.getElementById('totalAmount').value = '';
       document.getElementById('paymentType').value = 'Postpaid';
@@ -4925,6 +5083,8 @@
         document.getElementById('sourceNameOther').style.display = 'none';
       }
       document.getElementById('complimentary').value = booking.complimentary || '';
+      document.getElementById('addOnAmount').value = booking.addOnAmount || 0;
+      toggleAddOnAmount();
       document.getElementById('actualRoomRent').value = booking.actualRoomRent || '';
       document.getElementById('totalAmount').value = booking.totalAmount;
       document.getElementById('paymentType').value = booking.paymentType;
@@ -4935,6 +5095,7 @@
       resetSaveBtn();
       updateRoomAvailability();
       updateNightsDisplay();
+      updateBookingTotal();
     }
 
     function closeBookingModal() {
@@ -4959,6 +5120,31 @@
       if (sn) sn.addEventListener('change', toggleOtherSource);
     });
 
+    function toggleAddOnAmount() {
+      var comp = document.getElementById('complimentary').value;
+      var group = document.getElementById('addOnAmountGroup');
+      if (comp) {
+        group.style.display = 'block';
+      } else {
+        group.style.display = 'none';
+        document.getElementById('addOnAmount').value = '0';
+      }
+      updateBookingTotal();
+    }
+
+    function updateBookingTotal() {
+      var totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
+      var addOnAmount = parseFloat(document.getElementById('addOnAmount').value) || 0;
+      var display = document.getElementById('bookingTotalDisplay');
+      var valueEl = document.getElementById('bookingTotalValue');
+      if (addOnAmount > 0) {
+        display.style.display = 'block';
+        valueEl.textContent = '\u20B9' + (totalAmount + addOnAmount).toLocaleString('en-IN');
+      } else {
+        display.style.display = 'none';
+      }
+    }
+
     function resetSaveBtn() {
       var btn = document.getElementById('saveBtn');
       btn.disabled = false;
@@ -4981,6 +5167,7 @@
       var sourceNameVal = document.getElementById('sourceName').value;
       var sourceName = sourceNameVal === 'Other' ? document.getElementById('sourceNameOther').value.trim() : sourceNameVal;
       var complimentary = document.getElementById('complimentary').value;
+      var addOnAmount = parseFloat(document.getElementById('addOnAmount').value) || 0;
       var actualRoomRent = parseFloat(document.getElementById('actualRoomRent').value) || 0;
       var totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
       var paymentType = document.getElementById('paymentType').value;
@@ -5010,7 +5197,7 @@
             roomNo: roomNo, noOfRooms: noOfRooms, roomCategory: roomCategory,
             checkIn: checkIn, checkOut: checkOut, mealPlan: mealPlan,
             source: source, sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
-            complimentary: complimentary, actualRoomRent: actualRoomRent,
+            complimentary: complimentary, addOnAmount: addOnAmount, actualRoomRent: actualRoomRent,
             totalAmount: totalAmount, paymentType: paymentType,
             advanceReceived: advanceReceived, paymentMode: paymentMode, remarks: remarks
           };
@@ -5028,7 +5215,7 @@
             roomNo: roomNo, noOfRooms: noOfRooms, roomCategory: roomCategory,
             checkIn: checkIn, checkOut: checkOut, mealPlan: mealPlan,
             source: source, sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
-            complimentary: complimentary, actualRoomRent: actualRoomRent,
+            complimentary: complimentary, addOnAmount: addOnAmount, actualRoomRent: actualRoomRent,
             totalAmount: totalAmount, paymentType: paymentType,
             advanceReceived: advanceReceived, paymentMode: paymentMode, remarks: remarks
           };
@@ -5646,6 +5833,31 @@
       container.innerHTML = html;
     }
 
+    // ========== REPORT ACCORDION ==========
+    function toggleReportAccordion(header) {
+      var body = header.nextElementSibling;
+      var isExpanded = header.classList.contains('expanded');
+      if (isExpanded) {
+        header.classList.remove('expanded');
+        body.classList.remove('expanded');
+      } else {
+        header.classList.add('expanded');
+        body.classList.add('expanded');
+      }
+    }
+
+    function toggleMoreReports() {
+      var container = document.getElementById('moreReportsContainer');
+      var btn = document.getElementById('showMoreReportsBtn');
+      if (container.style.display === 'none') {
+        container.style.display = 'block';
+        btn.innerHTML = '<span class="material-icons" style="font-size:18px;vertical-align:middle;">expand_less</span> Show Less';
+      } else {
+        container.style.display = 'none';
+        btn.innerHTML = '<span class="material-icons" style="font-size:18px;vertical-align:middle;">expand_more</span> Show More Reports';
+      }
+    }
+
     // ========== PROFIT & LOSS REPORT ==========
     function updatePnlFilterInputs() {
       var type = document.getElementById('pnlFilterType').value;
@@ -5690,36 +5902,47 @@
         var monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         var expCols = ['Grocery','Electricity','Cylinder','Salary','Maintenance','Fuel','Laundry','Recharges','Garbage','Deco Items','Staff Meal','Bakery','Housekeeping','Butchery'];
 
+        // Color palette for column groups
+        var occBg = '#eff6ff';      // light blue tint for occupancy
+        var occHdrBg = '#1e3a5f';   // dark blue header
+        var incBg = '#ecfdf5';      // light green tint for income
+        var incHdrBg = '#14532d';   // dark green header
+        var expBg = '#fef2f2';      // light red tint for expenses
+        var expHdrBg = '#7f1d1d';   // dark red header
+        var totRowOcc = '#dbeafe';  var totRowInc = '#d1fae5';  var totRowExp = '#fee2e2';
+
         // Build table
-        var html = '<table class="report-table" style="font-size:12px;white-space:nowrap;">';
+        var html = '<table class="report-table" style="font-size:12px;white-space:nowrap;border-collapse:collapse;">';
 
         // Header row 1 - group headers
-        html += '<thead><tr style="background:#1e293b;color:#fff;">' +
-          '<th rowspan="2" style="position:sticky;left:0;background:#1e293b;z-index:2;padding:8px 6px;">Sr</th>' +
-          '<th rowspan="2" style="position:sticky;left:32px;background:#1e293b;z-index:2;padding:8px 6px;">Month</th>' +
-          '<th colspan="4" style="text-align:center;border-bottom:2px solid #60a5fa;padding:8px 6px;color:#93c5fd;">OCCUPANCY</th>' +
-          '<th colspan="4" style="text-align:center;border-bottom:2px solid #34d399;padding:8px 6px;color:#6ee7b7;">INCOME</th>' +
-          '<th colspan="' + expCols.length + '" style="text-align:center;border-bottom:2px solid #f87171;padding:8px 6px;color:#fca5a5;">EXPENSES</th>' +
-          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#fca5a5;">Total Exp</th>' +
-          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#fdba74;">Lease</th>' +
-          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#f87171;">Grand Exp</th>' +
-          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#fbbf24;">P&L</th>' +
-          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#7dd3fc;">ARR</th>' +
-          '<th rowspan="2" style="text-align:right;padding:8px 6px;color:#c4b5fd;">Meal/Person</th>' +
+        html += '<thead><tr>' +
+          '<th rowspan="2" style="position:sticky;left:0;background:#1e293b;z-index:2;padding:8px 6px;color:#fff;">Sr</th>' +
+          '<th rowspan="2" style="position:sticky;left:32px;background:#1e293b;z-index:2;padding:8px 6px;color:#fff;">Month</th>' +
+          '<th colspan="4" style="text-align:center;background:' + occHdrBg + ';color:#93c5fd;padding:8px 6px;border-bottom:2px solid #60a5fa;">OCCUPANCY</th>' +
+          '<th colspan="7" style="text-align:center;background:' + incHdrBg + ';color:#6ee7b7;padding:8px 6px;border-bottom:2px solid #34d399;">REVENUE</th>' +
+          '<th colspan="' + expCols.length + '" style="text-align:center;background:' + expHdrBg + ';color:#fca5a5;padding:8px 6px;border-bottom:2px solid #f87171;">EXPENSES</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;background:' + expHdrBg + ';color:#fca5a5;">Total Exp</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;background:#78350f;color:#fdba74;">Lease</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;background:#7f1d1d;color:#f87171;">Grand Exp</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;background:#1e293b;color:#fbbf24;">P&L</th>' +
+          '<th rowspan="2" style="text-align:right;padding:8px 6px;background:#1e293b;color:#7dd3fc;">ARR</th>' +
           '</tr>';
 
         // Header row 2 - sub headers
-        html += '<tr style="background:#334155;color:#e2e8f0;font-size:11px;">' +
-          '<th style="text-align:right;padding:6px 4px;">Rooms</th>' +
-          '<th style="text-align:right;padding:6px 4px;">Occ</th>' +
-          '<th style="text-align:right;padding:6px 4px;">Vacant</th>' +
-          '<th style="text-align:right;padding:6px 4px;">Occ%</th>' +
-          '<th style="text-align:right;padding:6px 4px;">Room Sale</th>' +
-          '<th style="text-align:right;padding:6px 4px;">KOT</th>' +
-          '<th style="text-align:right;padding:6px 4px;">Other</th>' +
-          '<th style="text-align:right;padding:6px 4px;font-weight:700;">Total Inc</th>';
+        html += '<tr>' +
+          '<th style="text-align:right;padding:6px 4px;background:#1e3a5f;color:#bfdbfe;">Rooms</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#1e3a5f;color:#bfdbfe;">Occ</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#1e3a5f;color:#bfdbfe;">Vacant</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#1e3a5f;color:#bfdbfe;">Occ%</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#bbf7d0;">Room Sale</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#bbf7d0;">KOT</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#bbf7d0;">Add-On</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#bbf7d0;">Cash</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#e9d5ff;">Card</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#93c5fd;">Bank SBI</th>' +
+          '<th style="text-align:right;padding:6px 4px;background:#14532d;color:#fef9c3;font-weight:700;">Total Revenue</th>';
         for (var ei = 0; ei < expCols.length; ei++) {
-          html += '<th style="text-align:right;padding:6px 4px;">' + expCols[ei] + '</th>';
+          html += '<th style="text-align:right;padding:6px 4px;background:#7f1d1d;color:#fecaca;">' + expCols[ei] + '</th>';
         }
         html += '</tr></thead>';
 
@@ -5727,9 +5950,9 @@
         html += '<tbody>';
         var totals = {
           totalRooms:0, occupancy:0, vacant:0,
-          roomSale:0, kotIncome:0, otherIncome:0, totalIncome:0,
-          totalExpenses:0, lease:0, grandTotalExpense:0, profitLoss:0,
-          totalPaxNights:0
+          roomSale:0, kotIncome:0, addOnIncome:0, totalIncome:0,
+          totalIncomeCash:0, totalIncomeCard:0, totalIncomeBank:0,
+          totalExpenses:0, lease:0, grandTotalExpense:0, profitLoss:0
         };
         var expTotals = {};
         for (var ti = 0; ti < expCols.length; ti++) expTotals[expCols[ti]] = 0;
@@ -5744,40 +5967,48 @@
           totals.vacant += r.vacant;
           totals.roomSale += r.roomSale;
           totals.kotIncome += r.kotIncome;
-          totals.otherIncome += r.otherIncome;
+          totals.addOnIncome += (r.addOnIncome || 0);
           totals.totalIncome += r.totalIncome;
+          totals.totalIncomeCash += (r.totalIncomeCash || 0);
+          totals.totalIncomeCard += (r.totalIncomeCard || 0);
+          totals.totalIncomeBank += (r.totalIncomeBank || 0);
           totals.totalExpenses += r.totalExpenses;
           totals.lease += r.lease;
           totals.grandTotalExpense += r.grandTotalExpense;
           totals.profitLoss += r.profitLoss;
-          totals.totalPaxNights += r.totalPaxNights;
 
           var plColor = r.profitLoss >= 0 ? '#0d7a54' : '#c53030';
+          var occPctColor = r.occupancyPct >= 70 ? '#0d7a54' : r.occupancyPct >= 40 ? '#b45309' : '#c53030';
 
           html += '<tr>' +
             '<td style="position:sticky;left:0;background:#fff;z-index:1;font-weight:600;">' + (i+1) + '</td>' +
             '<td style="position:sticky;left:32px;background:#fff;z-index:1;font-weight:600;">' + mLabel + '</td>' +
-            '<td class="amount" style="text-align:right">' + r.totalRooms + '</td>' +
-            '<td class="amount" style="text-align:right">' + r.occupancy + '</td>' +
-            '<td class="amount" style="text-align:right">' + r.vacant + '</td>' +
-            '<td class="amount" style="text-align:right;font-weight:600;color:' + (r.occupancyPct >= 70 ? '#0d7a54' : r.occupancyPct >= 40 ? '#b45309' : '#c53030') + ';">' + r.occupancyPct + '%</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(r.roomSale) + '</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(r.kotIncome) + '</td>' +
-            '<td class="amount" style="text-align:right">' + formatCurrency(r.otherIncome) + '</td>' +
-            '<td class="amount" style="text-align:right;font-weight:700;color:#0d7a54;">' + formatCurrency(r.totalIncome) + '</td>';
+            // OCCUPANCY cells (blue tint)
+            '<td class="amount" style="text-align:right;background:' + occBg + ';">' + r.totalRooms + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + occBg + ';">' + r.occupancy + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + occBg + ';">' + r.vacant + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + occBg + ';font-weight:600;color:' + occPctColor + ';">' + r.occupancyPct + '%</td>' +
+            // INCOME cells (green tint)
+            '<td class="amount" style="text-align:right;background:' + incBg + ';">' + formatCurrency(r.roomSale) + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + incBg + ';">' + formatCurrency(r.kotIncome) + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + incBg + ';">' + formatCurrency(r.addOnIncome || 0) + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + incBg + ';color:#059669;">' + formatCurrency(r.totalIncomeCash || 0) + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + incBg + ';color:#7c3aed;">' + formatCurrency(r.totalIncomeCard || 0) + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + incBg + ';color:#2563eb;">' + formatCurrency(r.totalIncomeBank || 0) + '</td>' +
+            '<td class="amount" style="text-align:right;background:#d1fae5;font-weight:700;color:#065f46;">' + formatCurrency(r.totalIncome) + '</td>';
 
+          // EXPENSE cells (red tint)
           for (var ej = 0; ej < expCols.length; ej++) {
             var expVal = (r.expenses && r.expenses[expCols[ej]]) || 0;
             expTotals[expCols[ej]] += expVal;
-            html += '<td class="amount" style="text-align:right">' + (expVal ? formatCurrency(expVal) : '-') + '</td>';
+            html += '<td class="amount" style="text-align:right;background:' + expBg + ';">' + (expVal ? formatCurrency(expVal) : '-') + '</td>';
           }
 
-          html += '<td class="amount" style="text-align:right;font-weight:600;color:#c53030;">' + formatCurrency(r.totalExpenses) + '</td>' +
-            '<td class="amount" style="text-align:right;color:#b45309;">' + formatCurrency(r.lease) + '</td>' +
-            '<td class="amount" style="text-align:right;font-weight:600;color:#c53030;">' + formatCurrency(r.grandTotalExpense) + '</td>' +
+          html += '<td class="amount" style="text-align:right;background:' + expBg + ';font-weight:600;color:#c53030;">' + formatCurrency(r.totalExpenses) + '</td>' +
+            '<td class="amount" style="text-align:right;background:#fef3c7;color:#92400e;">' + formatCurrency(r.lease) + '</td>' +
+            '<td class="amount" style="text-align:right;background:' + expBg + ';font-weight:600;color:#c53030;">' + formatCurrency(r.grandTotalExpense) + '</td>' +
             '<td class="amount" style="text-align:right;font-weight:700;color:' + plColor + ';">' + formatCurrency(r.profitLoss) + '</td>' +
             '<td class="amount" style="text-align:right;color:#4338ca;">' + formatCurrency(r.arr) + '</td>' +
-            '<td class="amount" style="text-align:right">' + (r.perPersonMealCost ? formatCurrency(r.perPersonMealCost) : '-') + '</td>' +
             '</tr>';
         }
 
@@ -5785,33 +6016,47 @@
         var tPlColor = totals.profitLoss >= 0 ? '#0d7a54' : '#c53030';
         var tOccPct = totals.totalRooms > 0 ? Math.round((totals.occupancy / totals.totalRooms) * 100) : 0;
         var tArr = totals.occupancy > 0 ? Math.round(totals.roomSale / totals.occupancy) : 0;
-        var tMeal = totals.totalPaxNights > 0 ? Math.round((expTotals['Grocery'] || 0) / totals.totalPaxNights) : 0;
 
-        html += '<tr class="total-row" style="background:#f1f5f9;font-weight:700;border-top:2px solid #334155;">' +
-          '<td style="position:sticky;left:0;background:#f1f5f9;z-index:1;"></td>' +
-          '<td style="position:sticky;left:32px;background:#f1f5f9;z-index:1;font-size:13px;">TOTAL</td>' +
-          '<td class="amount" style="text-align:right">' + totals.totalRooms + '</td>' +
-          '<td class="amount" style="text-align:right">' + totals.occupancy + '</td>' +
-          '<td class="amount" style="text-align:right">' + totals.vacant + '</td>' +
-          '<td class="amount" style="text-align:right">' + tOccPct + '%</td>' +
-          '<td class="amount" style="text-align:right">' + formatCurrency(totals.roomSale) + '</td>' +
-          '<td class="amount" style="text-align:right">' + formatCurrency(totals.kotIncome) + '</td>' +
-          '<td class="amount" style="text-align:right">' + formatCurrency(totals.otherIncome) + '</td>' +
-          '<td class="amount" style="text-align:right;color:#0d7a54;">' + formatCurrency(totals.totalIncome) + '</td>';
+        html += '<tr style="font-weight:700;border-top:3px solid #334155;">' +
+          '<td style="position:sticky;left:0;background:#e2e8f0;z-index:1;"></td>' +
+          '<td style="position:sticky;left:32px;background:#e2e8f0;z-index:1;font-size:13px;">TOTAL</td>' +
+          // Occupancy totals
+          '<td class="amount" style="text-align:right;background:' + totRowOcc + ';">' + totals.totalRooms + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowOcc + ';">' + totals.occupancy + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowOcc + ';">' + totals.vacant + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowOcc + ';">' + tOccPct + '%</td>' +
+          // Income totals
+          '<td class="amount" style="text-align:right;background:' + totRowInc + ';">' + formatCurrency(totals.roomSale) + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowInc + ';">' + formatCurrency(totals.kotIncome) + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowInc + ';">' + formatCurrency(totals.addOnIncome) + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowInc + ';color:#059669;">' + formatCurrency(totals.totalIncomeCash) + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowInc + ';color:#7c3aed;">' + formatCurrency(totals.totalIncomeCard) + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowInc + ';color:#2563eb;">' + formatCurrency(totals.totalIncomeBank) + '</td>' +
+          '<td class="amount" style="text-align:right;background:#a7f3d0;color:#065f46;">' + formatCurrency(totals.totalIncome) + '</td>';
 
+        // Expense totals
         for (var ek = 0; ek < expCols.length; ek++) {
-          html += '<td class="amount" style="text-align:right">' + formatCurrency(expTotals[expCols[ek]]) + '</td>';
+          html += '<td class="amount" style="text-align:right;background:' + totRowExp + ';">' + formatCurrency(expTotals[expCols[ek]]) + '</td>';
         }
 
-        html += '<td class="amount" style="text-align:right;color:#c53030;">' + formatCurrency(totals.totalExpenses) + '</td>' +
-          '<td class="amount" style="text-align:right;color:#b45309;">' + formatCurrency(totals.lease) + '</td>' +
-          '<td class="amount" style="text-align:right;color:#c53030;">' + formatCurrency(totals.grandTotalExpense) + '</td>' +
+        html += '<td class="amount" style="text-align:right;background:' + totRowExp + ';color:#c53030;">' + formatCurrency(totals.totalExpenses) + '</td>' +
+          '<td class="amount" style="text-align:right;background:#fde68a;color:#92400e;">' + formatCurrency(totals.lease) + '</td>' +
+          '<td class="amount" style="text-align:right;background:' + totRowExp + ';color:#c53030;">' + formatCurrency(totals.grandTotalExpense) + '</td>' +
           '<td class="amount" style="text-align:right;color:' + tPlColor + ';">' + formatCurrency(totals.profitLoss) + '</td>' +
           '<td class="amount" style="text-align:right;color:#4338ca;">' + formatCurrency(tArr) + '</td>' +
-          '<td class="amount" style="text-align:right">' + (tMeal ? formatCurrency(tMeal) : '-') + '</td>' +
           '</tr>';
 
         html += '</tbody></table>';
+
+        // ARR Card - big font below table
+        html += '<div class="arr-card">' +
+          '<div class="arr-label">Average Room Rate (ARR)</div>' +
+          '<div class="arr-value">' + formatCurrency(tArr) + '</div>' +
+          '<div class="arr-detail">Total Room Sale: ' + formatCurrency(totals.roomSale) +
+          ' &nbsp;|&nbsp; Occupied Nights: ' + totals.occupancy +
+          ' &nbsp;|&nbsp; Occupancy: ' + tOccPct + '%</div>' +
+          '</div>';
+
         container.innerHTML = html;
       } catch (err) {
         container.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error loading P&L report: ' + (err.message || err) + '</p>';
@@ -6059,145 +6304,122 @@
       }
     }
 
-    function generateBill(id) {
-      var b = bookings.find(function(bk) { return bk.id === id; });
-      if (!b) return;
-
-      var invoiceNo = getNextInvoiceNo();
-      var nights = calculateNights(b.checkIn, b.checkOut);
-      var rooms = parseInt(b.noOfRooms) || 1;
-      var totalAmount = parseFloat(b.totalAmount) || 0;
-
-      // GST 5%
-      var baseAmount = Math.round(totalAmount / 1.05 * 100) / 100;
-      var cgst = Math.round((totalAmount - baseAmount) / 2 * 100) / 100;
-      var sgst = cgst;
-      var gstTotal = cgst + sgst;
-
-      var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
-      var balanceDue = totalAmount - totalReceived;
-
-      var billHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-        '<title>Invoice ' + invoiceNo + '</title>' +
-        '<style>' +
-        '* { margin:0; padding:0; box-sizing:border-box; }' +
-        'body { font-family: Arial, sans-serif; color: #1c2038; padding: 0; }' +
-        '.invoice { max-width: 800px; margin: 0 auto; padding: 40px; }' +
-        '.inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e3a5f; padding-bottom: 20px; margin-bottom: 24px; }' +
-        '.inv-company h1 { font-size: 24px; color: #1e3a5f; margin-bottom: 4px; }' +
-        '.inv-company p { font-size: 12px; color: #4b5563; line-height: 1.6; }' +
-        '.inv-meta { text-align: right; }' +
-        '.inv-meta h2 { font-size: 28px; color: #1e3a5f; margin-bottom: 8px; }' +
-        '.inv-meta p { font-size: 13px; color: #4b5563; line-height: 1.6; }' +
-        '.inv-meta strong { color: #1f2937; }' +
-        '.inv-section { margin-bottom: 24px; }' +
-        '.inv-section h3 { font-size: 14px; color: #1e3a5f; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }' +
-        '.inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }' +
-        '.inv-grid .label { font-size: 12px; color: #6b7280; }' +
-        '.inv-grid .val { font-size: 14px; font-weight: 600; color: #1f2937; }' +
-        'table { width: 100%; border-collapse: collapse; margin-top: 12px; }' +
-        'th { background: #1e3a5f; color: white; padding: 10px 14px; text-align: left; font-size: 12px; text-transform: uppercase; }' +
-        'td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }' +
-        'tr:nth-child(even) { background: #f9fafb; }' +
-        '.text-right { text-align: right; }' +
-        '.totals { margin-top: 20px; display: flex; justify-content: flex-end; }' +
-        '.totals table { width: 320px; }' +
-        '.totals td { font-size: 13px; padding: 8px 14px; }' +
-        '.totals .grand { background: #1e3a5f; color: white; font-weight: 700; font-size: 15px; }' +
-        '.inv-footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px; display: flex; justify-content: space-between; }' +
-        '.inv-footer .col { width: 45%; }' +
-        '.inv-footer h4 { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }' +
-        '.inv-footer p { font-size: 12px; color: #4b5563; line-height: 1.5; }' +
-        '.sign-line { margin-top: 60px; border-top: 1px solid #1c2038; width: 200px; padding-top: 6px; font-size: 12px; color: #6b7280; }' +
-        '@media print { body { padding: 0; } .invoice { padding: 20px; } .no-print { display: none !important; } }' +
-        '</style></head><body>' +
-        '<div class="invoice">' +
-
-        // Print button
-        '<div class="no-print" style="text-align:right;margin-bottom:20px;">' +
-        '<button onclick="window.print()" style="padding:10px 24px;background:#1e3a5f;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">Print Invoice</button>' +
-        '</div>' +
-
-        // Header
-        '<div class="inv-header">' +
-        '<div class="inv-company">' +
-        '<h1>The Neelkanth Grand</h1>' +
-        '<p><strong>AKS Hospitality</strong><br>' +
-        'Neelkanth Grand, Naggar Road, Manali,<br>Himachal Pradesh<br>' +
-        'Contact: 8922032843 | 9838888878<br>' +
-        'Sales Office: 912A, 9th Floor, Bhutani Alphatum,<br>Sector 90, Noida<br>' +
-        'GSTIN: 02ACAFA1060C1ZI</p>' +
-        '</div>' +
-        '<div class="inv-meta">' +
-        '<h2>INVOICE</h2>' +
-        '<p>Invoice No: <strong>' + invoiceNo + '</strong><br>' +
-        'Date: <strong>' + formatFullDate(getToday()) + '</strong><br>' +
-        'Booking ID: <strong>' + escapeHtml(b.id) + '</strong></p>' +
-        '</div>' +
-        '</div>' +
-
-        // Guest Details
-        '<div class="inv-section">' +
-        '<h3>Guest Details</h3>' +
-        '<div class="inv-grid">' +
-        '<div><div class="label">Guest Name</div><div class="val">' + escapeHtml(b.guestName) + '</div></div>' +
-        '<div><div class="label">Phone</div><div class="val">' + escapeHtml(b.phone || '-') + '</div></div>' +
-        '<div><div class="label">Pax</div><div class="val">' + (b.pax || 1) + '</div></div>' +
-        '<div><div class="label">Room(s)</div><div class="val">' + escapeHtml(b.roomNo) + (b.roomCategory ? ' (' + escapeHtml(b.roomCategory) + ')' : '') + '</div></div>' +
-        '<div><div class="label">Check-in</div><div class="val">' + formatFullDate(b.checkIn) + '</div></div>' +
-        '<div><div class="label">Check-out</div><div class="val">' + formatFullDate(b.checkOut) + '</div></div>' +
-        '<div><div class="label">Nights</div><div class="val">' + nights + '</div></div>' +
-        '<div><div class="label">Plan</div><div class="val">' + escapeHtml(b.mealPlan || '-') + '</div></div>' +
-        '</div>' +
-        '</div>' +
-
-        // Charges Table
-        '<div class="inv-section">' +
-        '<h3>Charges</h3>' +
-        '<table><thead><tr>' +
-        '<th>Description</th><th class="text-right">Nights</th><th class="text-right">Rooms</th><th class="text-right">Amount</th>' +
-        '</tr></thead><tbody>' +
-        '<tr><td>Room Charges' + (b.roomCategory ? ' (' + escapeHtml(b.roomCategory) + ')' : '') + '</td>' +
-        '<td class="text-right">' + nights + '</td>' +
-        '<td class="text-right">' + rooms + '</td>' +
-        '<td class="text-right">' + formatCurrency(baseAmount) + '</td></tr>' +
-        (b.complimentary ? '<tr><td>Add-On: ' + escapeHtml(b.complimentary) + '</td><td></td><td></td><td class="text-right">-</td></tr>' : '') +
-        (b.kotAmount ? '<tr><td>KOT Charges</td><td></td><td></td><td class="text-right">' + formatCurrency(b.kotAmount) + '</td></tr>' : '') +
-        (b.addOns && b.addOns.length > 0 ? b.addOns.map(function(ao) { return '<tr><td>Add-On: ' + escapeHtml(ao.type) + '</td><td></td><td></td><td class="text-right">' + formatCurrency(ao.amount) + '</td></tr>'; }).join('') : '') +
-        '</tbody></table>' +
-        '</div>' +
-
-        // Totals
-        '<div class="totals"><table>' +
-        '<tr><td>Subtotal</td><td class="text-right">' + formatCurrency(baseAmount) + '</td></tr>' +
-        '<tr><td>CGST @ 2.5%</td><td class="text-right">' + formatCurrency(cgst) + '</td></tr>' +
-        '<tr><td>SGST @ 2.5%</td><td class="text-right">' + formatCurrency(sgst) + '</td></tr>' +
-        '<tr class="grand"><td>Grand Total (incl. GST 5%)</td><td class="text-right">' + formatCurrency(totalAmount) + '</td></tr>' +
-        '<tr><td>Amount Received</td><td class="text-right" style="color:#10b981;font-weight:600">' + formatCurrency(totalReceived) + '</td></tr>' +
-        (balanceDue > 0 ? '<tr><td><strong>Balance Due</strong></td><td class="text-right" style="color:#ef4444;font-weight:700">' + formatCurrency(balanceDue) + '</td></tr>' : '') +
-        '</table></div>' +
-
-        // Footer
-        '<div class="inv-footer">' +
-        '<div class="col">' +
-        '<h4>Payment Info</h4>' +
-        '<p>Payment Type: ' + escapeHtml(b.paymentType) + '<br>' +
-        'Mode: ' + escapeHtml(b.paymentMode || '-') + '<br>' +
-        'Source: ' + escapeHtml(b.source) + (b.sourceName ? ' (' + escapeHtml(b.sourceName) + ')' : '') + '</p>' +
-        '</div>' +
-        '<div class="col" style="text-align:right">' +
-        '<div class="sign-line">Authorized Signatory<br><strong>AKS Hospitality</strong></div>' +
-        '</div>' +
-        '</div>' +
-
-        '<p style="text-align:center;margin-top:30px;font-size:11px;color:#9ca3af;">Thank you for staying with us! | The Neelkanth Grand | AKS Hospitality</p>' +
-
-        '</div></body></html>';
-
-      // Open in new window for printing
-      var billWindow = window.open('', '_blank', 'width=900,height=700');
-      billWindow.document.write(billHtml);
-      billWindow.document.close();
+    async function generateBill(id) {
+      try {
+        showToast('Generating invoice...', 'success');
+        var resp = await fetch(API_BASE + '/bookings/' + id + '/invoice', {
+          headers: authToken ? { 'Authorization': 'Bearer ' + authToken } : {}
+        });
+        if (!resp.ok) throw new Error('Failed to generate invoice');
+        var billHtml = await resp.text();
+        var billWindow = window.open('', '_blank', 'width=900,height=700');
+        billWindow.document.write(billHtml);
+        billWindow.document.close();
+      } catch(e) {
+        // Fallback to local generation if API fails
+        var b = bookings.find(function(bk) { return bk.id === id; });
+        if (!b) return;
+        var invoiceNo = getNextInvoiceNo();
+        var nights = calculateNights(b.checkIn, b.checkOut);
+        var rooms = parseInt(b.noOfRooms) || 1;
+        var totalAmount = parseFloat(b.totalAmount) || 0;
+        var baseAmount = Math.round(totalAmount / 1.05 * 100) / 100;
+        var cgst = Math.round((totalAmount - baseAmount) / 2 * 100) / 100;
+        var sgst = cgst;
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var balanceDue = totalAmount - totalReceived;
+        var billHtmlLocal = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+          '<title>Invoice ' + invoiceNo + '</title>' +
+          '<style>' +
+          '* { margin:0; padding:0; box-sizing:border-box; }' +
+          'body { font-family: Arial, sans-serif; color: #1c2038; padding: 0; }' +
+          '.invoice { max-width: 800px; margin: 0 auto; padding: 40px; }' +
+          '.inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e3a5f; padding-bottom: 20px; margin-bottom: 24px; }' +
+          '.inv-company h1 { font-size: 24px; color: #1e3a5f; margin-bottom: 4px; }' +
+          '.inv-company p { font-size: 12px; color: #4b5563; line-height: 1.6; }' +
+          '.inv-meta { text-align: right; }' +
+          '.inv-meta h2 { font-size: 28px; color: #1e3a5f; margin-bottom: 8px; }' +
+          '.inv-meta p { font-size: 13px; color: #4b5563; line-height: 1.6; }' +
+          '.inv-meta strong { color: #1f2937; }' +
+          '.inv-section { margin-bottom: 24px; }' +
+          '.inv-section h3 { font-size: 14px; color: #1e3a5f; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }' +
+          '.inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }' +
+          '.inv-grid .label { font-size: 12px; color: #6b7280; }' +
+          '.inv-grid .val { font-size: 14px; font-weight: 600; color: #1f2937; }' +
+          'table { width: 100%; border-collapse: collapse; margin-top: 12px; }' +
+          'th { background: #1e3a5f; color: white; padding: 10px 14px; text-align: left; font-size: 12px; text-transform: uppercase; }' +
+          'td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }' +
+          'tr:nth-child(even) { background: #f9fafb; }' +
+          '.text-right { text-align: right; }' +
+          '.totals { margin-top: 20px; display: flex; justify-content: flex-end; }' +
+          '.totals table { width: 320px; }' +
+          '.totals td { font-size: 13px; padding: 8px 14px; }' +
+          '.totals .grand { background: #1e3a5f; color: white; font-weight: 700; font-size: 15px; }' +
+          '.inv-footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px; display: flex; justify-content: space-between; }' +
+          '.inv-footer .col { width: 45%; }' +
+          '.inv-footer h4 { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }' +
+          '.inv-footer p { font-size: 12px; color: #4b5563; line-height: 1.5; }' +
+          '.sign-line { margin-top: 60px; border-top: 1px solid #1c2038; width: 200px; padding-top: 6px; font-size: 12px; color: #6b7280; }' +
+          '@media print { body { padding: 0; } .invoice { padding: 20px; } .no-print { display: none !important; } }' +
+          '</style></head><body>' +
+          '<div class="invoice">' +
+          '<div class="no-print" style="text-align:right;margin-bottom:20px;">' +
+          '<button onclick="window.print()" style="padding:10px 24px;background:#1e3a5f;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">Print Invoice</button>' +
+          '</div>' +
+          '<div class="inv-header">' +
+          '<div class="inv-company">' +
+          '<h1>The Neelkanth Grand</h1>' +
+          '<p><strong>AKS Hospitality</strong><br>' +
+          'Neelkanth Grand, Naggar Road, Manali,<br>Himachal Pradesh<br>' +
+          'Contact: 8922032843 | 9838888878<br>' +
+          'Sales Office: 912A, 9th Floor, Bhutani Alphatum,<br>Sector 90, Noida<br>' +
+          'GSTIN: 02ACAFA1060C1ZI</p>' +
+          '</div>' +
+          '<div class="inv-meta">' +
+          '<h2>INVOICE</h2>' +
+          '<p>Invoice No: <strong>' + invoiceNo + '</strong><br>' +
+          'Date: <strong>' + formatFullDate(getToday()) + '</strong><br>' +
+          'Booking ID: <strong>' + escapeHtml(b.bookingId || b.id) + '</strong></p>' +
+          '</div>' +
+          '</div>' +
+          '<div class="inv-section"><h3>Guest Details</h3><div class="inv-grid">' +
+          '<div><div class="label">Guest Name</div><div class="val">' + escapeHtml(b.guestName) + '</div></div>' +
+          '<div><div class="label">Phone</div><div class="val">' + escapeHtml(b.phone || '-') + '</div></div>' +
+          '<div><div class="label">Pax</div><div class="val">' + (b.pax || 1) + '</div></div>' +
+          '<div><div class="label">Room(s)</div><div class="val">' + escapeHtml(b.roomNo || '-') + (b.roomCategory ? ' (' + escapeHtml(b.roomCategory) + ')' : '') + '</div></div>' +
+          '<div><div class="label">Check-in</div><div class="val">' + formatFullDate(b.checkIn) + '</div></div>' +
+          '<div><div class="label">Check-out</div><div class="val">' + formatFullDate(b.checkOut) + '</div></div>' +
+          '<div><div class="label">Nights</div><div class="val">' + nights + '</div></div>' +
+          '<div><div class="label">Plan</div><div class="val">' + escapeHtml(b.mealPlan || '-') + '</div></div>' +
+          '</div></div>' +
+          '<div class="inv-section"><h3>Charges</h3><table><thead><tr>' +
+          '<th>Description</th><th class="text-right">Nights</th><th class="text-right">Rooms</th><th class="text-right">Amount</th>' +
+          '</tr></thead><tbody>' +
+          '<tr><td>Room Charges' + (b.roomCategory ? ' (' + escapeHtml(b.roomCategory) + ')' : '') + '</td>' +
+          '<td class="text-right">' + nights + '</td><td class="text-right">' + rooms + '</td>' +
+          '<td class="text-right">' + formatCurrency(baseAmount) + '</td></tr>' +
+          (b.complimentary ? '<tr><td>Add-On: ' + escapeHtml(b.complimentary) + '</td><td></td><td></td><td class="text-right">-</td></tr>' : '') +
+          (b.kotAmount ? '<tr><td>KOT Charges</td><td></td><td></td><td class="text-right">' + formatCurrency(b.kotAmount) + '</td></tr>' : '') +
+          (b.addOns && b.addOns.length > 0 ? b.addOns.map(function(ao) { return '<tr><td>Add-On: ' + escapeHtml(ao.type) + '</td><td></td><td></td><td class="text-right">' + formatCurrency(ao.amount) + '</td></tr>'; }).join('') : '') +
+          '</tbody></table></div>' +
+          '<div class="totals"><table>' +
+          '<tr><td>Subtotal</td><td class="text-right">' + formatCurrency(baseAmount) + '</td></tr>' +
+          '<tr><td>CGST @ 2.5%</td><td class="text-right">' + formatCurrency(cgst) + '</td></tr>' +
+          '<tr><td>SGST @ 2.5%</td><td class="text-right">' + formatCurrency(sgst) + '</td></tr>' +
+          '<tr class="grand"><td>Grand Total (incl. GST 5%)</td><td class="text-right">' + formatCurrency(totalAmount) + '</td></tr>' +
+          '<tr><td>Amount Received</td><td class="text-right" style="color:#10b981;font-weight:600">' + formatCurrency(totalReceived) + '</td></tr>' +
+          (balanceDue > 0 ? '<tr><td><strong>Balance Due</strong></td><td class="text-right" style="color:#ef4444;font-weight:700">' + formatCurrency(balanceDue) + '</td></tr>' : '') +
+          '</table></div>' +
+          '<div class="inv-footer"><div class="col"><h4>Payment Info</h4>' +
+          '<p>Payment Type: ' + escapeHtml(b.paymentType) + '<br>Mode: ' + escapeHtml(b.paymentMode || '-') + '<br>' +
+          'Source: ' + escapeHtml(b.source) + (b.sourceName ? ' (' + escapeHtml(b.sourceName) + ')' : '') + '</p></div>' +
+          '<div class="col" style="text-align:right"><div class="sign-line">Authorized Signatory<br><strong>AKS Hospitality</strong></div></div></div>' +
+          '<p style="text-align:center;margin-top:30px;font-size:11px;color:#9ca3af;">Thank you for staying with us! | The Neelkanth Grand | AKS Hospitality</p>' +
+          '</div></body></html>';
+        var billWindow2 = window.open('', '_blank', 'width=900,height=700');
+        billWindow2.document.write(billHtmlLocal);
+        billWindow2.document.close();
+      }
     }
 
     // ========== DAY BOOK + SALARY DATA LAYER ==========
@@ -7020,6 +7242,187 @@
         await renderSalaryCalculation();
         showToast('FnF processed. Employee marked as Left.', 'success');
       } catch(e) { /* toast shown */ }
+    }
+
+    // ========== GUEST HISTORY (Phone Lookup) ==========
+    var _guestHistoryTimer = null;
+    var _guestHistoryExpanded = true;
+
+    function debouncedGuestHistory() {
+      clearTimeout(_guestHistoryTimer);
+      _guestHistoryTimer = setTimeout(function() {
+        searchGuestHistory();
+      }, 600);
+    }
+
+    async function searchGuestHistory() {
+      var phone = (document.getElementById('guestPhone').value || '').trim();
+      var badge = document.getElementById('guestHistoryBadge');
+      var panel = document.getElementById('guestHistoryPanel');
+      var list = document.getElementById('guestHistoryList');
+      var badgeText = document.getElementById('repeatGuestBadge');
+
+      if (!phone || phone.length < 4) {
+        badge.style.display = 'none';
+        panel.style.display = 'none';
+        return;
+      }
+
+      try {
+        var history = await apiFetch('/bookings/guest-history/' + encodeURIComponent(phone));
+        if (!history || history.length === 0) {
+          badge.style.display = 'none';
+          panel.style.display = 'none';
+          return;
+        }
+
+        // Show repeat guest badge
+        badge.style.display = 'block';
+        badgeText.textContent = 'Repeat Guest (' + history.length + ' visit' + (history.length > 1 ? 's' : '') + ')';
+
+        // Build previous stays list
+        var html = '';
+        history.forEach(function(b) {
+          html += '<div style="padding:4px 0;border-bottom:1px solid #e0e7ff;display:flex;justify-content:space-between;align-items:center">' +
+            '<div>' +
+            '<strong>' + escapeHtml(b.guestName) + '</strong>' +
+            ' <span style="color:#6b7280">' + formatDate(b.checkIn) + ' - ' + formatDate(b.checkOut) + '</span>' +
+            '</div>' +
+            '<div style="text-align:right">' +
+            '<span style="color:#1e3a5f;font-weight:600">' + formatCurrency(b.totalAmount) + '</span>' +
+            (b.roomNo ? ' <span style="color:#6b7280">Rm ' + escapeHtml(b.roomNo) + '</span>' : '') +
+            '</div>' +
+            '</div>';
+        });
+        list.innerHTML = html;
+        panel.style.display = 'block';
+        _guestHistoryExpanded = true;
+        document.getElementById('guestHistoryToggle').innerHTML = '&#9660;';
+        list.style.display = 'block';
+
+        // Auto-fill guest name if empty
+        var nameField = document.getElementById('guestName');
+        if (!nameField.value && history.length > 0) {
+          nameField.value = history[0].guestName;
+        }
+      } catch(e) {
+        badge.style.display = 'none';
+        panel.style.display = 'none';
+      }
+    }
+
+    function toggleGuestHistory() {
+      var list = document.getElementById('guestHistoryList');
+      var toggle = document.getElementById('guestHistoryToggle');
+      _guestHistoryExpanded = !_guestHistoryExpanded;
+      if (_guestHistoryExpanded) {
+        list.style.display = 'block';
+        toggle.innerHTML = '&#9660;';
+      } else {
+        list.style.display = 'none';
+        toggle.innerHTML = '&#9654;';
+      }
+    }
+
+    // ========== ROOM DASHBOARD ==========
+    var ROOM_FLOORS = {
+      'Floor 1': ['101','102','103','104','105'],
+      'Floor 2': ['201','202','203','204','205','206'],
+      'Floor 3': ['301','302','303','304','305','306'],
+      'Floor 4': ['401','402','403']
+    };
+
+    function renderRoomDashboard() {
+      var today = getToday();
+      var container = document.getElementById('roomDashboardGrid');
+      if (!container) return;
+
+      // Build room status map
+      var roomStatus = {}; // room -> { status: 'vacant'|'occupied'|'checkout', guest: '', checkOut: '' }
+      ALL_ROOMS.forEach(function(r) {
+        roomStatus[r] = { status: 'vacant', guest: '', checkOut: '', bookingId: '' };
+      });
+
+      bookings.forEach(function(b) {
+        if (b.status === 'CANCELLED') return;
+        if (!b.roomNo) return;
+        var bRooms = b.roomNo.split(',').map(function(r) { return r.trim(); });
+        bRooms.forEach(function(room) {
+          if (!roomStatus[room]) return;
+
+          // Check if guest is currently staying (in-house)
+          var isInHouse = (b.checkedIn && b.checkIn <= today && b.checkOut >= today && !b.checkedOut) ||
+                          (!b.checkedIn && b.checkIn <= today && b.checkOut > today && !b.checkedOut);
+
+          // Is this a checkout today room?
+          var isCheckoutToday = b.checkOut === today && !b.checkedOut;
+
+          if (isCheckoutToday) {
+            roomStatus[room] = { status: 'checkout', guest: b.guestName, checkOut: b.checkOut, bookingId: b.bookingId || b.id };
+          } else if (isInHouse) {
+            roomStatus[room] = { status: 'occupied', guest: b.guestName, checkOut: b.checkOut, bookingId: b.bookingId || b.id };
+          }
+        });
+      });
+
+      var html = '';
+      var floors = Object.keys(ROOM_FLOORS);
+      floors.forEach(function(floor) {
+        html += '<div style="margin-bottom:24px">' +
+          '<h3 style="color:#1e3a5f;margin-bottom:12px;font-size:16px">' + floor + '</h3>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">';
+
+        ROOM_FLOORS[floor].forEach(function(room) {
+          var rs = roomStatus[room];
+          var cat = ROOM_TYPE[room] || '';
+          var bgColor = '#d1fae5'; // green/vacant
+          var borderColor = '#10b981';
+          var statusLabel = 'Vacant';
+
+          if (rs.status === 'occupied') {
+            bgColor = '#fee2e2';
+            borderColor = '#ef4444';
+            statusLabel = 'Occupied';
+          } else if (rs.status === 'checkout') {
+            bgColor = '#fef3c7';
+            borderColor = '#f59e0b';
+            statusLabel = 'Checkout Today';
+          }
+
+          html += '<div style="background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:12px;padding:14px;min-height:100px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+            '<span style="font-size:20px;font-weight:700;color:#1c2038">' + room + '</span>' +
+            '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + borderColor + ';color:white;font-weight:600">' + statusLabel + '</span>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">' + escapeHtml(cat) + '</div>';
+
+          if (rs.status !== 'vacant') {
+            html += '<div style="font-size:12px;font-weight:600;color:#1c2038;margin-top:4px">' + escapeHtml(rs.guest) + '</div>' +
+              '<div style="font-size:11px;color:#6b7280">C/O: ' + formatDate(rs.checkOut) + '</div>';
+          }
+
+          html += '</div>';
+        });
+
+        html += '</div></div>';
+      });
+
+      // Summary counts
+      var vacantCount = 0, occupiedCount = 0, checkoutCount = 0;
+      ALL_ROOMS.forEach(function(r) {
+        if (roomStatus[r].status === 'vacant') vacantCount++;
+        else if (roomStatus[r].status === 'occupied') occupiedCount++;
+        else checkoutCount++;
+      });
+
+      var summaryHtml = '<div style="display:flex;gap:16px;margin-bottom:20px">' +
+        '<div style="background:#d1fae5;padding:12px 20px;border-radius:10px;flex:1;text-align:center"><div style="font-size:24px;font-weight:700;color:#10b981">' + vacantCount + '</div><div style="font-size:12px;color:#6b7280">Vacant</div></div>' +
+        '<div style="background:#fee2e2;padding:12px 20px;border-radius:10px;flex:1;text-align:center"><div style="font-size:24px;font-weight:700;color:#ef4444">' + occupiedCount + '</div><div style="font-size:12px;color:#6b7280">Occupied</div></div>' +
+        '<div style="background:#fef3c7;padding:12px 20px;border-radius:10px;flex:1;text-align:center"><div style="font-size:24px;font-weight:700;color:#f59e0b">' + checkoutCount + '</div><div style="font-size:12px;color:#6b7280">Checkout Today</div></div>' +
+        '<div style="background:#e0e7ff;padding:12px 20px;border-radius:10px;flex:1;text-align:center"><div style="font-size:24px;font-weight:700;color:#1e3a5f">' + ALL_ROOMS.length + '</div><div style="font-size:12px;color:#6b7280">Total Rooms</div></div>' +
+        '</div>';
+
+      container.innerHTML = summaryHtml + html;
     }
 
   </script>

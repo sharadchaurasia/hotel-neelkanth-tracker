@@ -84,6 +84,9 @@ export class Booking {
   @Column({ name: 'kot_amount', type: 'decimal', precision: 12, scale: 2, default: 0 })
   kotAmount: number;
 
+  @Column({ name: 'add_on_amount', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  addOnAmount: number;
+
   @Column({ name: 'checked_in', default: false })
   checkedIn: boolean;
 

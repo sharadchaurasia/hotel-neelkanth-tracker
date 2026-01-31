@@ -2,13 +2,16 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Booking } from './booking.entity';
 import { BookingAddon } from './booking-addon.entity';
+import { InvoiceCounter } from './invoice-counter.entity';
+import { DaybookEntry } from '../daybook/daybook-entry.entity';
 import { BookingsService } from './bookings.service';
+import { InvoiceService } from './invoice.service';
 import { BookingsController } from './bookings.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Booking, BookingAddon])],
+  imports: [TypeOrmModule.forFeature([Booking, BookingAddon, InvoiceCounter, DaybookEntry])],
   controllers: [BookingsController],
-  providers: [BookingsService],
+  providers: [BookingsService, InvoiceService],
   exports: [BookingsService, TypeOrmModule],
 })
 export class BookingsModule {}

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from './booking.entity';
 import { BookingAddon } from './booking-addon.entity';
+import { DaybookEntry } from '../daybook/daybook-entry.entity';
 import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto } from './dto/create-booking.dto';
 
 @Injectable()
@@ -12,7 +13,43 @@ export class BookingsService {
     private bookingRepo: Repository<Booking>,
     @InjectRepository(BookingAddon)
     private addonRepo: Repository<BookingAddon>,
+    @InjectRepository(DaybookEntry)
+    private daybookRepo: Repository<DaybookEntry>,
   ) {}
+
+  private normalizePaymentMode(mode: string): string {
+    if (!mode || mode === 'Cash') return 'Cash';
+    if (mode === 'Card') return 'Card';
+    return 'Bank Transfer';
+  }
+
+  private async createDaybookEntry(params: {
+    date: string; category: string; incomeSource: string;
+    description: string; amount: number; paymentMode: string;
+    refBookingId: string; guestName: string;
+  }): Promise<void> {
+    if (params.amount <= 0) return;
+    const receivedIn = this.normalizePaymentMode(params.paymentMode);
+    // Check duplicate
+    const existing = await this.daybookRepo.findOne({
+      where: { date: params.date, refBookingId: params.refBookingId, incomeSource: params.incomeSource },
+    });
+    if (existing) return;
+    const entry = this.daybookRepo.create({
+      date: params.date,
+      type: 'income',
+      category: params.category,
+      incomeSource: params.incomeSource,
+      description: params.description,
+      amount: params.amount,
+      paymentSource: receivedIn,
+      paymentMode: params.paymentMode || 'Cash',
+      receivedIn,
+      refBookingId: params.refBookingId,
+      guestName: params.guestName,
+    });
+    await this.daybookRepo.save(entry);
+  }
 
   private async generateBookingId(): Promise<string> {
     const result = await this.bookingRepo
@@ -76,6 +113,8 @@ export class BookingsService {
     if (pending <= 0) status = 'COLLECTED';
     else if (advanceReceived > 0) status = 'PARTIAL';
 
+    const addOnAmount = dto.addOnAmount || 0;
+
     const booking = this.bookingRepo.create({
       bookingId,
       guestName: dto.guestName,
@@ -91,6 +130,7 @@ export class BookingsService {
       source: dto.source || 'Walk-in',
       sourceName: (dto.source === 'OTA' || dto.source === 'Agent') ? dto.sourceName : '',
       complimentary: dto.complimentary,
+      addOnAmount,
       actualRoomRent: dto.actualRoomRent || 0,
       totalAmount: dto.totalAmount,
       paymentType: dto.paymentType || 'Postpaid',
@@ -105,11 +145,38 @@ export class BookingsService {
       checkedOut: false,
     } as Partial<Booking>);
 
-    return this.bookingRepo.save(booking) as Promise<Booking>;
+    const saved = await this.bookingRepo.save(booking) as Booking;
+
+    // Create BookingAddon record if addOnAmount > 0 and complimentary is set
+    if (addOnAmount > 0 && dto.complimentary) {
+      const addon = new BookingAddon();
+      addon.booking = saved;
+      addon.type = dto.complimentary;
+      addon.amount = addOnAmount;
+      await this.addonRepo.save(addon);
+    }
+
+    // Auto-create daybook entry for advance payment
+    if (advanceReceived > 0 && dto.paymentMode) {
+      await this.createDaybookEntry({
+        date: new Date().toISOString().split('T')[0],
+        category: 'Room Rent',
+        incomeSource: 'Room Rent (Advance)',
+        description: `Advance - ${dto.guestName}`,
+        amount: advanceReceived,
+        paymentMode: dto.paymentMode,
+        refBookingId: saved.bookingId,
+        guestName: dto.guestName,
+      });
+    }
+
+    return this.findOne(saved.id);
   }
 
   async update(id: number, dto: Partial<CreateBookingDto>, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
+
+    const newAddOnAmount = dto.addOnAmount !== undefined ? dto.addOnAmount : undefined;
 
     Object.assign(booking, {
       guestName: dto.guestName ?? booking.guestName,
@@ -125,6 +192,7 @@ export class BookingsService {
       source: dto.source ?? booking.source,
       sourceName: dto.sourceName ?? booking.sourceName,
       complimentary: dto.complimentary ?? booking.complimentary,
+      addOnAmount: newAddOnAmount !== undefined ? newAddOnAmount : booking.addOnAmount,
       actualRoomRent: dto.actualRoomRent ?? booking.actualRoomRent,
       totalAmount: dto.totalAmount ?? booking.totalAmount,
       paymentType: dto.paymentType ?? booking.paymentType,
@@ -141,7 +209,22 @@ export class BookingsService {
     else if (totalReceived > 0) booking.status = 'PARTIAL';
     else booking.status = 'PENDING';
 
-    return this.bookingRepo.save(booking);
+    const saved = await this.bookingRepo.save(booking);
+
+    // Update BookingAddon if addOnAmount changed
+    if (newAddOnAmount !== undefined) {
+      await this.addonRepo.delete({ booking: { id: saved.id } });
+      const comp = dto.complimentary ?? booking.complimentary;
+      if (newAddOnAmount > 0 && comp) {
+        const addon = new BookingAddon();
+        addon.booking = saved;
+        addon.type = comp;
+        addon.amount = newAddOnAmount;
+        await this.addonRepo.save(addon);
+      }
+    }
+
+    return this.findOne(saved.id);
   }
 
   async delete(id: number): Promise<void> {
@@ -160,7 +243,24 @@ export class BookingsService {
     const pending = Number(booking.totalAmount || 0) - totalReceived;
     booking.status = pending <= 0 ? 'COLLECTED' : 'PARTIAL';
 
-    return this.bookingRepo.save(booking);
+    const saved = await this.bookingRepo.save(booking);
+
+    // Auto-create daybook entry for collected payment
+    if (dto.amount > 0 && dto.paymentMode) {
+      const today = new Date().toISOString().split('T')[0];
+      await this.createDaybookEntry({
+        date: today,
+        category: 'Room Rent',
+        incomeSource: 'Room Rent (Collection)',
+        description: `Payment collected - ${booking.guestName}`,
+        amount: dto.amount,
+        paymentMode: dto.paymentMode,
+        refBookingId: booking.bookingId,
+        guestName: booking.guestName,
+      });
+    }
+
+    return saved;
   }
 
   async checkin(id: number, dto: CheckinDto, userName?: string): Promise<Booking> {
@@ -214,7 +314,59 @@ export class BookingsService {
       else booking.status = 'PENDING';
     }
 
-    return this.bookingRepo.save(booking);
+    const saved = await this.bookingRepo.save(booking);
+
+    // Auto-create daybook entries at checkout
+    const today = new Date().toISOString().split('T')[0];
+    const checkoutMode = dto.paymentMode || booking.balancePaymentMode || booking.paymentMode || 'Cash';
+
+    // Room rent balance entry (if balance paid at checkout)
+    if (dto.paymentMode && balance > 0) {
+      const roomRentPortion = balance - kotAmt - addOnTotal;
+      if (roomRentPortion > 0) {
+        await this.createDaybookEntry({
+          date: today,
+          category: 'Room Rent',
+          incomeSource: 'Room Rent (Balance)',
+          description: `Checkout balance - ${booking.guestName}`,
+          amount: roomRentPortion,
+          paymentMode: checkoutMode,
+          refBookingId: booking.bookingId,
+          guestName: booking.guestName,
+        });
+      }
+    }
+
+    // KOT entry
+    if (kotAmt > 0) {
+      await this.createDaybookEntry({
+        date: today,
+        category: 'KOT',
+        incomeSource: 'KOT',
+        description: `KOT - ${booking.guestName}`,
+        amount: kotAmt,
+        paymentMode: checkoutMode,
+        refBookingId: booking.bookingId,
+        guestName: booking.guestName,
+      });
+    }
+
+    // Add-on entries
+    if (addOnTotal > 0) {
+      const addonDesc = (dto.addOns || []).map(a => a.type).join(', ');
+      await this.createDaybookEntry({
+        date: today,
+        category: 'Other',
+        incomeSource: 'Add-On',
+        description: `Add-On (${addonDesc}) - ${booking.guestName}`,
+        amount: addOnTotal,
+        paymentMode: checkoutMode,
+        refBookingId: booking.bookingId,
+        guestName: booking.guestName,
+      });
+    }
+
+    return saved;
   }
 
   async cancel(id: number, userName?: string): Promise<Booking> {
@@ -231,6 +383,15 @@ export class BookingsService {
     booking.status = 'RESCHEDULED';
     booking.lastModifiedBy = userName || booking.lastModifiedBy;
     return this.bookingRepo.save(booking);
+  }
+
+  async getGuestHistory(phone: string): Promise<Booking[]> {
+    if (!phone || phone.length < 4) return [];
+    return this.bookingRepo.find({
+      where: { phone },
+      relations: ['addOns'],
+      order: { checkIn: 'DESC' },
+    });
   }
 
   async getDashboardStats(): Promise<any> {

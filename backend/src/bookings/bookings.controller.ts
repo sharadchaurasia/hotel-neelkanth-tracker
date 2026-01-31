@@ -1,12 +1,17 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { BookingsService } from './bookings.service';
+import { InvoiceService } from './invoice.service';
 import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto } from './dto/create-booking.dto';
 import { RequirePermissions, CurrentUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
 
 @Controller('api/bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly invoiceService: InvoiceService,
+  ) {}
 
   @Get('dashboard/stats')
   @RequirePermissions('dashboard', 'view')
@@ -25,6 +30,12 @@ export class BookingsController {
     @Query('viewBy') viewBy?: string,
   ) {
     return this.bookingsService.findAll({ date, status, source, paymentType, agent, viewBy });
+  }
+
+  @Get('guest-history/:phone')
+  @RequirePermissions('bookings', 'view')
+  getGuestHistory(@Param('phone') phone: string) {
+    return this.bookingsService.getGuestHistory(phone);
   }
 
   @Get(':id')
@@ -79,5 +90,13 @@ export class BookingsController {
   @RequirePermissions('bookings', 'edit')
   reschedule(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: RescheduleDto) {
     return this.bookingsService.reschedule(+id, dto, user.name);
+  }
+
+  @Get(':id/invoice')
+  @RequirePermissions('bookings', 'view')
+  async getInvoice(@Param('id') id: string, @Res() res: Response) {
+    const html = await this.invoiceService.generateInvoiceHtml(+id);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
   }
 }

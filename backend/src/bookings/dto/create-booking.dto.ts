@@ -12,6 +12,7 @@ export class CreateBookingDto {
   source?: string;
   sourceName?: string;
   complimentary?: string;
+  addOnAmount?: number;
   actualRoomRent?: number;
   totalAmount: number;
   paymentType?: string;
