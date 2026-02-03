@@ -3198,7 +3198,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeKotModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="saveKotOrder()" style="background:#c99b1a;border-color:#c99b1a;">
+          <button class="btn btn-primary" onclick="saveKotOrder()" id="kotSaveBtn" style="background:#c99b1a;border-color:#c99b1a;">
             <span class="material-icons">restaurant</span> Save KOT
           </button>
         </div>
@@ -3640,7 +3640,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeCollectModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="collectPayment()">
+        <button class="btn btn-primary" onclick="collectPayment()" id="collectBtn">
           <span class="material-icons">payments</span> Collect
         </button>
       </div>
@@ -3734,7 +3734,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeRefundModal()">Skip</button>
-        <button class="btn btn-primary" onclick="submitRefund()">
+        <button class="btn btn-primary" onclick="submitRefund()" id="refundBtn">
           <span class="material-icons">currency_rupee</span> Process Refund
         </button>
       </div>
@@ -3889,7 +3889,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="processCheckout()">
+        <button class="btn btn-primary" onclick="processCheckout()" id="checkoutBtn">
           <span class="material-icons">logout</span> Check Out
         </button>
       </div>
@@ -4194,6 +4194,19 @@
   <script>
     // ========== DOUBLE-CLICK GUARD ==========
     var _submitting = false;
+    function lockBtn(btn) {
+      if (!btn) return;
+      btn._origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.innerHTML = '<span class="material-icons" style="animation:spin 1s linear infinite;font-size:16px">sync</span> Processing...';
+    }
+    function unlockBtn(btn) {
+      if (!btn) return;
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.innerHTML = btn._origHtml || btn.innerHTML;
+    }
 
     // ========== AUTH STATE ==========
     var authToken = null;
@@ -6477,7 +6490,9 @@
     async function saveBooking() {
       if (_submitting) return;
       _submitting = true;
-      try { await _doSaveBooking(); } finally { _submitting = false; }
+      var btn = document.getElementById('saveBtn');
+      lockBtn(btn);
+      try { await _doSaveBooking(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doSaveBooking() {
       var editId = document.getElementById('editBookingId').value;
@@ -6607,7 +6622,9 @@
     async function collectPayment() {
       if (_submitting) return;
       _submitting = true;
-      try { await _doCollectPayment(); } finally { _submitting = false; }
+      var btn = document.getElementById('collectBtn');
+      lockBtn(btn);
+      try { await _doCollectPayment(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doCollectPayment() {
       var id = document.getElementById('collectBookingId').value;
@@ -6681,7 +6698,9 @@
     async function confirmCancelOrReschedule() {
       if (_submitting) return;
       _submitting = true;
-      try { await _doCancelOrReschedule(); } finally { _submitting = false; }
+      var btn = document.getElementById('cancelConfirmBtn');
+      lockBtn(btn);
+      try { await _doCancelOrReschedule(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doCancelOrReschedule() {
       var id = document.getElementById('cancelBookingId').value;
@@ -6750,7 +6769,9 @@
     async function submitRefund() {
       if (_submitting) return;
       _submitting = true;
-      try { await _doSubmitRefund(); } finally { _submitting = false; }
+      var btn = document.getElementById('refundBtn');
+      lockBtn(btn);
+      try { await _doSubmitRefund(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doSubmitRefund() {
       var backendId = document.getElementById('refundBackendId').value;
@@ -7259,7 +7280,9 @@
     async function processCheckout() {
       if (_submitting) return;
       _submitting = true;
-      try { await _doProcessCheckout(); } finally { _submitting = false; }
+      var btn = document.getElementById('checkoutBtn');
+      lockBtn(btn);
+      try { await _doProcessCheckout(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doProcessCheckout() {
       var id = document.getElementById('checkoutBookingId').value;
@@ -7386,7 +7409,9 @@
     async function saveKotOrder() {
       if (_submitting) return;
       _submitting = true;
-      try { await _doSaveKotOrder(); } finally { _submitting = false; }
+      var btn = document.getElementById('kotSaveBtn');
+      lockBtn(btn);
+      try { await _doSaveKotOrder(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doSaveKotOrder() {
       var description = document.getElementById('kotDescription').value.trim();
@@ -11163,7 +11188,7 @@
   </script>
   <script>
     (function() {
-      var APP_VERSION = 30;
+      var APP_VERSION = 31;
       var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
       if (storedVersion < APP_VERSION) {
         localStorage.setItem('app_version', APP_VERSION);
