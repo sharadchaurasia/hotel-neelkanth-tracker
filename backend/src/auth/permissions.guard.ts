@@ -23,7 +23,7 @@ export class PermissionsGuard implements CanActivate {
     const user = request.user;
     if (!user) return false;
 
-    if (user.role === 'admin') return true;
+    if (user.role === 'admin' || user.role === 'super_admin') return true;
 
     const userPerms = user.permissions?.[required.section] || [];
     if (!userPerms.includes(required.action)) {

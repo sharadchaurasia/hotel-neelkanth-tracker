@@ -59,7 +59,12 @@ export class InvoiceService {
     if (!booking) throw new NotFoundException('Booking not found');
 
     const b = booking;
-    const invoiceNo = await this.getNextInvoiceNo();
+    let invoiceNo = b.invoiceNo;
+    if (!invoiceNo) {
+      invoiceNo = await this.getNextInvoiceNo();
+      b.invoiceNo = invoiceNo;
+      await this.bookingRepo.save(b);
+    }
     const nights = this.calculateNights(b.checkIn, b.checkOut);
     const rooms = b.noOfRooms || 1;
     const totalAmount = Number(b.totalAmount) || 0;
@@ -88,9 +93,12 @@ export class InvoiceService {
       }
     }
 
-    const balanceDueRow = balanceDue > 0
-      ? `<tr><td><strong>Balance Due</strong></td><td class="text-right" style="color:#ef4444;font-weight:700">${this.formatCurrency(balanceDue)}</td></tr>`
-      : '';
+    const isAksOffice = b.status === 'COLLECTED' && balanceDue > 0 && (b.remarks || '').includes('AKS Office');
+    const balanceDueRow = isAksOffice
+      ? `<tr><td><strong>Paid via AKS Office</strong></td><td class="text-right" style="color:#996b2f;font-weight:700">${this.formatCurrency(balanceDue)}</td></tr>`
+      : balanceDue > 0
+        ? `<tr><td><strong>Balance Due</strong></td><td class="text-right" style="color:#ef4444;font-weight:700">${this.formatCurrency(balanceDue)}</td></tr>`
+        : '';
 
     const html = `<!DOCTYPE html>
 <html>

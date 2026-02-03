@@ -219,7 +219,7 @@ export class AuthService implements OnModuleInit {
   async deleteUser(id: number) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
-    if (user.role === 'admin') throw new BadRequestException('Cannot delete admin user');
+    if (user.role === 'admin' || user.role === 'super_admin') throw new BadRequestException('Cannot delete admin user');
     await this.userRepo.remove(user);
     return { success: true };
   }
@@ -233,9 +233,9 @@ export class AuthService implements OnModuleInit {
     return { success: true };
   }
 
-  // Staff users must never have bookings:delete or daybook:delete
+  // Only super_admin keeps delete permissions
   private stripProtectedPermissions(perms: Record<string, string[]>, role: string): Record<string, string[]> {
-    if (role === 'admin') return perms;
+    if (role === 'super_admin') return perms;
     const result = { ...perms };
     if (result.bookings) {
       result.bookings = result.bookings.filter(p => p !== 'delete');

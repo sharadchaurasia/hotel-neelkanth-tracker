@@ -102,8 +102,20 @@ export class Booking {
   @Column({ name: 'rescheduled_from', nullable: true })
   rescheduledFrom: string;
 
+  @Column({ name: 'invoice_no', nullable: true })
+  invoiceNo: string;
+
   @Column({ name: 'last_modified_by', nullable: true })
   lastModifiedBy: string;
+
+  @Column({ name: 'id_proof_path', type: 'varchar', nullable: true })
+  idProofFrontPath: string | null;
+
+  @Column({ name: 'id_proof_back_path', type: 'varchar', nullable: true })
+  idProofBackPath: string | null;
+
+  @Column({ name: 'payment_proof_path', type: 'varchar', nullable: true })
+  paymentProofPath: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

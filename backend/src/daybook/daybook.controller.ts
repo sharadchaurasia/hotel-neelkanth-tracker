@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, ForbiddenException } from '@nestjs/common';
 import { DaybookService } from './daybook.service';
 import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
-import { RequirePermissions } from '../auth/decorators';
+import { RequirePermissions, CurrentUser } from '../auth/decorators';
+import { User } from '../auth/entities/user.entity';
 
 @Controller('api/daybook')
 export class DaybookController {
@@ -15,14 +16,17 @@ export class DaybookController {
 
   @Post('entries')
   @RequirePermissions('daybook', 'create')
-  createEntry(@Body() dto: CreateDaybookEntryDto) {
-    return this.daybookService.createEntry(dto);
+  createEntry(@Body() dto: CreateDaybookEntryDto, @CurrentUser() user: User) {
+    return this.daybookService.createEntry(dto, user.id, user.role);
   }
 
   @Delete('entries/:id')
   @RequirePermissions('daybook', 'delete')
-  deleteEntry(@Param('id') id: string) {
-    return this.daybookService.deleteEntry(+id);
+  deleteEntry(@Param('id') id: string, @CurrentUser() user: User) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can delete daybook entries');
+    }
+    return this.daybookService.deleteEntry(+id, user.id, user.role);
   }
 
   @Get('balance')
@@ -33,8 +37,8 @@ export class DaybookController {
 
   @Put('balance')
   @RequirePermissions('daybook', 'edit')
-  setBalance(@Body() dto: SetBalanceDto) {
-    return this.daybookService.setBalance(dto);
+  setBalance(@Body() dto: SetBalanceDto, @CurrentUser() user: User) {
+    return this.daybookService.setBalance(dto, user.id, user.role);
   }
 
   @Get('closing')
@@ -45,7 +49,48 @@ export class DaybookController {
 
   @Post('auto-collect')
   @RequirePermissions('daybook', 'create')
-  autoCollect(@Query('date') date: string) {
-    return this.daybookService.autoCollect(date);
+  autoCollect(@Query('date') date: string, @CurrentUser() user: User) {
+    return this.daybookService.autoCollect(date, user.id, user.role);
+  }
+
+  // Access request endpoints
+  @Get('check-access')
+  @RequirePermissions('daybook', 'view')
+  checkAccess(@Query('date') date: string, @CurrentUser() user: User) {
+    return this.daybookService.checkAccess(user.id, user.role, date);
+  }
+
+  @Post('access-request')
+  @RequirePermissions('daybook', 'view')
+  requestAccess(@Body() body: { date: string; reason?: string }, @CurrentUser() user: User) {
+    return this.daybookService.requestAccess(user.id, user.name, body.date, body.reason);
+  }
+
+  @Get('access-requests')
+  @RequirePermissions('daybook', 'view')
+  getAccessRequests(@CurrentUser() user: User) {
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      return this.daybookService.getAllRequests();
+    }
+    return [];
+  }
+
+  @Get('pending-requests')
+  @RequirePermissions('daybook', 'view')
+  getPendingRequests(@CurrentUser() user: User) {
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      return this.daybookService.getPendingRequests();
+    }
+    return [];
+  }
+
+  @Put('access-requests/:id')
+  @RequirePermissions('daybook', 'edit')
+  respondToRequest(
+    @Param('id') id: string,
+    @Body() body: { status: 'approved' | 'denied'; adminNote?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.daybookService.respondToRequest(+id, body.status, user.id, user.name, body.adminNote);
   }
 }

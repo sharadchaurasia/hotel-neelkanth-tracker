@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public, CurrentUser } from './decorators';
@@ -101,7 +102,7 @@ export class AuthController {
     @CurrentUser() user: User,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    if (user.role !== 'admin') throw new Error('Admin only');
+    if (user.role !== 'super_admin') throw new ForbiddenException('Only super admin can delete users');
     return this.authService.deleteUser(id);
   }
 

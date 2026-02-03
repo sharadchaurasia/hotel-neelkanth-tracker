@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, ForbiddenException } from '@nestjs/common';
 import { StaffService } from './staff.service';
 import { CreateStaffDto, CreateAttendanceDto, CreateAdvanceDto, FnfDto } from './dto/create-staff.dto';
-import { RequirePermissions } from '../auth/decorators';
+import { RequirePermissions, CurrentUser } from '../auth/decorators';
+import { User } from '../auth/entities/user.entity';
 
 @Controller('api')
 export class StaffController {
@@ -47,7 +48,10 @@ export class StaffController {
 
   @Delete('attendance')
   @RequirePermissions('salary', 'delete')
-  removeAbsence(@Query('staffId') staffId: string, @Query('date') date: string) {
+  removeAbsence(@CurrentUser() user: User, @Query('staffId') staffId: string, @Query('date') date: string) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can delete attendance records');
+    }
     return this.staffService.removeAbsence(+staffId, date);
   }
 
@@ -66,7 +70,10 @@ export class StaffController {
 
   @Delete('advances/:id')
   @RequirePermissions('salary', 'delete')
-  deleteAdvance(@Param('id') id: string) {
+  deleteAdvance(@CurrentUser() user: User, @Param('id') id: string) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can delete advance records');
+    }
     return this.staffService.deleteAdvance(+id);
   }
 }

@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DaybookEntry } from './daybook-entry.entity';
 import { DaybookBalance } from './daybook-balance.entity';
+import { DaybookAccessRequest } from './daybook-access-request.entity';
 import { Booking } from '../bookings/booking.entity';
 import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class DaybookService {
@@ -13,9 +15,118 @@ export class DaybookService {
     private entryRepo: Repository<DaybookEntry>,
     @InjectRepository(DaybookBalance)
     private balanceRepo: Repository<DaybookBalance>,
+    @InjectRepository(DaybookAccessRequest)
+    private accessRepo: Repository<DaybookAccessRequest>,
     @InjectRepository(Booking)
     private bookingRepo: Repository<Booking>,
+    private auditService: AuditService,
   ) {}
+
+  private getTodayStr(): string {
+    const now = new Date();
+    const offset = 5.5 * 60 * 60 * 1000; // IST offset
+    const ist = new Date(now.getTime() + offset);
+    return ist.toISOString().split('T')[0];
+  }
+
+  async checkDateAccess(userId: number, role: string, date: string): Promise<boolean> {
+    if (role === 'admin' || role === 'super_admin') return true;
+    const today = this.getTodayStr();
+    if (date === today) return true;
+    // Check if approved access exists
+    const approved = await this.accessRepo.findOne({
+      where: { userId, requestedDate: date, status: 'approved' },
+    });
+    return !!approved;
+  }
+
+  async validateDateAccess(userId: number, role: string, date: string): Promise<void> {
+    const hasAccess = await this.checkDateAccess(userId, role, date);
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have permission to modify daybook for this date. Request access from admin.');
+    }
+  }
+
+  // Access request methods
+  async requestAccess(userId: number, userName: string, date: string, reason?: string) {
+    const existing = await this.accessRepo.findOne({
+      where: { userId, requestedDate: date, status: 'pending' },
+    });
+    if (existing) {
+      return { success: true, message: 'Request already pending', request: existing };
+    }
+    const req = this.accessRepo.create({
+      userId,
+      userName,
+      requestedDate: date,
+      reason: reason || '',
+      status: 'pending',
+    });
+    const saved = await this.accessRepo.save(req);
+    await this.auditService.log({
+      userId,
+      userName,
+      action: 'ACCESS_REQUEST',
+      entityType: 'daybook',
+      description: `Requested daybook access for ${date}${reason ? ': ' + reason : ''}`,
+      newValue: { date, reason },
+    });
+    return { success: true, request: saved };
+  }
+
+  async getPendingRequests() {
+    return this.accessRepo.find({
+      where: { status: 'pending' },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getAllRequests() {
+    return this.accessRepo.find({
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+  }
+
+  async respondToRequest(
+    requestId: number,
+    status: 'approved' | 'denied',
+    adminId: number,
+    adminName: string,
+    adminNote?: string,
+  ) {
+    const req = await this.accessRepo.findOne({ where: { id: requestId } });
+    if (!req) throw new NotFoundException('Request not found');
+    if (req.status !== 'pending') {
+      return { success: false, message: 'Request already ' + req.status };
+    }
+    req.status = status;
+    req.respondedBy = adminName;
+    req.adminNote = adminNote || '';
+    req.respondedAt = new Date();
+    await this.accessRepo.save(req);
+
+    await this.auditService.log({
+      userId: adminId,
+      userName: adminName,
+      action: status === 'approved' ? 'ACCESS_APPROVED' : 'ACCESS_DENIED',
+      entityType: 'daybook',
+      description: `${status === 'approved' ? 'Approved' : 'Denied'} daybook access for ${req.userName} on ${req.requestedDate}`,
+      newValue: { requestId, userId: req.userId, userName: req.userName, date: req.requestedDate, status, adminNote },
+    });
+
+    return { success: true, request: req };
+  }
+
+  async checkAccess(userId: number, role: string, date: string) {
+    const hasAccess = await this.checkDateAccess(userId, role, date);
+    const today = this.getTodayStr();
+    return {
+      hasAccess,
+      isToday: date === today,
+      isAdmin: role === 'admin' || role === 'super_admin',
+    };
+  }
 
   async getEntries(date: string): Promise<DaybookEntry[]> {
     return this.entryRepo.find({
@@ -24,14 +135,20 @@ export class DaybookService {
     });
   }
 
-  async createEntry(dto: CreateDaybookEntryDto): Promise<DaybookEntry> {
+  async createEntry(dto: CreateDaybookEntryDto, userId?: number, role?: string): Promise<DaybookEntry> {
+    if (userId && role) {
+      await this.validateDateAccess(userId, role, dto.date);
+    }
     const entry = this.entryRepo.create(dto);
     return this.entryRepo.save(entry);
   }
 
-  async deleteEntry(id: number): Promise<void> {
+  async deleteEntry(id: number, userId?: number, role?: string): Promise<void> {
     const entry = await this.entryRepo.findOne({ where: { id } });
     if (!entry) throw new NotFoundException('Entry not found');
+    if (userId && role) {
+      await this.validateDateAccess(userId, role, entry.date);
+    }
     await this.entryRepo.remove(entry);
   }
 
@@ -39,7 +156,10 @@ export class DaybookService {
     return this.balanceRepo.findOne({ where: { date } });
   }
 
-  async setBalance(dto: SetBalanceDto): Promise<DaybookBalance> {
+  async setBalance(dto: SetBalanceDto, userId?: number, role?: string): Promise<DaybookBalance> {
+    if (userId && role) {
+      await this.validateDateAccess(userId, role, dto.date);
+    }
     let balance = await this.balanceRepo.findOne({ where: { date: dto.date } });
     if (balance) {
       balance.cashOpening = dto.cashOpening;
@@ -83,7 +203,10 @@ export class DaybookService {
     };
   }
 
-  async autoCollect(date: string): Promise<{ added: number }> {
+  async autoCollect(date: string, userId?: number, role?: string): Promise<{ added: number }> {
+    if (userId && role) {
+      await this.validateDateAccess(userId, role, date);
+    }
     const existingEntries = await this.entryRepo.find({ where: { date } });
     const existingKeys = new Set(
       existingEntries
@@ -121,8 +244,9 @@ export class DaybookService {
 
       const balAmt = Number(b.balanceReceived) || 0;
       if (balAmt > 0 && b.balanceDate === date) {
-        const key = `${b.bookingId}-Room Rent (Balance)`;
-        if (!existingKeys.has(key)) {
+        const balKey = `${b.bookingId}-Room Rent (Balance)`;
+        const collKey = `${b.bookingId}-Room Rent (Collection)`;
+        if (!existingKeys.has(balKey) && !existingKeys.has(collKey)) {
           newEntries.push({
             date,
             type: 'income',
