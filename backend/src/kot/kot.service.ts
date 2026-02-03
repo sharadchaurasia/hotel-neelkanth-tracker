@@ -51,11 +51,11 @@ export class KotService {
       description: dto.description,
       amount: dto.amount,
       paymentMode: dto.paymentMode,
-      subCategory: dto.subCategory || null,
+      subCategory: dto.subCategory || undefined,
       status: 'PAID',
       createdBy: userName,
     });
-    const saved = await this.kotRepo.save(order);
+    const saved = await this.kotRepo.save(order) as KotOrder;
 
     // Auto-create daybook income entry for Cash, Card, or Bank Transfer
     if (dto.paymentMode !== 'AKS Office' && dto.amount > 0) {
@@ -81,9 +81,8 @@ export class KotService {
       const aksPayment = this.aksOfficeRepo.create({
         refBookingId: kotId,
         guestName: dto.customerName || 'Walk-in KOT',
-        roomNo: null,
         amount: dto.amount,
-        subCategory: dto.subCategory || null,
+        subCategory: dto.subCategory || undefined,
         date: dto.orderDate || today,
         context: 'kot',
         createdBy: userName,
