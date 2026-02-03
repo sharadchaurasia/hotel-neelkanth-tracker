@@ -11129,9 +11129,33 @@
 
   </script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(function(){});
-    }
+    (function() {
+      var APP_VERSION = 29;
+      var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
+      if (storedVersion < APP_VERSION) {
+        localStorage.setItem('app_version', APP_VERSION);
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            return Promise.all(names.map(function(name) { return caches.delete(name); }));
+          }).then(function() {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                return Promise.all(regs.map(function(r) { return r.unregister(); }));
+              }).then(function() {
+                if (storedVersion > 0) window.location.reload(true);
+                else navigator.serviceWorker.register('/sw.js').catch(function(){});
+              });
+            }
+          });
+        } else if (storedVersion > 0) {
+          window.location.reload(true);
+        }
+      } else {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js').catch(function(){});
+        }
+      }
+    })();
   </script>
 </body>
 </html>
