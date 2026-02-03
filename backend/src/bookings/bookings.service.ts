@@ -633,7 +633,7 @@ export class BookingsService {
       } else if (b.paymentType === 'Prepaid') {
         showInTodayCollection = (b.advanceDate === today);
       } else if (b.paymentType === 'Ledger') {
-        showInTodayCollection = false;
+        showInTodayCollection = (b.checkOut === today && !b.checkedOut);
       } else {
         // Fallback for old bookings without paymentType
         showInTodayCollection = (b.checkOut === today && !b.checkedOut);
