@@ -4192,6 +4192,9 @@
   </div>
 
   <script>
+    // ========== DOUBLE-CLICK GUARD ==========
+    var _submitting = false;
+
     // ========== AUTH STATE ==========
     var authToken = null;
     var currentUser = null;
@@ -6472,6 +6475,11 @@
     }
 
     async function saveBooking() {
+      if (_submitting) return;
+      _submitting = true;
+      try { await _doSaveBooking(); } finally { _submitting = false; }
+    }
+    async function _doSaveBooking() {
       var editId = document.getElementById('editBookingId').value;
       var guestName = document.getElementById('guestName').value.trim();
       var phone = document.getElementById('guestPhone').value.trim();
@@ -6597,6 +6605,11 @@
     }
 
     async function collectPayment() {
+      if (_submitting) return;
+      _submitting = true;
+      try { await _doCollectPayment(); } finally { _submitting = false; }
+    }
+    async function _doCollectPayment() {
       var id = document.getElementById('collectBookingId').value;
       var amount = parseFloat(document.getElementById('collectAmount').value) || 0;
       var mode = document.getElementById('collectPaymentMode').value;
@@ -6666,6 +6679,11 @@
     }
 
     async function confirmCancelOrReschedule() {
+      if (_submitting) return;
+      _submitting = true;
+      try { await _doCancelOrReschedule(); } finally { _submitting = false; }
+    }
+    async function _doCancelOrReschedule() {
       var id = document.getElementById('cancelBookingId').value;
       var action = document.getElementById('cancelAction').value;
       var backendId = getBackendBookingId(id);
@@ -6730,6 +6748,11 @@
     }
 
     async function submitRefund() {
+      if (_submitting) return;
+      _submitting = true;
+      try { await _doSubmitRefund(); } finally { _submitting = false; }
+    }
+    async function _doSubmitRefund() {
       var backendId = document.getElementById('refundBackendId').value;
       var refundDate = document.getElementById('refundDate').value;
       var refundAmount = parseFloat(document.getElementById('refundAmount').value) || 0;
@@ -7234,6 +7257,11 @@
     }
 
     async function processCheckout() {
+      if (_submitting) return;
+      _submitting = true;
+      try { await _doProcessCheckout(); } finally { _submitting = false; }
+    }
+    async function _doProcessCheckout() {
       var id = document.getElementById('checkoutBookingId').value;
       var backendId = getBackendBookingId(id);
       if (!backendId) return;
@@ -7356,6 +7384,11 @@
     }
 
     async function saveKotOrder() {
+      if (_submitting) return;
+      _submitting = true;
+      try { await _doSaveKotOrder(); } finally { _submitting = false; }
+    }
+    async function _doSaveKotOrder() {
       var description = document.getElementById('kotDescription').value.trim();
       var amount = parseFloat(document.getElementById('kotAmount').value) || 0;
       var paymentMode = document.getElementById('kotPaymentMode').value;
@@ -11130,7 +11163,7 @@
   </script>
   <script>
     (function() {
-      var APP_VERSION = 29;
+      var APP_VERSION = 30;
       var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
       if (storedVersion < APP_VERSION) {
         localStorage.setItem('app_version', APP_VERSION);
