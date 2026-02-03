@@ -5178,11 +5178,13 @@
       var todayCollectionAmt = 0;
       var todayCollectedAmt = 0;
       var todayPendingAmt = 0;
+      var aksOfficeAmt = 0;
 
       bookings.forEach(function(b) {
         if (b.status === 'CANCELLED') return;
         var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
         if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
         var showInCollection = false;
@@ -5193,7 +5195,7 @@
         } else if (b.paymentType === 'Prepaid') {
           showInCollection = (b.advanceDate === statsDate);
         } else if (b.paymentType === 'Ledger') {
-          showInCollection = false;
+          showInCollection = (b.checkOut === statsDate && !b.checkedOut);
         } else {
           showInCollection = (b.checkOut === statsDate && !b.checkedOut);
         }
@@ -5201,12 +5203,19 @@
         if (showInCollection) {
           todayCollectionAmt += (parseFloat(b.totalAmount) || 0);
           todayCollectedAmt += totalReceived;
+          if (isAksOffice && b.status === 'COLLECTED') {
+            aksOfficeAmt += (parseFloat(b.totalAmount) || 0) - totalReceived;
+          }
           if (pending > 0) todayPendingAmt += pending;
         }
       });
 
       document.getElementById('todayCollection').textContent = formatCurrency(todayCollectionAmt);
-      document.getElementById('todayCollected').textContent = formatCurrency(todayCollectedAmt);
+      var collectedText = formatCurrency(todayCollectedAmt);
+      if (aksOfficeAmt > 0) {
+        collectedText += '<br><span style="font-size:11px;color:#996b2f;font-weight:500">(+ ' + formatCurrency(aksOfficeAmt) + ' to AKS Office)</span>';
+      }
+      document.getElementById('todayCollected').innerHTML = collectedText;
       document.getElementById('todayPending').textContent = formatCurrency(todayPendingAmt);
 
       // Alert box
@@ -11188,7 +11197,7 @@
   </script>
   <script>
     (function() {
-      var APP_VERSION = 31;
+      var APP_VERSION = 32;
       var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
       if (storedVersion < APP_VERSION) {
         localStorage.setItem('app_version', APP_VERSION);
