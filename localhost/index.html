@@ -3684,6 +3684,60 @@
     </div>
   </div>
 
+  <!-- Refund Modal -->
+  <div class="modal-overlay" id="refundModal">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Process Refund</h3>
+        <button class="modal-close" onclick="closeRefundModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="refundBookingId">
+        <input type="hidden" id="refundBackendId">
+        <p style="margin-bottom:8px;font-size:15px;">
+          Booking: <strong id="refundBookingName"></strong>
+        </p>
+        <p style="margin-bottom:20px;font-size:14px;color:#6b7280;">
+          Booking has been cancelled. Process refund if applicable.
+        </p>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Refund Date *</label>
+          <input type="date" id="refundDate">
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Refund Amount *</label>
+          <input type="number" id="refundAmount" placeholder="₹" min="0" step="1">
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Refund Mode *</label>
+          <select id="refundMode">
+            <option value="Cash">Cash</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="deleteDaybookGroup" style="margin-bottom:16px;display:none;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="deleteDaybookEntry" style="width:auto;">
+            Delete original daybook income entry
+          </label>
+          <small style="color:#6b7280;">This will remove the advance/collection income entries linked to this booking</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeRefundModal()">Skip</button>
+        <button class="btn btn-primary" onclick="submitRefund()">
+          <span class="material-icons">currency_rupee</span> Process Refund
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Check-in / Room Allotment Modal -->
   <div class="modal-overlay" id="checkinModal">
     <div class="modal" style="max-width: 500px;">
@@ -6616,12 +6670,18 @@
 
       try {
         if (action === 'cancel') {
+          var bookingBeforeCancel = bookings.find(function(b) { return b.id === id; });
           await apiFetch('/bookings/' + backendId + '/cancel', { method: 'POST' });
           await loadBookingsFromAPI();
           closeCancelModal();
           renderBookings();
           updateDashboard();
           showToast('Booking cancelled', 'success');
+          // Open refund modal if there was any payment received
+          if (bookingBeforeCancel) {
+            var totalReceived = (parseFloat(bookingBeforeCancel.advanceReceived) || 0) + (parseFloat(bookingBeforeCancel.balanceReceived) || 0);
+            openRefundModal(bookingBeforeCancel, backendId, totalReceived);
+          }
         } else {
           var newDate = document.getElementById('rescheduleDate').value;
           if (!newDate) {
@@ -6638,6 +6698,65 @@
           updateDashboard();
           showToast('Booking rescheduled to ' + formatDate(newDate), 'success');
         }
+      } catch(e) { /* toast shown */ }
+    }
+
+    // ========== REFUND ==========
+    function openRefundModal(booking, backendId, totalReceived) {
+      var today = new Date().toISOString().split('T')[0];
+      document.getElementById('refundModal').classList.add('active');
+      document.getElementById('refundBookingId').value = booking.id;
+      document.getElementById('refundBackendId').value = backendId;
+      document.getElementById('refundBookingName').textContent = booking.guestName + ' (' + (booking.bookingId || booking.id) + ')';
+      document.getElementById('refundDate').value = today;
+      document.getElementById('refundAmount').value = totalReceived > 0 ? totalReceived : 0;
+      document.getElementById('refundMode').value = 'Cash';
+      document.getElementById('deleteDaybookEntry').checked = false;
+
+      // Show delete daybook checkbox only for super_admin
+      var deleteDaybookGroup = document.getElementById('deleteDaybookGroup');
+      if (currentUser && currentUser.role === 'super_admin') {
+        deleteDaybookGroup.style.display = 'block';
+      } else {
+        deleteDaybookGroup.style.display = 'none';
+      }
+    }
+
+    function closeRefundModal() {
+      document.getElementById('refundModal').classList.remove('active');
+    }
+
+    async function submitRefund() {
+      var backendId = document.getElementById('refundBackendId').value;
+      var refundDate = document.getElementById('refundDate').value;
+      var refundAmount = parseFloat(document.getElementById('refundAmount').value) || 0;
+      var refundMode = document.getElementById('refundMode').value;
+      var deleteDaybookEntry = document.getElementById('deleteDaybookEntry').checked;
+
+      if (!refundDate) {
+        showToast('Please select refund date', 'error');
+        return;
+      }
+      if (refundAmount <= 0) {
+        showToast('Please enter refund amount', 'error');
+        return;
+      }
+
+      try {
+        await apiFetch('/bookings/' + backendId + '/refund', {
+          method: 'POST',
+          body: {
+            refundDate: refundDate,
+            refundAmount: refundAmount,
+            refundMode: refundMode,
+            deleteDaybookEntry: deleteDaybookEntry
+          }
+        });
+        await loadBookingsFromAPI();
+        closeRefundModal();
+        renderBookings();
+        updateDashboard();
+        showToast('Refund of ₹' + refundAmount + ' processed', 'success');
       } catch(e) { /* toast shown */ }
     }
 

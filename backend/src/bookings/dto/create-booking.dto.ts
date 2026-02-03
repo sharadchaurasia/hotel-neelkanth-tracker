@@ -17,6 +17,7 @@ export class CreateBookingDto {
   totalAmount: number;
   paymentType?: string;
   advanceReceived?: number;
+  advanceDate?: string;
   paymentMode?: string;
   remarks?: string;
 }
@@ -24,6 +25,7 @@ export class CreateBookingDto {
 export class CollectPaymentDto {
   amount: number;
   paymentMode?: string;
+  subCategory?: string;
 }
 
 export class CheckinDto {
@@ -35,6 +37,7 @@ export class CheckoutDto {
   kotAmount?: number;
   addOns?: { type: string; amount: number }[];
   paymentMode?: string;
+  subCategory?: string;
 }
 
 export class CancelDto {
@@ -43,4 +46,19 @@ export class CancelDto {
 
 export class RescheduleDto {
   newCheckOut: string;
+}
+
+export class AgentSettlementDto {
+  agentName: string;
+  amount: number;
+  paymentMode?: string;
+  date: string;
+  reference?: string;
+}
+
+export class RefundDto {
+  refundDate: string;
+  refundAmount: number;
+  refundMode: string;
+  deleteDaybookEntry: boolean;
 }

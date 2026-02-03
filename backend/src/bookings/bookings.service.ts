@@ -3,8 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from './booking.entity';
 import { BookingAddon } from './booking-addon.entity';
+import { AksOfficePayment } from './aks-office-payment.entity';
+import { AgentSettlement } from './agent-settlement.entity';
 import { DaybookEntry } from '../daybook/daybook-entry.entity';
-import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto } from './dto/create-booking.dto';
+import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto, AgentSettlementDto, RefundDto } from './dto/create-booking.dto';
 
 @Injectable()
 export class BookingsService {
@@ -13,6 +15,10 @@ export class BookingsService {
     private bookingRepo: Repository<Booking>,
     @InjectRepository(BookingAddon)
     private addonRepo: Repository<BookingAddon>,
+    @InjectRepository(AksOfficePayment)
+    private aksOfficeRepo: Repository<AksOfficePayment>,
+    @InjectRepository(AgentSettlement)
+    private settlementRepo: Repository<AgentSettlement>,
     @InjectRepository(DaybookEntry)
     private daybookRepo: Repository<DaybookEntry>,
   ) {}
@@ -20,6 +26,7 @@ export class BookingsService {
   private normalizePaymentMode(mode: string): string {
     if (!mode || mode === 'Cash') return 'Cash';
     if (mode === 'Card') return 'Card';
+    if (mode === 'AKS Office') return 'AKS Office';
     return 'Bank Transfer';
   }
 
@@ -30,11 +37,13 @@ export class BookingsService {
   }): Promise<void> {
     if (params.amount <= 0) return;
     const receivedIn = this.normalizePaymentMode(params.paymentMode);
-    // Check duplicate
-    const existing = await this.daybookRepo.findOne({
-      where: { date: params.date, refBookingId: params.refBookingId, incomeSource: params.incomeSource },
-    });
-    if (existing) return;
+    // Check duplicate (skip for Collection - multiple collections per day allowed)
+    if (params.incomeSource !== 'Room Rent (Collection)') {
+      const existing = await this.daybookRepo.findOne({
+        where: { date: params.date, refBookingId: params.refBookingId, incomeSource: params.incomeSource },
+      });
+      if (existing) return;
+    }
     const entry = this.daybookRepo.create({
       date: params.date,
       type: 'income',
@@ -105,6 +114,10 @@ export class BookingsService {
     return booking;
   }
 
+  async saveBooking(booking: Booking): Promise<Booking> {
+    return this.bookingRepo.save(booking);
+  }
+
   async create(dto: CreateBookingDto): Promise<Booking> {
     const bookingId = await this.generateBookingId();
     const advanceReceived = dto.advanceReceived || 0;
@@ -135,7 +148,7 @@ export class BookingsService {
       totalAmount: dto.totalAmount,
       paymentType: dto.paymentType || 'Postpaid',
       advanceReceived,
-      advanceDate: advanceReceived > 0 ? new Date().toISOString().split('T')[0] : undefined,
+      advanceDate: dto.advanceDate || (advanceReceived > 0 ? new Date().toISOString().split('T')[0] : undefined),
       balanceReceived: 0,
       paymentMode: dto.paymentMode,
       status,
@@ -197,6 +210,7 @@ export class BookingsService {
       totalAmount: dto.totalAmount ?? booking.totalAmount,
       paymentType: dto.paymentType ?? booking.paymentType,
       advanceReceived: dto.advanceReceived ?? booking.advanceReceived,
+      advanceDate: dto.advanceDate ?? booking.advanceDate,
       paymentMode: dto.paymentMode ?? booking.paymentMode,
       remarks: dto.remarks ?? booking.remarks,
       lastModifiedBy: userName || booking.lastModifiedBy,
@@ -238,9 +252,46 @@ export class BookingsService {
 
   async collectPayment(id: number, dto: CollectPaymentDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
+    if (booking.status === 'COLLECTED') {
+      throw new NotFoundException('Payment already collected for this booking');
+    }
+    const today = new Date().toISOString().split('T')[0];
+
+    if (dto.paymentMode === 'AKS Office') {
+      // AKS Office: do NOT add to balanceReceived, do NOT create daybook entry
+      // Hotel's share = actualRoomRent + addOnAmount - what hotel already received
+      const hotelShare = Math.max(0,
+        Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
+        - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
+      );
+      booking.status = 'COLLECTED';
+      booking.lastModifiedBy = userName || booking.lastModifiedBy;
+      booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+        `[AKS Office collection ₹${hotelShare} (${dto.subCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
+      const saved = await this.bookingRepo.save(booking);
+
+      // Create AKS Office payment record with hotel's share
+      if (hotelShare > 0) {
+        const aksPayment = this.aksOfficeRepo.create({
+          booking: saved,
+          refBookingId: booking.bookingId,
+          guestName: booking.guestName,
+          roomNo: booking.roomNo,
+          amount: hotelShare,
+          subCategory: dto.subCategory,
+          date: today,
+          context: 'collect',
+          createdBy: userName,
+        });
+        await this.aksOfficeRepo.save(aksPayment);
+      }
+
+      return saved;
+    }
+
     booking.balanceReceived = Number(booking.balanceReceived || 0) + dto.amount;
     booking.balancePaymentMode = dto.paymentMode || booking.balancePaymentMode;
-    booking.balanceDate = new Date().toISOString().split('T')[0];
+    booking.balanceDate = today;
     booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
     const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
@@ -251,7 +302,6 @@ export class BookingsService {
 
     // Auto-create daybook entry for collected payment
     if (dto.amount > 0 && dto.paymentMode) {
-      const today = new Date().toISOString().split('T')[0];
       await this.createDaybookEntry({
         date: today,
         category: 'Room Rent',
@@ -279,6 +329,9 @@ export class BookingsService {
 
   async checkout(id: number, dto: CheckoutDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
+    if (booking.checkedOut) {
+      throw new NotFoundException('Booking already checked out');
+    }
     const kotAmt = dto.kotAmount || 0;
     booking.kotAmount = kotAmt;
     booking.checkedOut = true;
@@ -304,11 +357,18 @@ export class BookingsService {
 
     const received = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
     const balance = newTotal - received;
+    const today = new Date().toISOString().split('T')[0];
+    const isAksOffice = dto.paymentMode === 'AKS Office';
 
-    if (dto.paymentMode && balance > 0) {
+    if (isAksOffice) {
+      // AKS Office checkout: do NOT add room rent balance to balanceReceived, no room rent daybook
+      booking.status = 'COLLECTED';
+      booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+        `[AKS Office checkout ₹${balance > 0 ? balance : 0} (${dto.subCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
+    } else if (dto.paymentMode && balance > 0) {
       booking.balanceReceived = Number(booking.balanceReceived || 0) + balance;
       booking.balancePaymentMode = dto.paymentMode;
-      booking.balanceDate = new Date().toISOString().split('T')[0];
+      booking.balanceDate = today;
       booking.status = 'COLLECTED';
     } else {
       const totalRecv = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
@@ -321,11 +381,10 @@ export class BookingsService {
     const saved = await this.bookingRepo.save(booking);
 
     // Auto-create daybook entries at checkout
-    const today = new Date().toISOString().split('T')[0];
-    const checkoutMode = dto.paymentMode || booking.balancePaymentMode || booking.paymentMode || 'Cash';
+    const checkoutMode = isAksOffice ? 'Cash' : (dto.paymentMode || booking.balancePaymentMode || booking.paymentMode || 'Cash');
 
-    // Room rent balance entry (if balance paid at checkout)
-    if (dto.paymentMode && balance > 0) {
+    // Room rent balance entry (if balance paid at checkout) — skip for AKS Office
+    if (!isAksOffice && dto.paymentMode && balance > 0) {
       const roomRentPortion = balance - kotAmt - addOnTotal;
       if (roomRentPortion > 0) {
         await this.createDaybookEntry({
@@ -341,7 +400,29 @@ export class BookingsService {
       }
     }
 
-    // KOT entry
+    // AKS Office: create AKS payment record for hotel's share
+    if (isAksOffice) {
+      const hotelShare = Math.max(0,
+        Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0) + kotAmt + addOnTotal
+        - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
+      );
+      if (hotelShare > 0) {
+        const aksPayment = this.aksOfficeRepo.create({
+          booking: saved,
+          refBookingId: booking.bookingId,
+          guestName: booking.guestName,
+          roomNo: booking.roomNo,
+          amount: hotelShare,
+          subCategory: dto.subCategory,
+          date: today,
+          context: 'checkout',
+          createdBy: userName,
+        });
+        await this.aksOfficeRepo.save(aksPayment);
+      }
+    }
+
+    // KOT entry (always created, even for AKS Office — real income)
     if (kotAmt > 0) {
       await this.createDaybookEntry({
         date: today,
@@ -355,7 +436,7 @@ export class BookingsService {
       });
     }
 
-    // Add-on entries
+    // Add-on entries (always created, even for AKS Office — real income)
     if (addOnTotal > 0) {
       const addonDesc = (dto.addOns || []).map(a => a.type).join(', ');
       await this.createDaybookEntry({
@@ -380,6 +461,41 @@ export class BookingsService {
     return this.bookingRepo.save(booking);
   }
 
+  async refund(id: number, dto: RefundDto, userName?: string): Promise<Booking> {
+    const booking = await this.findOne(id);
+    if (booking.status !== 'CANCELLED') {
+      throw new NotFoundException('Booking must be cancelled before processing refund');
+    }
+
+    // Delete daybook income entries if requested
+    if (dto.deleteDaybookEntry) {
+      await this.daybookRepo.delete({ refBookingId: booking.bookingId, type: 'income' });
+    }
+
+    // Create daybook expense entry for refund
+    if (dto.refundAmount > 0) {
+      const refundEntry = this.daybookRepo.create({
+        date: dto.refundDate,
+        type: 'expense',
+        category: 'Refund',
+        description: `Refund - ${booking.guestName} (${booking.bookingId})`,
+        amount: dto.refundAmount,
+        paymentSource: this.normalizePaymentMode(dto.refundMode),
+        paymentMode: dto.refundMode || 'Cash',
+        refBookingId: booking.bookingId,
+        guestName: booking.guestName,
+      });
+      await this.daybookRepo.save(refundEntry);
+    }
+
+    // Update booking remarks with refund note
+    const refundNote = `[Refund ₹${dto.refundAmount} via ${dto.refundMode} on ${dto.refundDate} by ${userName || 'unknown'}]`;
+    booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') + refundNote;
+    booking.lastModifiedBy = userName || booking.lastModifiedBy;
+
+    return this.bookingRepo.save(booking);
+  }
+
   async reschedule(id: number, dto: RescheduleDto, userName?: string): Promise<Booking> {
     const booking = await this.findOne(id);
     booking.rescheduledFrom = booking.checkOut;
@@ -398,6 +514,87 @@ export class BookingsService {
     });
   }
 
+  async getAksOfficePayments(filters: { from?: string; to?: string; subCategory?: string }): Promise<AksOfficePayment[]> {
+    const qb = this.aksOfficeRepo.createQueryBuilder('a')
+      .orderBy('a.date', 'DESC')
+      .addOrderBy('a.created_at', 'DESC');
+
+    if (filters.from && filters.to) {
+      qb.andWhere('a.date BETWEEN :from AND :to', { from: filters.from, to: filters.to });
+    } else if (filters.from) {
+      qb.andWhere('a.date >= :from', { from: filters.from });
+    } else if (filters.to) {
+      qb.andWhere('a.date <= :to', { to: filters.to });
+    }
+
+    if (filters.subCategory) {
+      qb.andWhere('a.sub_category = :subCategory', { subCategory: filters.subCategory });
+    }
+
+    return qb.getMany();
+  }
+
+  async deleteAksOfficePayment(id: number): Promise<void> {
+    const payment = await this.aksOfficeRepo.findOne({ where: { id } });
+    if (!payment) throw new NotFoundException('AKS Office payment not found');
+    await this.aksOfficeRepo.remove(payment);
+  }
+
+  // ===== Agent Settlements =====
+  async createAgentSettlement(dto: AgentSettlementDto, userName?: string): Promise<AgentSettlement> {
+    const settlement = this.settlementRepo.create({
+      agentName: dto.agentName,
+      amount: dto.amount,
+      paymentMode: dto.paymentMode || 'Bank Transfer',
+      date: dto.date,
+      reference: dto.reference,
+      createdBy: userName,
+    });
+    const saved = await this.settlementRepo.save(settlement);
+
+    // Create daybook entry — money actually came to hotel
+    if (dto.amount > 0) {
+      await this.createDaybookEntry({
+        date: dto.date,
+        category: 'Room Rent',
+        incomeSource: 'Agent Settlement',
+        description: `Settlement from ${dto.agentName}${dto.reference ? ' - ' + dto.reference : ''}`,
+        amount: dto.amount,
+        paymentMode: dto.paymentMode || 'Bank Transfer',
+        refBookingId: 'SETTLEMENT-' + saved.id,
+        guestName: dto.agentName,
+      });
+    }
+
+    return saved;
+  }
+
+  async getAgentSettlements(filters: { agent?: string; from?: string; to?: string }): Promise<AgentSettlement[]> {
+    const qb = this.settlementRepo.createQueryBuilder('s')
+      .orderBy('s.date', 'DESC')
+      .addOrderBy('s.created_at', 'DESC');
+
+    if (filters.agent) {
+      qb.andWhere('s.agent_name = :agent', { agent: filters.agent });
+    }
+    if (filters.from) {
+      qb.andWhere('s.date >= :from', { from: filters.from });
+    }
+    if (filters.to) {
+      qb.andWhere('s.date <= :to', { to: filters.to });
+    }
+
+    return qb.getMany();
+  }
+
+  async deleteAgentSettlement(id: number): Promise<void> {
+    const settlement = await this.settlementRepo.findOne({ where: { id } });
+    if (!settlement) throw new NotFoundException('Settlement not found');
+    // Also remove corresponding daybook entry
+    await this.daybookRepo.delete({ refBookingId: 'SETTLEMENT-' + id });
+    await this.settlementRepo.remove(settlement);
+  }
+
   async getDashboardStats(): Promise<any> {
     const today = new Date().toISOString().split('T')[0];
     const allBookings = await this.bookingRepo.find({ relations: ['addOns'] });
@@ -414,15 +611,35 @@ export class BookingsService {
     for (const b of allBookings) {
       if (b.status === 'CANCELLED' || b.status === 'DELETED') continue;
       const totalReceived = Number(b.advanceReceived || 0) + Number(b.balanceReceived || 0);
-      const pending = Number(b.totalAmount || 0) - totalReceived;
+      let pending = Number(b.totalAmount || 0) - totalReceived;
+      // AKS Office COLLECTED bookings have zero pending (paid via AKS Office)
+      if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
       if (b.checkIn === today && !b.checkedIn) checkinGuests.push(b);
-      if ((b.checkedIn && b.checkIn <= today && b.checkOut > today) ||
-          (!b.checkedIn && b.checkIn < today && b.checkOut > today)) {
+      if (b.checkedIn && !b.checkedOut && b.checkOut >= today) {
         inhouseGuests.push(b);
       }
+      // Checkout guest list: always based on checkout date
       if (b.checkOut === today && !b.checkedOut) {
         checkoutGuests.push(b);
+      }
+
+      // Today Collection stats: based on paymentType
+      let showInTodayCollection = false;
+      if (b.paymentType === 'Pay at Check-in') {
+        showInTodayCollection = (b.checkIn === today);
+      } else if (b.paymentType === 'Postpaid') {
+        showInTodayCollection = (b.checkOut === today && !b.checkedOut);
+      } else if (b.paymentType === 'Prepaid') {
+        showInTodayCollection = (b.advanceDate === today);
+      } else if (b.paymentType === 'Ledger') {
+        showInTodayCollection = false;
+      } else {
+        // Fallback for old bookings without paymentType
+        showInTodayCollection = (b.checkOut === today && !b.checkedOut);
+      }
+
+      if (showInTodayCollection) {
         todayCollectionAmt += Number(b.totalAmount || 0);
         todayCollectedAmt += totalReceived;
         if (pending > 0) todayPendingAmt += pending;
