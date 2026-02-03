@@ -3288,6 +3288,7 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px" id="permCheckboxes">
               <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
               <label><input type="checkbox" data-section="bookings"> Bookings</label>
+              <label><input type="checkbox" data-section="kot"> KOT</label>
               <label><input type="checkbox" data-section="inventory"> Inventory</label>
               <label><input type="checkbox" data-section="ledger"> Ledger</label>
               <label><input type="checkbox" data-section="reports"> Reports</label>
@@ -4428,10 +4429,10 @@
       if (nbBtn) nbBtn.style.display = hasPermission('bookings', 'create') ? '' : 'none';
       // KOT Order button
       var kotBtn = document.getElementById('btnNewKot');
-      if (kotBtn) kotBtn.style.display = hasPermission('bookings', 'create') ? '' : 'none';
+      if (kotBtn) kotBtn.style.display = hasPermission('kot', 'create') ? '' : 'none';
       // KOT tab
       var kotTabBtn = document.getElementById('tab-btn-kot');
-      if (kotTabBtn) kotTabBtn.style.display = hasPermission('bookings', 'view') ? '' : 'none';
+      if (kotTabBtn) kotTabBtn.style.display = hasPermission('kot', 'view') ? '' : 'none';
       // Opening Balance button - admin only (cards visible to all)
       var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin');
       var obBtn = document.getElementById('btnSetOpeningBalance');

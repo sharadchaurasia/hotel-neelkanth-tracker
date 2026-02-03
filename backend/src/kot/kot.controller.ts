@@ -8,7 +8,7 @@ export class KotController {
   constructor(private readonly kotService: KotService) {}
 
   @Post()
-  @RequirePermissions('bookings', 'create')
+  @RequirePermissions('kot', 'create')
   create(
     @Body() dto: {
       orderDate?: string;
@@ -24,13 +24,13 @@ export class KotController {
   }
 
   @Get()
-  @RequirePermissions('bookings', 'view')
+  @RequirePermissions('kot', 'view')
   findAll(@Query('date') date?: string) {
     return this.kotService.findAll(date);
   }
 
   @Delete(':id')
-  @RequirePermissions('bookings', 'delete')
+  @RequirePermissions('kot', 'delete')
   delete(@Param('id') id: string, @CurrentUser() user: User) {
     if (user.role !== 'super_admin') {
       throw new ForbiddenException('Only super admin can delete KOT orders');
