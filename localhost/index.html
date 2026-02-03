@@ -78,6 +78,14 @@
     .auth-card .auth-btn:hover { opacity: 0.9; }
     .auth-card .auth-link { color: #b8943e; cursor: pointer; font-size: 14px; }
     .auth-card .error-text { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+    .pin-box {
+      width: 52px; height: 58px; text-align: center; font-size: 24px; font-weight: 700;
+      border: 2px solid #e0ddd8; border-radius: 12px; background: rgba(255,255,255,0.8);
+      color: #1c2038; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-text-security: disc;
+    }
+    .pin-box:focus { border-color: #b8943e; box-shadow: 0 0 0 3px rgba(184,148,62,0.15); }
+    .pin-box.filled { border-color: #b8943e; background: rgba(184,148,62,0.08); }
     .auth-hidden { display: none !important; }
 
     /* User badge in header */
@@ -497,6 +505,60 @@
       margin-left: 4px;
     }
 
+    .badge-idproof {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      font-size: 10px;
+      padding: 2px 5px;
+      border-radius: 6px;
+      margin-left: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+    .badge-idproof:hover {
+      background: rgba(59, 130, 246, 0.3);
+    }
+
+    .id-proof-slot {
+      background: rgba(20,20,40,0.4);
+      border: 1px dashed rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      min-height: 80px;
+    }
+    .id-proof-preview img {
+      max-width: 100%;
+      max-height: 100px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+    }
+    .id-proof-status {
+      font-size: 11px;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+    .id-proof-status.validating {
+      color: #f59e0b;
+    }
+    .id-proof-status.valid {
+      color: #10b981;
+    }
+    .id-proof-status.invalid {
+      color: #ef4444;
+    }
+    .id-proof-slot.has-proof {
+      border-style: solid;
+      border-color: rgba(16,185,129,0.4);
+      background: rgba(16,185,129,0.06);
+    }
+    .id-proof-slot.rejected {
+      border-color: rgba(239,68,68,0.4);
+      background: rgba(239,68,68,0.06);
+    }
+
     .amount {
       font-family: 'SF Mono', 'Courier New', monospace;
       font-weight: 600;
@@ -722,18 +784,18 @@
       .header-brand p { font-size: 9px; }
       .header-user { padding: 3px 8px; gap: 4px; }
       .header-user .user-name { font-size: 10px; }
-      .header-user .logout-btn { font-size: 9px; padding: 3px 8px; }
+      .header-user .logout-btn { font-size: 10px; padding: 8px 12px; min-height: 40px; }
       .header-actions { justify-content: center; gap: 4px; }
-      .header-actions .btn { font-size: 9px; padding: 4px 8px; }
+      .header-actions .btn { font-size: 10px; padding: 8px 12px; min-height: 40px; }
 
-      /* Tabs - icon only */
+      /* Tabs - icon only, touch-friendly */
       .nav-tabs { margin-bottom: 8px; border-radius: 6px; justify-content: center; }
       .nav-tabs button {
-        font-size: 0; padding: 8px 0; gap: 0;
-        flex: 1 1 12.5%; min-width: 0; justify-content: center;
+        font-size: 0; padding: 12px 0; gap: 0;
+        flex: 1 1 12.5%; min-width: 44px; min-height: 44px; justify-content: center;
         border-bottom-width: 2px;
       }
-      .nav-tabs button .material-icons { font-size: 18px; }
+      .nav-tabs button .material-icons { font-size: 20px; }
 
       /* Dashboard cards */
       .dashboard { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
@@ -765,11 +827,11 @@
         width: 100%; font-size: 11px; padding: 6px 8px; border-radius: 6px;
       }
 
-      /* Buttons */
-      .btn { padding: 5px 10px; font-size: 10px; border-radius: 6px; gap: 4px; }
+      /* Buttons — touch-friendly (min 44px tap target) */
+      .btn { padding: 10px 14px; font-size: 11px; border-radius: 6px; gap: 4px; min-height: 44px; }
       .btn:hover { transform: none; box-shadow: none; }
-      .btn-small { padding: 4px 8px; font-size: 9px; }
-      .btn .material-icons { font-size: 14px; }
+      .btn-small { padding: 8px 12px; font-size: 10px; min-height: 40px; }
+      .btn .material-icons { font-size: 16px; }
 
       /* Tables */
       table { min-width: 700px; }
@@ -805,9 +867,10 @@
       .auth-card .auth-logo { font-size: 30px; }
       .auth-card h2 { font-size: 18px; }
       .auth-card p { font-size: 11px; margin-bottom: 16px; }
-      .auth-card input { padding: 10px 12px; font-size: 13px; margin-bottom: 10px; }
-      .auth-card .auth-btn { padding: 10px; font-size: 13px; }
+      .auth-card input { padding: 12px 14px; font-size: 14px; margin-bottom: 10px; min-height: 44px; }
+      .auth-card .auth-btn { padding: 14px; font-size: 14px; min-height: 48px; }
       .auth-card .auth-link { font-size: 11px; }
+      .pin-box { width: 48px; height: 54px; font-size: 22px; border-radius: 10px; }
 
       /* Day Book */
       .daybook-date-bar { flex-direction: column; gap: 6px; margin-bottom: 8px; }
@@ -1808,6 +1871,27 @@
       background: rgba(239, 68, 68, 0.12); color: #dc2626; border-color: rgba(239, 68, 68, 0.3);
     }
 
+    /* ===== Daybook Access Control ===== */
+    .daybook-date-lock {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 10px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08));
+      border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; color: #92400e;
+    }
+    .access-requests-panel {
+      background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+    }
+    .access-req-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 14px; background: rgba(255,255,255,0.7); border-radius: 8px;
+      margin-bottom: 6px; border: 1px solid rgba(0,0,0,0.06);
+    }
+    .access-req-card .req-info { flex: 1; }
+    .access-req-card .req-info strong { color: #1c2038; }
+    .access-req-card .req-info small { color: #666; display: block; margin-top: 2px; }
+    .access-req-card .req-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .access-req-card .req-actions button { min-height: 36px; }
+
     /* ===== Feature 5: Room Blocking ===== */
     .room-blocked {
       background: #fef9c3 !important; border: 2px dashed #eab308 !important;
@@ -1930,9 +2014,15 @@
     <div class="auth-card">
       <div class="auth-logo">🏨</div>
       <h2>Login</h2>
-      <p>Enter your email and password</p>
-      <input type="text" id="loginEmail" placeholder="Email or Phone" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
-      <input type="password" id="loginPassword" placeholder="Password" maxlength="4" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
+      <p>Enter your email and 4-digit PIN</p>
+      <input type="text" id="loginEmail" placeholder="Email or Phone" onkeydown="if(event.key==='Enter')document.getElementById('pin1').focus()">
+      <div class="pin-boxes" style="display:flex;gap:10px;justify-content:center;margin:16px 0;">
+        <input type="password" id="pin1" class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+        <input type="password" id="pin2" class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+        <input type="password" id="pin3" class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+        <input type="password" id="pin4" class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+      </div>
+      <input type="hidden" id="loginPassword">
       <button class="auth-btn" onclick="doLogin()">Login</button>
       <p class="auth-link" onclick="showScreen('forgot-screen')">Forgot Password?</p>
       <p id="loginError" class="error-text" style="display:none"></p>
@@ -1981,6 +2071,9 @@
       <div class="header-actions">
         <button class="btn btn-primary" id="btnNewBooking" onclick="openBookingModal()">
           <span class="material-icons">add</span> New Booking
+        </button>
+        <button class="btn btn-primary" id="btnNewKot" onclick="openKotModal()" style="background:#c99b1a;border-color:#c99b1a;">
+          <span class="material-icons">restaurant</span> KOT Order
         </button>
         <button class="btn btn-secondary" onclick="exportData()">
           <span class="material-icons">download</span> Export
@@ -2038,6 +2131,12 @@
       <button onclick="switchTab('calendar')">
         <span class="material-icons">calendar_month</span> Calendar
       </button>
+      <button onclick="switchTab('aksoffice')">
+        <span class="material-icons">business</span> AKS Office
+      </button>
+      <button id="tab-btn-kot" onclick="switchTab('kot')">
+        <span class="material-icons">restaurant_menu</span> KOT
+      </button>
       <button id="tab-btn-users" onclick="switchTab('users')" style="display:none">
         <span class="material-icons">people</span> Users
       </button>
@@ -2054,6 +2153,14 @@
 
       <!-- Reminder Badges (Feature 7) -->
       <div id="reminderBadges" class="reminder-badges"></div>
+
+      <!-- Admin: Daybook Access Requests -->
+      <div id="accessRequestsPanel" style="display:none;" class="access-requests-panel">
+        <div class="section-header" style="padding:8px 0;">
+          <h3><span class="material-icons" style="color:#f59e0b;vertical-align:middle;">lock_open</span> Daybook Access Requests</h3>
+        </div>
+        <div id="accessRequestsList"></div>
+      </div>
 
       <!-- Search Results Panel -->
       <div id="searchResultsPanel" style="display:none;"></div>
@@ -2089,17 +2196,22 @@
       </div>
 
       <!-- Summary Stats -->
+      <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px 0;flex-wrap:wrap;">
+        <span style="font-weight:600;font-size:14px;color:#5a4a3a;" id="collectionDateLabel">Collection Stats</span>
+        <input type="date" id="collectionStatsDate" onchange="onCollectionDateChange()" style="padding:4px 8px;border:1px solid #d1c7b7;border-radius:6px;font-size:13px;background:#fff;color:#3d3425;">
+        <button onclick="resetCollectionDate()" class="btn btn-secondary" style="padding:3px 10px;font-size:11px;">Today</button>
+      </div>
       <div class="dashboard">
         <div class="stat-card blue">
-          <div class="label">Today Collection</div>
+          <div class="label" id="collectionLabel">Today Collection</div>
           <div class="value" id="todayCollection">&#8377;0</div>
         </div>
         <div class="stat-card green">
-          <div class="label">Today Collected</div>
+          <div class="label" id="collectedLabel">Today Collected</div>
           <div class="value" id="todayCollected">&#8377;0</div>
         </div>
         <div class="stat-card red">
-          <div class="label">Today Pending</div>
+          <div class="label" id="pendingLabel">Today Pending</div>
           <div class="value" id="todayPending">&#8377;0</div>
         </div>
         <div class="stat-card orange">
@@ -2390,6 +2502,9 @@
             <button class="btn btn-secondary btn-small" onclick="exportLedgerCSV()">
               <span class="material-icons" style="font-size:14px">download</span> Export
             </button>
+            <button class="btn btn-primary btn-small" onclick="openSettlementModal()">
+              <span class="material-icons" style="font-size:14px">payments</span> Record Payment
+            </button>
           </div>
         </div>
         <!-- Aging Bar (Feature 4) -->
@@ -2398,6 +2513,14 @@
         <div class="monthly-grid" id="ledgerSummaryCards" style="margin-bottom:20px;"></div>
         <!-- Detail table -->
         <div id="ledgerReportContent"></div>
+        <!-- Settlement History -->
+        <div id="settlementHistorySection" style="margin-top:24px;display:none;">
+          <h4 style="margin-bottom:12px"><span class="material-icons" style="vertical-align:middle;font-size:18px">receipt_long</span> Settlement History</h4>
+          <table class="report-table">
+            <thead><tr><th>Date</th><th>Agent</th><th>Amount</th><th>Mode</th><th>Reference</th><th>By</th><th id="settlementDeleteCol" style="display:none">Action</th></tr></thead>
+            <tbody id="settlementTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -2604,10 +2727,21 @@
       <div class="daybook-date-bar">
         <div class="filter-group">
           <label>Date</label>
-          <input type="date" id="daybookDate" onchange="renderDayBook()">
+          <input type="date" id="daybookDate" onchange="onDaybookDateChange()">
         </div>
         <button class="btn btn-secondary btn-small" id="btnSetOpeningBalance" onclick="openSetBalanceModal()">
           <span class="material-icons" style="font-size:14px">account_balance_wallet</span> Set Opening Balance
+        </button>
+      </div>
+      <!-- Date Lock Banner (shown when staff tries to access previous date) -->
+      <div id="daybookDateLock" class="daybook-date-lock" style="display:none;">
+        <span class="material-icons" style="font-size:20px;">lock</span>
+        <div>
+          <strong id="dateLockMsg">You don't have access to this date.</strong>
+          <p style="font-size:11px;margin-top:4px;opacity:0.85;" id="dateLockSubMsg">Request admin permission to view or modify entries for this date.</p>
+        </div>
+        <button class="btn btn-small" style="background:#f59e0b;color:#000;white-space:nowrap;" onclick="requestDaybookAccess()">
+          <span class="material-icons" style="font-size:14px;">send</span> Request Access
         </button>
       </div>
 
@@ -2923,6 +3057,218 @@
       </div>
     </div>
 
+    <!-- ==================== AKS OFFICE TAB ==================== -->
+    <div class="tab-content" id="tab-aksoffice">
+      <div class="section-card" style="padding:24px">
+        <h2 style="margin-bottom:16px"><span class="material-icons" style="vertical-align:middle">business</span> AKS Office Collections</h2>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+          <div class="filter-group">
+            <label>From</label>
+            <input type="date" id="aksFrom" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+          </div>
+          <div class="filter-group">
+            <label>To</label>
+            <input type="date" id="aksTo" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+          </div>
+          <div class="filter-group">
+            <label>Sub-Category</label>
+            <select id="aksSubCatFilter" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;min-width:140px">
+              <option value="">All</option>
+              <option value="Office (SBI)">Office (SBI)</option>
+              <option value="Getaway">Getaway</option>
+              <option value="Rajat">Rajat</option>
+              <option value="Happy">Happy</option>
+              <option value="Fyra">Fyra</option>
+              <option value="Vishal">Vishal</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-small" onclick="loadAksOfficePayments()" style="height:38px">
+            <span class="material-icons" style="font-size:16px">search</span> Search
+          </button>
+          <button class="btn btn-secondary btn-small" onclick="exportAksOfficeCsv()" style="height:38px">
+            <span class="material-icons" style="font-size:16px">download</span> Export CSV
+          </button>
+        </div>
+        <!-- Summary cards -->
+        <div id="aksSummaryCards" style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap"></div>
+        <!-- Data table -->
+        <div style="overflow-x:auto">
+          <table class="data-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Booking ID</th>
+                <th>Guest Name</th>
+                <th>Room</th>
+                <th>Amount (Cr)</th>
+                <th>Sub-Category</th>
+                <th>Context</th>
+                <th>Recorded By</th>
+                <th id="aksDeleteColHeader" style="display:none">Action</th>
+              </tr>
+            </thead>
+            <tbody id="aksTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== KOT TAB ==================== -->
+    <div class="tab-content" id="tab-kot">
+      <div class="section-card" style="padding:24px">
+        <h2 style="margin-bottom:16px"><span class="material-icons" style="vertical-align:middle;color:#c99b1a">restaurant_menu</span> Kitchen Order Tokens (Walk-in)</h2>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+          <div class="filter-group">
+            <label>Date</label>
+            <input type="date" id="kotDate" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd" onchange="loadKotOrders()">
+          </div>
+          <button class="btn btn-primary btn-small" onclick="openKotModal()" style="height:38px;background:#c99b1a;border-color:#c99b1a;">
+            <span class="material-icons" style="font-size:16px">add</span> New KOT
+          </button>
+        </div>
+        <div id="kotSummary" style="margin-bottom:16px"></div>
+        <div style="overflow-x:auto">
+          <table class="data-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>KOT ID</th>
+                <th>Customer</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Payment Mode</th>
+                <th>Created By</th>
+                <th id="kotDeleteColHeader" style="display:none">Action</th>
+              </tr>
+            </thead>
+            <tbody id="kotTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOT Modal -->
+    <div class="modal-overlay" id="kotModal">
+      <div class="modal" style="max-width: 460px;">
+        <div class="modal-header">
+          <h3><span class="material-icons" style="vertical-align:middle;color:#c99b1a">restaurant</span> New KOT Order</h3>
+          <button class="modal-close" onclick="closeKotModal()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Customer Name</label>
+            <input type="text" id="kotCustomerName" placeholder="Walk-in customer (optional)">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Description / Items *</label>
+            <input type="text" id="kotDescription" placeholder="e.g. 2x Dal, 1x Rice, 1x Roti">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Amount *</label>
+            <input type="number" id="kotAmount" min="0" placeholder="&#8377;">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Payment Mode *</label>
+            <select id="kotPaymentMode" onchange="toggleKotSubCategory()">
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+              <option value="AKS Office">AKS Office</option>
+            </select>
+          </div>
+          <div class="form-group" id="kotSubCatGroup" style="display:none;margin-top:12px">
+            <label>Sub-Category *</label>
+            <select id="kotSubCategory" onchange="toggleKotOtherInput()">
+              <option value="Office (SBI)">Office (SBI)</option>
+              <option value="Getaway">Getaway</option>
+              <option value="Rajat">Rajat</option>
+              <option value="Happy">Happy</option>
+              <option value="Fyra">Fyra</option>
+              <option value="Vishal">Vishal</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group" id="kotOtherSubCatGroup" style="display:none;margin-top:8px">
+            <label>Specify Sub-Category</label>
+            <input type="text" id="kotOtherSubCategory" placeholder="Enter sub-category">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeKotModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveKotOrder()" style="background:#c99b1a;border-color:#c99b1a;">
+            <span class="material-icons">restaurant</span> Save KOT
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settlement Modal -->
+    <div class="modal-overlay" id="settlementModal">
+      <div class="modal" style="max-width: 460px;">
+        <div class="modal-header">
+          <h3>Record Agent Payment</h3>
+          <button class="modal-close" onclick="closeModal('settlementModal')">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Agent / Source *</label>
+            <select id="settlementAgent">
+              <option value="">Select Agent</option>
+              <option value="Focus">Focus</option>
+              <option value="Global">Global</option>
+              <option value="Globe India">Globe India</option>
+              <option value="Holiday7">Holiday7</option>
+              <option value="Ultimate">Ultimate</option>
+              <option value="Minto">Minto</option>
+              <option value="Jatin TA">Jatin TA</option>
+              <option value="Himalayan Queen">Himalayan Queen</option>
+              <option value="MMT">MMT</option>
+              <option value="My Vacation">My Vacation</option>
+              <option value="MIH">MIH</option>
+              <option value="Royal Sunshine">Royal Sunshine</option>
+              <option value="Gyanrachanatour">Gyanrachanatour</option>
+              <option value="Self">Self</option>
+              <option value="Walking">Walking</option>
+              <option value="AKS">AKS</option>
+              <option value="Raisooone">Raisooone</option>
+              <option value="Legendyatri">Legendyatri</option>
+              <option value="AKS Office">AKS Office</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Amount *</label>
+            <input type="number" id="settlementAmount" min="0" placeholder="&#8377;">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Payment Mode *</label>
+            <select id="settlementPayMode">
+              <option value="Bank Transfer">SBI Neelkanth (Bank Transfer)</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Date *</label>
+            <input type="date" id="settlementDate">
+          </div>
+          <div class="form-group">
+            <label>Reference / Note</label>
+            <input type="text" id="settlementRef" placeholder="e.g. UTR number, cheque no.">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('settlementModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="submitSettlement()">
+            <span class="material-icons">payments</span> Record Payment
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- User Modal -->
     <div class="modal-overlay" id="userModal">
       <div class="modal" style="max-width:500px">
@@ -3171,7 +3517,7 @@
           </div>
           <div class="form-group">
             <label>Payment Type *</label>
-            <select id="paymentType">
+            <select id="paymentType" onchange="togglePrepaidFields()">
               <option value="Prepaid">Prepaid (Paid in advance)</option>
               <option value="Pay at Check-in">Pay at Check-in</option>
               <option value="Postpaid">Postpaid (Pay at checkout)</option>
@@ -3196,6 +3542,26 @@
           </div>
         </div>
 
+        <!-- Prepaid fields (shown when paymentType === 'Prepaid') -->
+        <div class="form-row" id="prepaidFieldsGroup" style="display:none;">
+          <div class="form-group">
+            <label>Advance Payment Date *</label>
+            <input type="date" id="prepaidAdvanceDate">
+          </div>
+          <div class="form-group">
+            <label>Payment Screenshot</label>
+            <div style="margin-top:4px;">
+              <div id="paymentProofPreview" style="margin-bottom:4px;"></div>
+              <label class="btn btn-secondary btn-small" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                <span class="material-icons" style="font-size:14px;">photo_camera</span>
+                <span id="paymentProofLabel">Upload Screenshot</span>
+                <input type="file" id="paymentProofFile" accept="image/*" style="display:none;"
+                       onchange="handlePaymentProofSelect(this)">
+              </label>
+            </div>
+          </div>
+        </div>
+
         <div id="bookingTotalDisplay" style="display:none;padding:12px 16px;background:linear-gradient(135deg,rgba(153,107,47,0.08),rgba(153,107,47,0.15));border-radius:10px;margin-bottom:12px;border:1px solid rgba(153,107,47,0.2);">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span style="font-weight:600;color:#996b2f;font-size:14px;">Estimated Total (Room + Add-On)</span>
@@ -3206,6 +3572,14 @@
         <div class="form-group">
           <label>Remarks</label>
           <input type="text" id="remarks" placeholder="Any notes...">
+        </div>
+
+        <!-- ID Proof section (visible only in edit mode) -->
+        <div id="editIdProofSection" style="display:none;margin-top:12px;padding:12px;background:rgba(59,130,246,0.08);border-radius:10px;border:1px solid rgba(59,130,246,0.2);">
+          <label style="font-weight:600;font-size:13px;color:#3b82f6;display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+            <span class="material-icons" style="font-size:16px;">badge</span> Guest ID Proof
+          </label>
+          <div id="editIdProofContent"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -3237,11 +3611,28 @@
         </div>
         <div class="form-group">
           <label>Payment Mode *</label>
-          <select id="collectPaymentMode">
+          <select id="collectPaymentMode" onchange="toggleCollectSubCategory()">
             <option value="Cash">Cash</option>
             <option value="Card">Card</option>
             <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <option value="AKS Office">AKS Office</option>
           </select>
+        </div>
+        <div class="form-group" id="collectSubCatGroup" style="display:none;margin-top:12px">
+          <label>Sub-Category *</label>
+          <select id="collectSubCategory" onchange="toggleCollectOtherInput()">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="collectOtherSubCatGroup" style="display:none;margin-top:8px">
+          <label>Specify Sub-Category</label>
+          <input type="text" id="collectOtherSubCategory" placeholder="Enter sub-category">
         </div>
       </div>
       <div class="modal-footer">
@@ -3320,6 +3711,31 @@
           <div id="checkinRoomSelectContainer" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
           <div class="room-avail-hint" id="checkinRoomHint" style="margin-top:6px;"></div>
         </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label style="font-weight:600;"><span class="material-icons" style="font-size:16px;vertical-align:middle;">badge</span> Guest ID Proof</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+            <!-- Front Side (Required) -->
+            <div class="id-proof-slot" id="idProofFrontSlot">
+              <div style="font-size:11px;font-weight:600;color:#f59e0b;margin-bottom:4px;">FRONT SIDE *</div>
+              <div id="idProofFrontPreview" class="id-proof-preview"></div>
+              <div id="idProofFrontStatus" class="id-proof-status"></div>
+              <label class="btn btn-secondary btn-small" style="cursor:pointer;margin:4px 0 0;display:inline-flex;align-items:center;gap:4px;">
+                <span class="material-icons" style="font-size:14px;">photo_camera</span> <span id="idProofFrontLabel">Upload</span>
+                <input type="file" id="checkinIdProofFront" accept="image/*" capture="environment" style="display:none;" onchange="handleIdProofSelect(this,'front')">
+              </label>
+            </div>
+            <!-- Back Side (Optional) -->
+            <div class="id-proof-slot" id="idProofBackSlot">
+              <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;">BACK SIDE (Optional)</div>
+              <div id="idProofBackPreview" class="id-proof-preview"></div>
+              <div id="idProofBackStatus" class="id-proof-status"></div>
+              <label class="btn btn-secondary btn-small" style="cursor:pointer;margin:4px 0 0;display:inline-flex;align-items:center;gap:4px;">
+                <span class="material-icons" style="font-size:14px;">photo_camera</span> <span id="idProofBackLabel">Upload</span>
+                <input type="file" id="checkinIdProofBack" accept="image/*" capture="environment" style="display:none;" onchange="handleIdProofSelect(this,'back')">
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeCheckinModal()">Cancel</button>
@@ -3388,13 +3804,30 @@
         <div class="form-row" style="margin-top:16px;">
           <div class="form-group">
             <label>Collect Balance - Payment Mode</label>
-            <select id="checkoutPayMode">
+            <select id="checkoutPayMode" onchange="toggleCheckoutSubCategory()">
               <option value="">No Collection Now</option>
               <option value="Cash">Cash</option>
               <option value="Card">Card</option>
               <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+              <option value="AKS Office">AKS Office</option>
             </select>
           </div>
+        </div>
+        <div class="form-group" id="checkoutSubCatGroup" style="display:none;margin-top:12px">
+          <label>Sub-Category *</label>
+          <select id="checkoutSubCategory" onchange="toggleCheckoutOtherInput()">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="checkoutOtherSubCatGroup" style="display:none;margin-top:8px">
+          <label>Specify Sub-Category</label>
+          <input type="text" id="checkoutOtherSubCategory" placeholder="Enter sub-category">
         </div>
       </div>
       <div class="modal-footer">
@@ -3726,7 +4159,7 @@
     }
     function hasPermission(section, action) {
       if (!currentUser) return false;
-      if (currentUser.role === 'admin') return true;
+      if (currentUser.role === 'admin' || currentUser.role === 'super_admin') return true;
       var p = currentUser.permissions || {};
       return (p[section] || []).includes(action);
     }
@@ -3760,10 +4193,61 @@
 
     var _pendingOtpUserId = null;
 
+    function getLoginPin() {
+      return (document.getElementById('pin1').value +
+              document.getElementById('pin2').value +
+              document.getElementById('pin3').value +
+              document.getElementById('pin4').value);
+    }
+    function clearLoginPin() {
+      ['pin1','pin2','pin3','pin4'].forEach(function(id) {
+        var el = document.getElementById(id);
+        el.value = '';
+        el.classList.remove('filled');
+      });
+    }
+    (function initPinBoxes() {
+      var pins = ['pin1','pin2','pin3','pin4'];
+      pins.forEach(function(id, i) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function() {
+          var v = this.value.replace(/[^0-9]/g, '');
+          this.value = v ? v[0] : '';
+          this.classList.toggle('filled', !!this.value);
+          if (this.value && i < 3) {
+            document.getElementById(pins[i + 1]).focus();
+          }
+          if (i === 3 && this.value) {
+            setTimeout(function() { doLogin(); }, 100);
+          }
+        });
+        el.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !this.value && i > 0) {
+            var prev = document.getElementById(pins[i - 1]);
+            prev.value = '';
+            prev.classList.remove('filled');
+            prev.focus();
+          }
+        });
+        el.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+          for (var j = 0; j < 4 && j < pasted.length; j++) {
+            var box = document.getElementById(pins[j]);
+            box.value = pasted[j];
+            box.classList.add('filled');
+          }
+          if (pasted.length >= 4) setTimeout(function() { doLogin(); }, 100);
+          else if (pasted.length > 0) document.getElementById(pins[Math.min(pasted.length, 3)]).focus();
+        });
+      });
+    })();
+
     async function doLogin() {
       var email = document.getElementById('loginEmail').value;
-      var pass = document.getElementById('loginPassword').value;
-      if (!email || !pass) return;
+      var pass = getLoginPin();
+      if (!email || pass.length < 4) return;
       try {
         document.getElementById('loginError').style.display = 'none';
         var r = await apiFetch('/auth/login', { method: 'POST', body: { emailOrPhone: email, password: pass } });
@@ -3773,6 +4257,8 @@
       } catch(e) {
         document.getElementById('loginError').textContent = e.message || 'Login failed';
         document.getElementById('loginError').style.display = 'block';
+        clearLoginPin();
+        document.getElementById('pin1').focus();
       }
     }
 
@@ -3836,7 +4322,7 @@
       clearAuth();
       showScreen('login-screen');
       document.getElementById('loginEmail').value = '';
-      document.getElementById('loginPassword').value = '';
+      clearLoginPin();
     }
 
     function openChangePassword() {
@@ -3876,7 +4362,7 @@
         if (match) {
           var tabName = match[1];
           if (tabName === 'users' || tabName === 'audit') {
-            btn.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+            btn.style.display = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')) ? '' : 'none';
           } else if (tabSections.includes(tabName)) {
             btn.style.display = hasPermission(tabName, 'view') ? '' : 'none';
           }
@@ -3885,8 +4371,14 @@
       // New Booking button
       var nbBtn = document.getElementById('btnNewBooking');
       if (nbBtn) nbBtn.style.display = hasPermission('bookings', 'create') ? '' : 'none';
+      // KOT Order button
+      var kotBtn = document.getElementById('btnNewKot');
+      if (kotBtn) kotBtn.style.display = hasPermission('bookings', 'create') ? '' : 'none';
+      // KOT tab
+      var kotTabBtn = document.getElementById('tab-btn-kot');
+      if (kotTabBtn) kotTabBtn.style.display = hasPermission('bookings', 'view') ? '' : 'none';
       // Opening Balance button - admin only (cards visible to all)
-      var isAdmin = currentUser && currentUser.role === 'admin';
+      var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin');
       var obBtn = document.getElementById('btnSetOpeningBalance');
       if (obBtn) obBtn.style.display = isAdmin ? '' : 'none';
     }
@@ -3957,13 +4449,13 @@
             '<td>' + escapeHtml(u.name) + '</td>' +
             '<td>' + escapeHtml(u.email) + '</td>' +
             '<td>' + escapeHtml(u.phone || '-') + '</td>' +
-            '<td><span class="badge ' + (u.role === 'admin' ? 'badge-info' : 'badge-default') + '">' + u.role.toUpperCase() + '</span></td>' +
+            '<td><span class="badge ' + (u.role === 'admin' || u.role === 'super_admin' ? 'badge-info' : 'badge-default') + '">' + u.role.toUpperCase() + '</span></td>' +
             '<td><span class="badge ' + (u.isActive ? 'badge-success' : 'badge-danger') + '">' + (u.isActive ? 'Active' : 'Inactive') + '</span></td>' +
-            '<td style="font-size:12px">' + (u.role === 'admin' ? 'All Access' : permLabels) + '</td>' +
+            '<td style="font-size:12px">' + (u.role === 'admin' || u.role === 'super_admin' ? 'All Access' : permLabels) + '</td>' +
             '<td>' +
               '<button class="btn btn-sm btn-secondary" onclick="openUserModal(' + u.id + ')" title="Edit"><span class="material-icons" style="font-size:16px">edit</span></button> ' +
-              (u.role !== 'admin' ? '<button class="btn btn-sm btn-secondary" onclick="resetUserPw(' + u.id + ')" title="Reset Password"><span class="material-icons" style="font-size:16px">lock_reset</span></button> ' : '') +
-              (u.role !== 'admin' ? '<button class="btn btn-sm btn-danger" onclick="deleteUserConfirm(' + u.id + ')" title="Delete"><span class="material-icons" style="font-size:16px">delete</span></button>' : '') +
+              (u.role !== 'admin' && u.role !== 'super_admin' ? '<button class="btn btn-sm btn-secondary" onclick="resetUserPw(' + u.id + ')" title="Reset Password"><span class="material-icons" style="font-size:16px">lock_reset</span></button> ' : '') +
+              (currentUser && currentUser.role === 'super_admin' && u.role !== 'admin' && u.role !== 'super_admin' ? '<button class="btn btn-sm btn-danger" onclick="deleteUserConfirm(' + u.id + ')" title="Delete"><span class="material-icons" style="font-size:16px">delete</span></button>' : '') +
             '</td></tr>';
         }).join('');
       } catch(e) {}
@@ -4126,6 +4618,7 @@
         sourceName: b.sourceName || '',
         complimentary: b.complimentary || '',
         actualRoomRent: parseFloat(b.actualRoomRent) || 0,
+        addOnAmount: parseFloat(b.addOnAmount) || 0,
         totalAmount: parseFloat(b.totalAmount) || 0,
         paymentType: b.paymentType || '',
         advanceReceived: parseFloat(b.advanceReceived) || 0,
@@ -4143,7 +4636,11 @@
         checkedOut: b.checkedOut || false,
         checkedOutTime: b.checkedOutTime || '',
         rescheduledFrom: b.rescheduledFrom || '',
-        createdAt: b.createdAt || ''
+        createdAt: b.createdAt || '',
+        idProofFrontPath: b.idProofFrontPath || '',
+        idProofBackPath: b.idProofBackPath || '',
+        paymentProofPath: b.paymentProofPath || '',
+        lastModifiedBy: b.lastModifiedBy || ''
       };
     }
 
@@ -4368,7 +4865,7 @@
         if (!document.getElementById('daybookDate').value) {
           document.getElementById('daybookDate').value = getToday();
         }
-        renderDayBook();
+        onDaybookDateChange();
       }
       if (tab === 'salary') {
         initSalaryTab();
@@ -4384,6 +4881,12 @@
       }
       if (tab === 'calendar') {
         renderGanttCalendar();
+      }
+      if (tab === 'aksoffice') {
+        initAksOfficeTab();
+      }
+      if (tab === 'kot') {
+        initKotTab();
       }
     }
 
@@ -4524,6 +5027,8 @@
       tbody.innerHTML = filtered.map(function(b) {
         var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
+        if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
         var sourceClass = b.source === 'Walk-in' ? 'badge-walkin' :
                           b.source === 'OTA' ? 'badge-ota' : 'badge-agent';
@@ -4539,6 +5044,7 @@
           '<td><strong>' + escapeHtml(b.id) + '</strong></td>' +
           '<td><div class="guest-info"><div class="name">' + escapeHtml(b.guestName) +
             (b.kot === 'Yes' ? ' <span class="badge-kot">KOT</span>' : '') +
+            (b.idProofFrontPath ? ' <span class="badge-idproof" onclick="viewBookingIdProof(\'' + b.id + '\')" title="View ID Proof"><span class="material-icons" style="font-size:13px;vertical-align:middle;">badge</span>' + (b.idProofBackPath ? ' 2' : ' 1') + '</span>' : '') +
           '</div>' +
             (b.phone ? '<div class="phone">' + escapeHtml(b.phone) + '</div>' : '') +
           '</div></td>' +
@@ -4558,30 +5064,99 @@
           '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
           '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
           '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
+            (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
             (b.lastModifiedBy ? '<br><small style="color:#6b7280">by ' + escapeHtml(b.lastModifiedBy) + '</small>' : '') +
           '</td>' +
           '<td><div class="actions">' +
             (!isCancelledOrRescheduled && pending > 0 ? '<button class="btn btn-primary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
             (!isCancelledOrRescheduled ? '<button class="btn btn-warning btn-small" onclick="openCheckoutModal(\'' + b.id + '\')"><span class="material-icons" style="font-size:14px">logout</span> Checkout</button>' : '') +
             '<button class="btn btn-secondary btn-small" onclick="generateBill(\'' + b.id + '\')" title="Generate Bill"><span class="material-icons" style="font-size:14px">receipt</span> Bill</button>' +
-            (!isCancelledOrRescheduled ? '<button class="btn btn-secondary btn-small" onclick="openEditModalById(\'' + b.id + '\')">Edit</button>' : '') +
-            (!isCancelledOrRescheduled ? '<button class="btn btn-danger btn-small" onclick="openCancelModal(\'' + b.id + '\')">Cancel</button>' : '') +
+            (!isCancelledOrRescheduled && currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin') ? '<button class="btn btn-secondary btn-small" onclick="openEditModalById(\'' + b.id + '\')">Edit</button>' : '') +
+            (!isCancelledOrRescheduled && currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-danger btn-small" onclick="openCancelModal(\'' + b.id + '\')">Cancel</button>' : '') +
           '</div></td>' +
         '</tr>';
       }).join('');
     }
 
     // ========== DASHBOARD ==========
-    function updateDashboard() {
+    function getCollectionDate() {
+      var el = document.getElementById('collectionStatsDate');
+      return (el && el.value) ? el.value : getToday();
+    }
+    function onCollectionDateChange() {
+      updateCollectionStats();
+    }
+    function resetCollectionDate() {
+      document.getElementById('collectionStatsDate').value = getToday();
+      updateCollectionStats();
+    }
+    function updateCollectionStats() {
+      var statsDate = getCollectionDate();
       var today = getToday();
+      var isToday = (statsDate === today);
 
-      var checkinGuests = [];
-      var inhouseGuests = [];
-      var checkoutGuests = [];
+      // Update labels
+      var dateLabel = isToday ? 'Today' : formatDate(statsDate);
+      document.getElementById('collectionLabel').textContent = dateLabel + ' Collection';
+      document.getElementById('collectedLabel').textContent = dateLabel + ' Collected';
+      document.getElementById('pendingLabel').textContent = dateLabel + ' Pending';
+      document.getElementById('collectionDateLabel').textContent = isToday ? 'Collection Stats' : 'Collection: ' + formatDate(statsDate);
 
       var todayCollectionAmt = 0;
       var todayCollectedAmt = 0;
       var todayPendingAmt = 0;
+
+      bookings.forEach(function(b) {
+        if (b.status === 'CANCELLED') return;
+        var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        if (b.status === 'COLLECTED' && pending > 0) pending = 0;
+
+        var showInCollection = false;
+        if (b.paymentType === 'Pay at Check-in') {
+          showInCollection = (b.checkIn === statsDate);
+        } else if (b.paymentType === 'Postpaid') {
+          showInCollection = (b.checkOut === statsDate && !b.checkedOut);
+        } else if (b.paymentType === 'Prepaid') {
+          showInCollection = (b.advanceDate === statsDate);
+        } else if (b.paymentType === 'Ledger') {
+          showInCollection = false;
+        } else {
+          showInCollection = (b.checkOut === statsDate && !b.checkedOut);
+        }
+
+        if (showInCollection) {
+          todayCollectionAmt += (parseFloat(b.totalAmount) || 0);
+          todayCollectedAmt += totalReceived;
+          if (pending > 0) todayPendingAmt += pending;
+        }
+      });
+
+      document.getElementById('todayCollection').textContent = formatCurrency(todayCollectionAmt);
+      document.getElementById('todayCollected').textContent = formatCurrency(todayCollectedAmt);
+      document.getElementById('todayPending').textContent = formatCurrency(todayPendingAmt);
+
+      // Alert box
+      var alertBox = document.getElementById('alertBox');
+      if (todayPendingAmt > 0) {
+        alertBox.style.display = 'flex';
+        document.getElementById('alertText').textContent =
+          (isToday ? 'Today' : formatDate(statsDate)) + ': ' + formatCurrency(todayPendingAmt) + ' pending collection';
+      } else {
+        alertBox.style.display = 'none';
+      }
+    }
+
+    function updateDashboard() {
+      var today = getToday();
+
+      // Set collection date picker default to today if not set
+      var dateEl = document.getElementById('collectionStatsDate');
+      if (dateEl && !dateEl.value) dateEl.value = today;
+
+      var checkinGuests = [];
+      var inhouseGuests = [];
+      var checkoutGuests = [];
       var ledgerDueAmt = 0;
       var ledgerByAgent = {};
 
@@ -4589,26 +5164,12 @@
         if (b.status === 'CANCELLED') return;
         var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
-        // Today check-in: only if NOT yet checked in
-        if (b.checkIn === today && !b.checkedIn) {
-          checkinGuests.push(b);
-        }
-        // In-house: checked in (flag set) and checking out after today, OR checked in before today
-        if (b.checkedIn && b.checkIn <= today && b.checkOut > today) {
-          inhouseGuests.push(b);
-        }
-        // Also include guests who checked in before today (auto in-house)
-        if (!b.checkedIn && b.checkIn < today && b.checkOut > today) {
-          inhouseGuests.push(b);
-        }
-        // Today check-out: not yet checked out
-        if (b.checkOut === today && !b.checkedOut) {
-          checkoutGuests.push(b);
-          todayCollectionAmt += (parseFloat(b.totalAmount) || 0);
-          todayCollectedAmt += totalReceived;
-          if (pending > 0) todayPendingAmt += pending;
-        }
+        if (b.checkIn === today && !b.checkedIn) checkinGuests.push(b);
+        if (b.checkedIn && b.checkIn <= today && b.checkOut > today) inhouseGuests.push(b);
+        if (!b.checkedIn && b.checkIn < today && b.checkOut > today) inhouseGuests.push(b);
+        if (b.checkOut === today && !b.checkedOut) checkoutGuests.push(b);
 
         if (pending > 0 && b.paymentType === 'Ledger') {
           ledgerDueAmt += pending;
@@ -4625,21 +5186,11 @@
       document.getElementById('inhouseCount').textContent = '(' + inhouseGuests.length + ')';
       document.getElementById('checkoutCount').textContent = '(' + checkoutGuests.length + ')';
 
-      // Stat cards
-      document.getElementById('todayCollection').textContent = formatCurrency(todayCollectionAmt);
-      document.getElementById('todayCollected').textContent = formatCurrency(todayCollectedAmt);
-      document.getElementById('todayPending').textContent = formatCurrency(todayPendingAmt);
+      // Ledger Due card
       document.getElementById('ledgerDue').textContent = formatCurrency(ledgerDueAmt);
 
-      // Alert box
-      var alertBox = document.getElementById('alertBox');
-      if (todayPendingAmt > 0) {
-        alertBox.style.display = 'flex';
-        document.getElementById('alertText').textContent =
-          'Checkout today: ' + formatCurrency(todayPendingAmt) + ' pending collection';
-      } else {
-        alertBox.style.display = 'none';
-      }
+      // Collection stats (uses selected date)
+      updateCollectionStats();
 
       updateMonthlySummary();
       updateInventoryAlerts();
@@ -4657,6 +5208,7 @@
         overdueCheckouts = checkoutGuests.length;
       }
       renderReminderBadges(overdueCheckins, overdueCheckouts);
+      loadAccessRequests();
     }
 
     // === CHECK-IN LIST: with Check-in Done + Room Allot ===
@@ -4674,6 +5226,8 @@
       guests.forEach(function(b) {
         var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
+        if (b.status === 'COLLECTED' && pending > 0) pending = 0;
         var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
                           b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
         html += '<tr>' +
@@ -4686,7 +5240,9 @@
           '<td>' + formatDate(b.checkOut) + '</td>' +
           '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
           '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
-          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
+            (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
+          '</td>' +
           '<td><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
             '<button class="btn btn-primary btn-small" onclick="markCheckedIn(\'' + b.id + '\')" title="Check-in &amp; Allot Room">' +
               '<span class="material-icons" style="font-size:14px">login</span> Check-in &amp; Room</button>' +
@@ -4715,6 +5271,8 @@
       guests.forEach(function(b) {
         var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
+        if (b.status === 'COLLECTED' && pending > 0) pending = 0;
         var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
                           b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
         html += '<tr>' +
@@ -4730,8 +5288,15 @@
           '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
           '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
           '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
-          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
-          '<td>' + (b.phone ? '<a href="https://wa.me/' + formatWhatsAppPhone(b.phone) + '?text=' + encodeURIComponent('Hello ' + (b.guestName || '') + ', hope you\'re enjoying your stay at The Neelkanth Grand! \uD83D\uDE0A\nRoom: ' + (b.roomNo || 'TBA') + ', Checkout: ' + formatDate(b.checkOut) + '.\nNeed anything? Just let us know.\n\u2014 The Neelkanth Grand, Manali') + '" target="_blank" class="btn-whatsapp" title="WhatsApp"><span class="material-icons" style="font-size:16px">chat</span></a>' : '') + '</td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
+            (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
+          '</td>' +
+          '<td><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+            (pending > 0 ? '<button class="btn btn-primary btn-small" onclick="openCollectModalById(\'' + b.id + '\')">Collect</button>' : '') +
+            '<button class="btn btn-warning btn-small" onclick="openCheckoutModal(\'' + b.id + '\')"><span class="material-icons" style="font-size:14px">logout</span> Checkout</button>' +
+            (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin') ? '<button class="btn btn-secondary btn-small" onclick="openEditModalById(\'' + b.id + '\')">Edit</button>' : '') +
+            (b.phone ? '<a href="https://wa.me/' + formatWhatsAppPhone(b.phone) + '?text=' + encodeURIComponent('Hello ' + (b.guestName || '') + ', hope you\'re enjoying your stay at The Neelkanth Grand! \uD83D\uDE0A\nRoom: ' + (b.roomNo || 'TBA') + ', Checkout: ' + formatDate(b.checkOut) + '.\nNeed anything? Just let us know.\n\u2014 The Neelkanth Grand, Manali') + '" target="_blank" class="btn-whatsapp" title="WhatsApp"><span class="material-icons" style="font-size:16px">chat</span></a>' : '') +
+          '</div></td>' +
           '</tr>';
       });
       html += '</tbody></table></div>';
@@ -4753,6 +5318,8 @@
       guests.forEach(function(b) {
         var totalReceived = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pending = (parseFloat(b.totalAmount) || 0) - totalReceived;
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
+        if (b.status === 'COLLECTED' && pending > 0) pending = 0;
         var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
                           b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
         var nights = calculateNights(b.checkIn, b.checkOut);
@@ -4769,7 +5336,9 @@
           '<td class="amount">' + formatCurrency(b.totalAmount) + '</td>' +
           '<td class="amount amount-received">' + formatCurrency(totalReceived) + '</td>' +
           '<td class="amount ' + (pending > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pending) + '</td>' +
-          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
+            (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
+          '</td>' +
           '<td><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
             '<button class="btn btn-warning btn-small" onclick="openCheckoutModal(\'' + b.id + '\')" title="Check Out with KOT + Add-On">' +
               '<span class="material-icons" style="font-size:14px">logout</span> Checkout</button>' +
@@ -5622,6 +6191,10 @@
       document.getElementById('advanceReceived').value = '0';
       document.getElementById('paymentMode').value = '';
       document.getElementById('remarks').value = '';
+      document.getElementById('editIdProofSection').style.display = 'none';
+      document.getElementById('prepaidFieldsGroup').style.display = 'none';
+      document.getElementById('prepaidAdvanceDate').value = '';
+      resetPaymentProofSlot();
       toggleSourceName();
       resetSaveBtn();
       updateNightsDisplay();
@@ -5673,15 +6246,123 @@
       document.getElementById('advanceReceived').value = booking.advanceReceived || 0;
       document.getElementById('paymentMode').value = booking.paymentMode || '';
       document.getElementById('remarks').value = booking.remarks || '';
+      // Prepaid fields
+      resetPaymentProofSlot();
+      togglePrepaidFields();
+      if (booking.paymentType === 'Prepaid') {
+        document.getElementById('prepaidAdvanceDate').value = booking.advanceDate || '';
+        if (booking.paymentProofPath) {
+          var proofBkId = getBackendBookingId(booking.id);
+          document.getElementById('paymentProofPreview').innerHTML =
+            '<img src="' + API_BASE + '/bookings/' + proofBkId + '/payment-proof" ' +
+            'style="max-width:140px;max-height:100px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;" ' +
+            'onclick="viewPaymentProof(' + proofBkId + ')" ' +
+            'onerror="this.style.display=\'none\'">';
+          document.getElementById('paymentProofLabel').textContent = 'Change';
+        }
+      }
       toggleSourceName();
       resetSaveBtn();
       updateRoomAvailability();
       updateNightsDisplay();
       updateBookingTotal();
+      // Show ID proof section in edit mode
+      var idSection = document.getElementById('editIdProofSection');
+      idSection.style.display = 'block';
+      var idContent = document.getElementById('editIdProofContent');
+      var bkBackendId = getBackendBookingId(booking.id);
+      var editIdHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+      ['front', 'back'].forEach(function(side) {
+        var hasProof = side === 'front' ? booking.idProofFrontPath : booking.idProofBackPath;
+        var sideLabel = side === 'front' ? 'FRONT SIDE' : 'BACK SIDE';
+        editIdHtml += '<div style="text-align:center;padding:8px;background:rgba(20,20,40,0.3);border-radius:8px;border:1px solid ' + (hasProof ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)') + ';">';
+        editIdHtml += '<div style="font-size:11px;font-weight:600;color:' + (side === 'front' ? '#f59e0b' : '#6b7280') + ';margin-bottom:6px;">' + sideLabel + '</div>';
+        if (hasProof) {
+          editIdHtml += '<img src="' + API_BASE + '/bookings/' + bkBackendId + '/id-proof?side=' + side + '" style="max-width:140px;max-height:100px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,0.2);" onclick="viewIdProofImage(' + bkBackendId + ',\'' + side + '\')">';
+          editIdHtml += '<div style="margin-top:6px;display:flex;gap:4px;justify-content:center;">';
+          editIdHtml += '<label class="btn btn-secondary btn-small" style="cursor:pointer;font-size:11px;"><span class="material-icons" style="font-size:12px;">photo_camera</span> Change<input type="file" accept="image/*" style="display:none;" onchange="reuploadIdProofSide(\'' + booking.id + '\',\'' + side + '\',this)"></label>';
+          editIdHtml += '<button class="btn btn-danger btn-small" style="font-size:11px;" onclick="deleteIdProofSide(\'' + booking.id + '\',\'' + side + '\')"><span class="material-icons" style="font-size:12px;">delete</span></button>';
+          editIdHtml += '</div>';
+        } else {
+          editIdHtml += '<div style="color:#6b7280;font-size:11px;margin:12px 0;">No photo</div>';
+          editIdHtml += '<label class="btn btn-secondary btn-small" style="cursor:pointer;font-size:11px;"><span class="material-icons" style="font-size:12px;">photo_camera</span> Upload<input type="file" accept="image/*" style="display:none;" onchange="reuploadIdProofSide(\'' + booking.id + '\',\'' + side + '\',this)"></label>';
+        }
+        editIdHtml += '</div>';
+      });
+      editIdHtml += '</div>';
+      idContent.innerHTML = editIdHtml;
     }
 
     function closeBookingModal() {
       document.getElementById('bookingModal').classList.remove('active');
+      document.getElementById('editIdProofSection').style.display = 'none';
+    }
+
+    // ========== PREPAID FIELDS TOGGLE & PAYMENT PROOF ==========
+    var _paymentProofFile = null;
+
+    function togglePrepaidFields() {
+      var pt = document.getElementById('paymentType').value;
+      var group = document.getElementById('prepaidFieldsGroup');
+      if (pt === 'Prepaid') {
+        group.style.display = 'flex';
+        if (!document.getElementById('prepaidAdvanceDate').value) {
+          document.getElementById('prepaidAdvanceDate').value = getToday();
+        }
+      } else {
+        group.style.display = 'none';
+      }
+    }
+
+    function handlePaymentProofSelect(input) {
+      if (!input.files || !input.files[0]) return;
+      _paymentProofFile = input.files[0];
+      var label = document.getElementById('paymentProofLabel');
+      var preview = document.getElementById('paymentProofPreview');
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        preview.innerHTML = '<img src="' + e.target.result + '" style="max-width:140px;max-height:100px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;" onclick="viewIdProofFull(this.src)">';
+      };
+      reader.readAsDataURL(_paymentProofFile);
+      label.textContent = 'Change';
+    }
+
+    function resetPaymentProofSlot() {
+      _paymentProofFile = null;
+      document.getElementById('paymentProofPreview').innerHTML = '';
+      document.getElementById('paymentProofLabel').textContent = 'Upload Screenshot';
+      var input = document.getElementById('paymentProofFile');
+      if (input) input.value = '';
+    }
+
+    async function uploadPaymentProof(backendId, file) {
+      var formData = new FormData();
+      formData.append('paymentProof', file);
+      try {
+        var resp = await fetch(API_BASE + '/bookings/' + backendId + '/payment-proof', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken },
+          body: formData
+        });
+        if (!resp.ok) throw new Error('Upload failed');
+        return true;
+      } catch(e) {
+        showToast('Payment proof upload failed', 'error');
+        return false;
+      }
+    }
+
+    async function viewPaymentProof(backendId) {
+      try {
+        var resp = await fetch(API_BASE + '/bookings/' + backendId + '/payment-proof', {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (!resp.ok) throw new Error('Not found');
+        var blob = await resp.blob();
+        viewIdProofFull(URL.createObjectURL(blob));
+      } catch(e) {
+        showToast('Payment proof not found', 'error');
+      }
     }
 
     function toggleSourceName() {
@@ -5768,6 +6449,14 @@
         return;
       }
 
+      // Prepaid validation
+      var prepaidAdvanceDate = paymentType === 'Prepaid'
+        ? document.getElementById('prepaidAdvanceDate').value : '';
+      if (paymentType === 'Prepaid' && !prepaidAdvanceDate) {
+        showToast('Please enter advance payment date for Prepaid booking', 'error');
+        return;
+      }
+
       try {
         if (editId) {
           // Update existing booking
@@ -5781,10 +6470,15 @@
             source: source, sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
             complimentary: complimentary, addOnAmount: addOnAmount, actualRoomRent: actualRoomRent,
             totalAmount: totalAmount, paymentType: paymentType,
-            advanceReceived: advanceReceived, paymentMode: paymentMode, remarks: remarks
+            advanceReceived: advanceReceived, advanceDate: prepaidAdvanceDate || undefined,
+            paymentMode: paymentMode, remarks: remarks
           };
 
           await apiFetch('/bookings/' + backendId, { method: 'PUT', body: dto });
+          // Upload payment proof if Prepaid and file selected
+          if (paymentType === 'Prepaid' && _paymentProofFile) {
+            await uploadPaymentProof(backendId, _paymentProofFile);
+          }
           await loadBookingsFromAPI();
           closeBookingModal();
           renderBookings();
@@ -5799,10 +6493,15 @@
             source: source, sourceName: (source === 'OTA' || source === 'Agent') ? sourceName : '',
             complimentary: complimentary, addOnAmount: addOnAmount, actualRoomRent: actualRoomRent,
             totalAmount: totalAmount, paymentType: paymentType,
-            advanceReceived: advanceReceived, paymentMode: paymentMode, remarks: remarks
+            advanceReceived: advanceReceived, advanceDate: prepaidAdvanceDate || undefined,
+            paymentMode: paymentMode, remarks: remarks
           };
 
-          await apiFetch('/bookings', { method: 'POST', body: dto });
+          var saved = await apiFetch('/bookings', { method: 'POST', body: dto });
+          // Upload payment proof if Prepaid and file selected
+          if (paymentType === 'Prepaid' && _paymentProofFile && saved && saved.id) {
+            await uploadPaymentProof(saved.id, _paymentProofFile);
+          }
           await loadBookingsFromAPI();
           closeBookingModal();
           renderBookings();
@@ -5826,10 +6525,18 @@
       document.getElementById('collectBookingId').value = booking.id;
       document.getElementById('collectPendingAmount').textContent = formatCurrency(pending);
       document.getElementById('collectAmount').value = pending > 0 ? pending : 0;
+      // Reset payment mode and sub-category
+      document.getElementById('collectPaymentMode').value = 'Cash';
+      document.getElementById('collectSubCatGroup').style.display = 'none';
+      document.getElementById('collectOtherSubCatGroup').style.display = 'none';
+      document.getElementById('collectSubCategory').selectedIndex = 0;
+      document.getElementById('collectOtherSubCategory').value = '';
     }
 
     function closeCollectModal() {
       document.getElementById('collectModal').classList.remove('active');
+      document.getElementById('collectSubCatGroup').style.display = 'none';
+      document.getElementById('collectOtherSubCatGroup').style.display = 'none';
     }
 
     async function collectPayment() {
@@ -5842,13 +6549,25 @@
         return;
       }
 
+      var body = { amount: amount, paymentMode: mode };
+
+      // Include subCategory for AKS Office
+      if (mode === 'AKS Office') {
+        var subCat = document.getElementById('collectSubCategory').value;
+        if (subCat === 'Other') {
+          subCat = document.getElementById('collectOtherSubCategory').value.trim();
+          if (!subCat) { showToast('Please specify sub-category', 'error'); return; }
+        }
+        body.subCategory = subCat;
+      }
+
       var backendId = getBackendBookingId(id);
       if (!backendId) { showToast('Booking not found', 'error'); return; }
 
       try {
         await apiFetch('/bookings/' + backendId + '/collect', {
           method: 'POST',
-          body: { amount: amount, paymentMode: mode }
+          body: body
         });
         await loadBookingsFromAPI();
         closeCollectModal();
@@ -5963,11 +6682,204 @@
         '</div>';
 
       updateCheckinRoomSelects();
+      // Reset both ID proof slots
+      resetIdProofSlot('front');
+      resetIdProofSlot('back');
+      // Show existing ID proofs if already uploaded
+      var backendId = getBackendBookingId(b.id);
+      if (b.idProofFrontPath) showExistingIdProof('front', backendId, b.id);
+      if (b.idProofBackPath) showExistingIdProof('back', backendId, b.id);
     }
 
     function closeCheckinModal() {
       document.getElementById('checkinModal').classList.remove('active');
       checkinBookingData = null;
+      resetIdProofSlot('front');
+      resetIdProofSlot('back');
+    }
+
+    // ===== ID Proof Functions (front/back with AI validation) =====
+    var _idProofFiles = { front: null, back: null };
+    var _idProofValidated = { front: false, back: false };
+
+    function resetIdProofSlot(side) {
+      _idProofFiles[side] = null;
+      _idProofValidated[side] = false;
+      var preview = document.getElementById('idProof' + cap(side) + 'Preview');
+      var status = document.getElementById('idProof' + cap(side) + 'Status');
+      var slot = document.getElementById('idProof' + cap(side) + 'Slot');
+      var label = document.getElementById('idProof' + cap(side) + 'Label');
+      var input = document.getElementById('checkinIdProof' + cap(side));
+      if (preview) preview.innerHTML = '';
+      if (status) { status.textContent = ''; status.className = 'id-proof-status'; }
+      if (slot) { slot.className = 'id-proof-slot'; }
+      if (label) label.textContent = 'Upload';
+      if (input) input.value = '';
+    }
+
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    function handleIdProofSelect(input, side) {
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      _idProofFiles[side] = file;
+      _idProofValidated[side] = false;
+
+      var preview = document.getElementById('idProof' + cap(side) + 'Preview');
+      var label = document.getElementById('idProof' + cap(side) + 'Label');
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        preview.innerHTML = '<img src="' + e.target.result + '" onclick="viewIdProofFull(this.src)">';
+      };
+      reader.readAsDataURL(file);
+      if (label) label.textContent = 'Change';
+    }
+
+    function showExistingIdProof(side, backendId, displayId) {
+      var preview = document.getElementById('idProof' + cap(side) + 'Preview');
+      var status = document.getElementById('idProof' + cap(side) + 'Status');
+      var slot = document.getElementById('idProof' + cap(side) + 'Slot');
+      var label = document.getElementById('idProof' + cap(side) + 'Label');
+      _idProofValidated[side] = true;
+
+      preview.innerHTML = '<img src="' + API_BASE + '/bookings/' + backendId + '/id-proof?side=' + side + '" onclick="viewIdProofImage(' + backendId + ',\'' + side + '\')">';
+      status.innerHTML = '<span class="material-icons" style="font-size:12px;vertical-align:middle;">check_circle</span> On file';
+      status.className = 'id-proof-status valid';
+      slot.className = 'id-proof-slot has-proof';
+      if (label) label.textContent = 'Change';
+    }
+
+    function viewIdProofFull(src) {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+      overlay.onclick = function() { document.body.removeChild(overlay); };
+      var img = document.createElement('img');
+      img.src = src;
+      img.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+      overlay.appendChild(img);
+      document.body.appendChild(overlay);
+    }
+
+    async function viewIdProofImage(backendId, side) {
+      try {
+        var resp = await fetch(API_BASE + '/bookings/' + backendId + '/id-proof?side=' + side, {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (!resp.ok) throw new Error('Not found');
+        var blob = await resp.blob();
+        viewIdProofFull(URL.createObjectURL(blob));
+      } catch(e) {
+        showToast('ID proof not found', 'error');
+      }
+    }
+
+    async function viewBookingIdProof(bookingDisplayId) {
+      var backendId = getBackendBookingId(bookingDisplayId);
+      if (!backendId) return;
+      // Show both sides in a panel
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;cursor:pointer;padding:20px;';
+      overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+
+      var b = bookings.find(function(bk) { return bk.id === bookingDisplayId; });
+      var sides = [];
+      if (b && b.idProofFrontPath) sides.push('front');
+      if (b && b.idProofBackPath) sides.push('back');
+
+      for (var si = 0; si < sides.length; si++) {
+        try {
+          var resp = await fetch(API_BASE + '/bookings/' + backendId + '/id-proof?side=' + sides[si], {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+          });
+          if (resp.ok) {
+            var blob = await resp.blob();
+            var container = document.createElement('div');
+            container.style.cssText = 'text-align:center;';
+            var lbl = document.createElement('div');
+            lbl.style.cssText = 'color:#fff;font-size:13px;font-weight:600;margin-bottom:8px;';
+            lbl.textContent = sides[si].toUpperCase() + ' SIDE';
+            container.appendChild(lbl);
+            var img = document.createElement('img');
+            img.src = URL.createObjectURL(blob);
+            img.style.cssText = 'max-width:44vw;max-height:80vh;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+            container.appendChild(img);
+            overlay.appendChild(container);
+          }
+        } catch(e) {}
+      }
+      if (overlay.children.length === 0) {
+        showToast('No ID proof found', 'error');
+        return;
+      }
+      document.body.appendChild(overlay);
+    }
+
+    async function uploadIdProofSide(backendId, side, file) {
+      var status = document.getElementById('idProof' + cap(side) + 'Status');
+      var slot = document.getElementById('idProof' + cap(side) + 'Slot');
+
+      status.innerHTML = '<span class="material-icons" style="font-size:12px;vertical-align:middle;animation:spin 1s linear infinite;">sync</span> Verifying with AI...';
+      status.className = 'id-proof-status validating';
+
+      var formData = new FormData();
+      formData.append('idProof', file);
+      try {
+        var result = await apiFetch('/bookings/' + backendId + '/id-proof?side=' + side, {
+          method: 'POST',
+          body: formData
+        });
+        _idProofValidated[side] = true;
+        status.innerHTML = '<span class="material-icons" style="font-size:12px;vertical-align:middle;">check_circle</span> Valid ID proof';
+        status.className = 'id-proof-status valid';
+        slot.className = 'id-proof-slot has-proof';
+        return true;
+      } catch(e) {
+        _idProofValidated[side] = false;
+        _idProofFiles[side] = null;
+        var msg = (e && e.message) ? e.message : 'Upload failed';
+        status.innerHTML = '<span class="material-icons" style="font-size:12px;vertical-align:middle;">error</span> ' + escapeHtml(msg);
+        status.className = 'id-proof-status invalid';
+        slot.className = 'id-proof-slot rejected';
+        // Clear preview
+        document.getElementById('idProof' + cap(side) + 'Preview').innerHTML = '';
+        document.getElementById('checkinIdProof' + cap(side)).value = '';
+        document.getElementById('idProof' + cap(side) + 'Label').textContent = 'Upload';
+        return false;
+      }
+    }
+
+    async function deleteIdProofSide(bookingDisplayId, side) {
+      if (!confirm('Delete ' + side + ' side ID proof?')) return;
+      var backendId = getBackendBookingId(bookingDisplayId);
+      if (!backendId) return;
+      try {
+        await apiFetch('/bookings/' + backendId + '/id-proof?side=' + side, { method: 'DELETE' });
+        await loadBookingsFromAPI();
+        renderBookings();
+        showToast(cap(side) + ' ID proof deleted', 'success');
+        // If in edit modal, refresh
+        var editId = document.getElementById('editBookingId').value;
+        if (editId) openEditModalById(editId);
+      } catch(e) { /* toast shown */ }
+    }
+
+    async function reuploadIdProofSide(bookingDisplayId, side, input) {
+      if (!input.files || !input.files[0]) return;
+      var backendId = getBackendBookingId(bookingDisplayId);
+      if (!backendId) return;
+      var formData = new FormData();
+      formData.append('idProof', input.files[0]);
+      try {
+        await apiFetch('/bookings/' + backendId + '/id-proof?side=' + side, {
+          method: 'POST',
+          body: formData
+        });
+        await loadBookingsFromAPI();
+        renderBookings();
+        showToast(cap(side) + ' ID proof updated', 'success');
+        var editId = document.getElementById('editBookingId').value;
+        if (editId) openEditModalById(editId);
+      } catch(e) { /* toast shown */ }
     }
 
     function updateCheckinRoomSelects() {
@@ -6041,6 +6953,33 @@
         return;
       }
 
+      // Front ID proof is required (unless already on file)
+      var hasFrontFile = _idProofFiles.front;
+      var hasFrontOnFile = _idProofValidated.front;
+      if (!hasFrontFile && !hasFrontOnFile) {
+        showToast('Please upload front side of guest ID proof', 'error');
+        document.getElementById('idProofFrontSlot').style.borderColor = '#ef4444';
+        return;
+      }
+
+      // Upload front ID proof first (with AI validation) if new file selected
+      if (_idProofFiles.front && !_idProofValidated.front) {
+        var frontOk = await uploadIdProofSide(backendId, 'front', _idProofFiles.front);
+        if (!frontOk) {
+          showToast('Front ID proof rejected - please upload a valid ID card photo', 'error');
+          return;
+        }
+      }
+
+      // Upload back if selected
+      if (_idProofFiles.back && !_idProofValidated.back) {
+        var backOk = await uploadIdProofSide(backendId, 'back', _idProofFiles.back);
+        if (!backOk) {
+          showToast('Back side rejected - not an ID card. You can skip back side and proceed.', 'warning');
+          // Don't block check-in for back side failure
+        }
+      }
+
       try {
         await apiFetch('/bookings/' + backendId + '/checkin', {
           method: 'POST',
@@ -6083,6 +7022,10 @@
       document.getElementById('checkoutKotAmount').value = b.kotAmount || 0;
       document.getElementById('addOnChargesContainer').innerHTML = '';
       document.getElementById('checkoutPayMode').value = '';
+      document.getElementById('checkoutSubCatGroup').style.display = 'none';
+      document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
+      document.getElementById('checkoutSubCategory').selectedIndex = 0;
+      document.getElementById('checkoutOtherSubCategory').value = '';
 
       // Restore existing add-ons if any
       if (b.addOns && b.addOns.length > 0) {
@@ -6097,6 +7040,8 @@
     function closeCheckoutModal() {
       document.getElementById('checkoutModal').classList.remove('active');
       checkoutBookingData = null;
+      document.getElementById('checkoutSubCatGroup').style.display = 'none';
+      document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
     }
 
     function addAddOnRow(type, amount) {
@@ -6176,14 +7121,43 @@
       var addOnTotal = getAddOnTotal();
       var payMode = document.getElementById('checkoutPayMode').value;
 
+      // Block checkout if bill not fully cleared — skip when a payment mode is selected (balance will be collected)
+      if (!payMode) {
+        var b = checkoutBookingData;
+        if (b) {
+          var origTotal = parseFloat(b.totalAmount) || 0;
+          var grandTotal = origTotal + kotAmt + addOnTotal;
+          var received = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+          var pending = grandTotal - received;
+          if (pending > 0) {
+            showToast('Cannot checkout — pending balance of ' + formatCurrency(pending) + '. Please collect full payment first or select a payment mode.', 'error');
+            document.getElementById('checkoutBalance').style.color = '#ef4444';
+            document.getElementById('checkoutBalance').style.fontWeight = '800';
+            return;
+          }
+        }
+      }
+
+      var reqBody = {
+        kotAmount: kotAmt,
+        addOns: addOnItems,
+        paymentMode: payMode || undefined
+      };
+
+      // Include subCategory for AKS Office
+      if (payMode === 'AKS Office') {
+        var subCat = document.getElementById('checkoutSubCategory').value;
+        if (subCat === 'Other') {
+          subCat = document.getElementById('checkoutOtherSubCategory').value.trim();
+          if (!subCat) { showToast('Please specify sub-category', 'error'); return; }
+        }
+        reqBody.subCategory = subCat;
+      }
+
       try {
         await apiFetch('/bookings/' + backendId + '/checkout', {
           method: 'POST',
-          body: {
-            kotAmount: kotAmt,
-            addOns: addOnItems,
-            paymentMode: payMode || undefined
-          }
+          body: reqBody
         });
         var checkoutBooking = bookings.find(function(b) { return b.id === id; });
         await loadBookingsFromAPI();
@@ -6193,6 +7167,391 @@
         if (checkoutBooking) markRoomDirtyOnCheckout(checkoutBooking.roomNo);
         showToast('Guest checked out! ' + (kotAmt > 0 || addOnTotal > 0 ? 'Extra charges added.' : ''), 'success');
         if (checkoutBooking) showFeedbackPrompt(checkoutBooking);
+      } catch(e) { /* toast shown */ }
+    }
+
+    // ========== AKS OFFICE SUB-CATEGORY TOGGLES ==========
+    function toggleCollectSubCategory() {
+      var mode = document.getElementById('collectPaymentMode').value;
+      document.getElementById('collectSubCatGroup').style.display = mode === 'AKS Office' ? '' : 'none';
+      if (mode !== 'AKS Office') {
+        document.getElementById('collectOtherSubCatGroup').style.display = 'none';
+      }
+    }
+    function toggleCollectOtherInput() {
+      var val = document.getElementById('collectSubCategory').value;
+      document.getElementById('collectOtherSubCatGroup').style.display = val === 'Other' ? '' : 'none';
+    }
+    function toggleCheckoutSubCategory() {
+      var mode = document.getElementById('checkoutPayMode').value;
+      document.getElementById('checkoutSubCatGroup').style.display = mode === 'AKS Office' ? '' : 'none';
+      if (mode !== 'AKS Office') {
+        document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
+      }
+    }
+    function toggleCheckoutOtherInput() {
+      var val = document.getElementById('checkoutSubCategory').value;
+      document.getElementById('checkoutOtherSubCatGroup').style.display = val === 'Other' ? '' : 'none';
+    }
+
+    // ========== KOT (Walk-in Food Orders) ==========
+    var kotOrders = [];
+
+    function initKotTab() {
+      if (!document.getElementById('kotDate').value) {
+        document.getElementById('kotDate').value = getToday();
+      }
+      loadKotOrders();
+    }
+
+    function openKotModal() {
+      document.getElementById('kotModal').classList.add('active');
+      document.getElementById('kotCustomerName').value = '';
+      document.getElementById('kotDescription').value = '';
+      document.getElementById('kotAmount').value = '';
+      document.getElementById('kotPaymentMode').value = 'Cash';
+      document.getElementById('kotSubCatGroup').style.display = 'none';
+      document.getElementById('kotOtherSubCatGroup').style.display = 'none';
+      document.getElementById('kotSubCategory').selectedIndex = 0;
+      document.getElementById('kotOtherSubCategory').value = '';
+    }
+
+    function closeKotModal() {
+      document.getElementById('kotModal').classList.remove('active');
+    }
+
+    function toggleKotSubCategory() {
+      var mode = document.getElementById('kotPaymentMode').value;
+      document.getElementById('kotSubCatGroup').style.display = mode === 'AKS Office' ? '' : 'none';
+      if (mode !== 'AKS Office') {
+        document.getElementById('kotOtherSubCatGroup').style.display = 'none';
+      }
+    }
+
+    function toggleKotOtherInput() {
+      var val = document.getElementById('kotSubCategory').value;
+      document.getElementById('kotOtherSubCatGroup').style.display = val === 'Other' ? '' : 'none';
+    }
+
+    async function saveKotOrder() {
+      var description = document.getElementById('kotDescription').value.trim();
+      var amount = parseFloat(document.getElementById('kotAmount').value) || 0;
+      var paymentMode = document.getElementById('kotPaymentMode').value;
+      var customerName = document.getElementById('kotCustomerName').value.trim();
+
+      if (!description) {
+        showToast('Please enter order description', 'error');
+        return;
+      }
+      if (amount <= 0) {
+        showToast('Please enter a valid amount', 'error');
+        return;
+      }
+
+      var body = {
+        orderDate: getToday(),
+        customerName: customerName,
+        description: description,
+        amount: amount,
+        paymentMode: paymentMode
+      };
+
+      if (paymentMode === 'AKS Office') {
+        var subCat = document.getElementById('kotSubCategory').value;
+        if (subCat === 'Other') {
+          subCat = document.getElementById('kotOtherSubCategory').value.trim();
+          if (!subCat) {
+            showToast('Please specify sub-category', 'error');
+            return;
+          }
+        }
+        body.subCategory = subCat;
+      }
+
+      try {
+        await apiFetch('/kot', { method: 'POST', body: body });
+        showToast('KOT order saved successfully', 'success');
+        closeKotModal();
+        loadKotOrders();
+      } catch (e) {
+        // Error handled by apiFetch
+      }
+    }
+
+    async function loadKotOrders() {
+      var date = document.getElementById('kotDate').value || getToday();
+      try {
+        kotOrders = await apiFetch('/kot?date=' + date);
+      } catch (e) {
+        kotOrders = [];
+      }
+      renderKotTable();
+    }
+
+    function renderKotTable() {
+      var tbody = document.getElementById('kotTableBody');
+      var isSuperAdmin = currentUser && currentUser.role === 'super_admin';
+
+      // Show/hide delete column
+      var delHeader = document.getElementById('kotDeleteColHeader');
+      if (delHeader) delHeader.style.display = isSuperAdmin ? '' : 'none';
+
+      if (!kotOrders || kotOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="' + (isSuperAdmin ? 8 : 7) + '" style="text-align:center;padding:24px;color:#999">No KOT orders for this date</td></tr>';
+        document.getElementById('kotSummary').innerHTML = '';
+        return;
+      }
+
+      var total = 0;
+      var html = '';
+      kotOrders.forEach(function(o) {
+        var amt = Number(o.amount) || 0;
+        total += amt;
+        var payLabel = o.paymentMode;
+        if (o.paymentMode === 'AKS Office' && o.subCategory) {
+          payLabel += ' (' + escapeHtml(o.subCategory) + ')';
+        }
+        html += '<tr>';
+        html += '<td>' + escapeHtml(o.orderDate) + '</td>';
+        html += '<td><strong>' + escapeHtml(o.kotId) + '</strong></td>';
+        html += '<td>' + escapeHtml(o.customerName || 'Walk-in') + '</td>';
+        html += '<td>' + escapeHtml(o.description) + '</td>';
+        html += '<td style="text-align:right">' + formatCurrency(amt) + '</td>';
+        html += '<td>' + escapeHtml(payLabel) + '</td>';
+        html += '<td>' + escapeHtml(o.createdBy || '') + '</td>';
+        if (isSuperAdmin) {
+          html += '<td><button class="btn btn-small" style="background:#ef4444;color:#fff;padding:4px 8px;font-size:12px" onclick="deleteKotOrder(' + o.id + ')"><span class="material-icons" style="font-size:14px">delete</span></button></td>';
+        }
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+
+      // Summary
+      document.getElementById('kotSummary').innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap"><div style="background:#fef3c7;padding:12px 20px;border-radius:10px;border:1px solid #f59e0b33"><strong style="color:#92400e">Total Orders:</strong> ' + kotOrders.length + '</div><div style="background:#d1fae5;padding:12px 20px;border-radius:10px;border:1px solid #10b98133"><strong style="color:#065f46">Total Amount:</strong> ' + formatCurrency(total) + '</div></div>';
+    }
+
+    async function deleteKotOrder(id) {
+      if (!confirm('Delete this KOT order? This will also remove the daybook entry.')) return;
+      try {
+        await apiFetch('/kot/' + id, { method: 'DELETE' });
+        showToast('KOT order deleted', 'success');
+        loadKotOrders();
+      } catch (e) {
+        // Error handled by apiFetch
+      }
+    }
+
+    // ========== AKS OFFICE TAB ==========
+    var aksOfficeData = [];
+
+    function initAksOfficeTab() {
+      var fromEl = document.getElementById('aksFrom');
+      var toEl = document.getElementById('aksTo');
+      if (!fromEl.value) {
+        // Default: current month
+        var now = new Date();
+        fromEl.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+        toEl.value = now.toISOString().split('T')[0];
+      }
+      // Show/hide delete column for super_admin
+      var isAdmin = currentUser && currentUser.role === 'super_admin';
+      document.getElementById('aksDeleteColHeader').style.display = isAdmin ? '' : 'none';
+      loadAksOfficePayments();
+    }
+
+    async function loadAksOfficePayments() {
+      var from = document.getElementById('aksFrom').value;
+      var to = document.getElementById('aksTo').value;
+      var subCat = document.getElementById('aksSubCatFilter').value;
+
+      var params = [];
+      if (from) params.push('from=' + from);
+      if (to) params.push('to=' + to);
+      if (subCat) params.push('subCategory=' + encodeURIComponent(subCat));
+      var qs = params.length ? '?' + params.join('&') : '';
+
+      try {
+        aksOfficeData = await apiFetch('/bookings/aks-office-payments' + qs);
+        renderAksOfficeTable();
+        renderAksSummaryCards();
+      } catch(e) { /* toast shown */ }
+    }
+
+    function renderAksSummaryCards() {
+      var container = document.getElementById('aksSummaryCards');
+      var total = 0;
+      var byCat = {};
+      aksOfficeData.forEach(function(p) {
+        var amt = parseFloat(p.amount) || 0;
+        total += amt;
+        var cat = p.subCategory || 'Unknown';
+        byCat[cat] = (byCat[cat] || 0) + amt;
+      });
+
+      var html = '<div style="background:rgba(20,20,40,0.6);padding:16px 20px;border-radius:12px;min-width:160px">' +
+        '<div style="font-size:12px;color:#9ca3af">Total AKS Office</div>' +
+        '<div style="font-size:22px;font-weight:700;color:#996b2f">' + formatCurrency(total) + '</div>' +
+        '<div style="font-size:12px;color:#9ca3af">' + aksOfficeData.length + ' entries</div></div>';
+
+      var cats = Object.keys(byCat).sort();
+      cats.forEach(function(cat) {
+        html += '<div style="background:rgba(20,20,40,0.6);padding:16px 20px;border-radius:12px;min-width:140px">' +
+          '<div style="font-size:12px;color:#9ca3af">' + escapeHtml(cat) + '</div>' +
+          '<div style="font-size:18px;font-weight:700;color:#10b981">' + formatCurrency(byCat[cat]) + '</div></div>';
+      });
+
+      container.innerHTML = html;
+    }
+
+    function renderAksOfficeTable() {
+      var tbody = document.getElementById('aksTableBody');
+      var isAdmin = currentUser && currentUser.role === 'super_admin';
+
+      if (aksOfficeData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="' + (isAdmin ? 9 : 8) + '" style="text-align:center;padding:24px;color:#9ca3af">No AKS Office payments found</td></tr>';
+        return;
+      }
+
+      var html = '';
+      aksOfficeData.forEach(function(p) {
+        html += '<tr>' +
+          '<td>' + (p.date || '') + '</td>' +
+          '<td>' + escapeHtml(p.refBookingId || '') + '</td>' +
+          '<td>' + escapeHtml(p.guestName || '') + '</td>' +
+          '<td>' + escapeHtml(p.roomNo || '-') + '</td>' +
+          '<td style="color:#10b981;font-weight:600">' + formatCurrency(parseFloat(p.amount) || 0) + '</td>' +
+          '<td>' + escapeHtml(p.subCategory || '-') + '</td>' +
+          '<td>' + escapeHtml(p.context || '') + '</td>' +
+          '<td>' + escapeHtml(p.createdBy || '') + '</td>' +
+          (isAdmin ? '<td><button class="btn btn-danger btn-small" onclick="deleteAksPayment(' + p.id + ')">Delete</button></td>' : '') +
+          '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    async function deleteAksPayment(paymentId) {
+      if (!confirm('Delete this AKS Office payment record?')) return;
+      try {
+        await apiFetch('/bookings/aks-office-payments/' + paymentId, { method: 'DELETE' });
+        showToast('AKS Office payment deleted', 'success');
+        loadAksOfficePayments();
+      } catch(e) { /* toast shown */ }
+    }
+
+    function exportAksOfficeCsv() {
+      if (aksOfficeData.length === 0) {
+        showToast('No data to export', 'error');
+        return;
+      }
+      var headers = ['Date', 'Booking ID', 'Guest Name', 'Room', 'Amount', 'Sub-Category', 'Context', 'Recorded By'];
+      var rows = aksOfficeData.map(function(p) {
+        return [
+          p.date || '',
+          p.refBookingId || '',
+          '"' + (p.guestName || '').replace(/"/g, '""') + '"',
+          p.roomNo || '',
+          parseFloat(p.amount) || 0,
+          p.subCategory || '',
+          p.context || '',
+          p.createdBy || ''
+        ].join(',');
+      });
+      var csv = headers.join(',') + '\n' + rows.join('\n');
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'aks-office-payments.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ========== AGENT SETTLEMENTS ==========
+    var agentSettlements = [];
+
+    function openSettlementModal() {
+      document.getElementById('settlementModal').classList.add('active');
+      document.getElementById('settlementDate').value = getToday();
+      // Pre-select agent if one is selected in ledger filter
+      var ledgerAgent = document.getElementById('ledgerAgent').value;
+      if (ledgerAgent) document.getElementById('settlementAgent').value = ledgerAgent;
+    }
+
+    async function submitSettlement() {
+      var agent = document.getElementById('settlementAgent').value;
+      var amount = parseFloat(document.getElementById('settlementAmount').value) || 0;
+      var payMode = document.getElementById('settlementPayMode').value;
+      var date = document.getElementById('settlementDate').value;
+      var ref = document.getElementById('settlementRef').value.trim();
+
+      if (!agent) { showToast('Please select an agent', 'error'); return; }
+      if (amount <= 0) { showToast('Please enter a valid amount', 'error'); return; }
+      if (!date) { showToast('Please select a date', 'error'); return; }
+
+      try {
+        await apiFetch('/bookings/agent-settlements', {
+          method: 'POST',
+          body: { agentName: agent, amount: amount, paymentMode: payMode, date: date, reference: ref }
+        });
+        closeModal('settlementModal');
+        document.getElementById('settlementAmount').value = '';
+        document.getElementById('settlementRef').value = '';
+        showToast('Settlement recorded! ₹' + amount.toLocaleString('en-IN') + ' from ' + agent, 'success');
+        renderLedgerReport();
+      } catch(e) { /* toast shown */ }
+    }
+
+    async function loadAgentSettlements(agent, from, to) {
+      var params = [];
+      if (agent) params.push('agent=' + encodeURIComponent(agent));
+      if (from) params.push('from=' + from);
+      if (to) params.push('to=' + to);
+      var qs = params.length ? '?' + params.join('&') : '';
+      try {
+        agentSettlements = await apiFetch('/bookings/agent-settlements' + qs);
+      } catch(e) { agentSettlements = []; }
+    }
+
+    function getSettlementTotalByAgent(agentName) {
+      var total = 0;
+      agentSettlements.forEach(function(s) {
+        if (s.agentName === agentName) total += parseFloat(s.amount) || 0;
+      });
+      return total;
+    }
+
+    function renderSettlementHistory() {
+      var section = document.getElementById('settlementHistorySection');
+      var tbody = document.getElementById('settlementTableBody');
+      var isAdmin = currentUser && currentUser.role === 'super_admin';
+      document.getElementById('settlementDeleteCol').style.display = isAdmin ? '' : 'none';
+
+      if (agentSettlements.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      var html = '';
+      agentSettlements.forEach(function(s) {
+        html += '<tr>' +
+          '<td>' + (s.date || '') + '</td>' +
+          '<td>' + escapeHtml(s.agentName || '') + '</td>' +
+          '<td class="amount amount-received">' + formatCurrency(parseFloat(s.amount) || 0) + '</td>' +
+          '<td>' + escapeHtml(s.paymentMode || '') + '</td>' +
+          '<td>' + escapeHtml(s.reference || '-') + '</td>' +
+          '<td>' + escapeHtml(s.createdBy || '') + '</td>' +
+          (isAdmin ? '<td><button class="btn btn-danger btn-small" onclick="deleteSettlement(' + s.id + ')">Delete</button></td>' : '') +
+          '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    async function deleteSettlement(id) {
+      if (!confirm('Delete this settlement record? Daybook entry will also be removed.')) return;
+      try {
+        await apiFetch('/bookings/agent-settlements/' + id, { method: 'DELETE' });
+        showToast('Settlement deleted', 'success');
+        renderLedgerReport();
       } catch(e) { /* toast shown */ }
     }
 
@@ -6696,10 +8055,13 @@
     // ========== LEDGER REPORT ==========
     var ledgerFilteredBookings = []; // cached for export
 
-    function renderLedgerReport() {
+    async function renderLedgerReport() {
       var agent = document.getElementById('ledgerAgent').value;
       var from = document.getElementById('ledgerFrom').value;
       var to = document.getElementById('ledgerTo').value;
+
+      // Load settlements
+      await loadAgentSettlements(agent, from, to);
 
       var filtered = bookings.filter(function(b) {
         if (b.status === 'CANCELLED') return false;
@@ -6719,19 +8081,31 @@
 
       ledgerFilteredBookings = filtered;
 
+      // Helper: get hotel's share for a booking
+      function getHotelTotal(b) {
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
+        if (isAksOffice) {
+          return (parseFloat(b.actualRoomRent) || 0) + (parseFloat(b.addOnAmount) || 0);
+        }
+        return parseFloat(b.totalAmount) || 0;
+      }
+
       // Summary by agent
       var agentSums = {};
-      var grandTotal = { total: 0, received: 0, pending: 0, count: 0 };
+      var grandTotal = { total: 0, received: 0, pending: 0, settled: 0, count: 0 };
 
       // Aging buckets for pending amounts
       var agingBuckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
 
       filtered.forEach(function(b) {
         var name = b.sourceName || 'Unknown';
-        if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, count: 0 };
-        var total = parseFloat(b.totalAmount) || 0;
+        if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, settled: 0, count: 0 };
+        var total = getHotelTotal(b);
         var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pend = total - recv;
+        if (b.status === 'COLLECTED' && pend > 0) {
+          // AKS Office collected — pending is what AKS Office owes
+        }
         agentSums[name].total += total;
         agentSums[name].received += recv;
         if (pend > 0) agentSums[name].pending += pend;
@@ -6746,6 +8120,18 @@
         grandTotal.count++;
       });
 
+      // Deduct settlements from pending
+      var allAgentNames = Object.keys(agentSums);
+      allAgentNames.forEach(function(name) {
+        var settled = getSettlementTotalByAgent(name);
+        agentSums[name].settled = settled;
+        agentSums[name].pending = Math.max(0, agentSums[name].pending - settled);
+      });
+      var totalSettled = 0;
+      agentSettlements.forEach(function(s) { totalSettled += parseFloat(s.amount) || 0; });
+      grandTotal.settled = totalSettled;
+      grandTotal.pending = Math.max(0, grandTotal.pending - totalSettled);
+
       // Aging bar (Feature 4)
       var agingBarContainer = document.getElementById('ledgerAgingBar');
       if (agingBarContainer) {
@@ -6756,18 +8142,22 @@
       // Summary cards
       var cardsHtml = '';
       if (agent) {
+        var agentSettled = getSettlementTotalByAgent(agent);
         cardsHtml += '<div class="monthly-card"><div class="mc-label">' + escapeHtml(agent) + ' - Bookings</div><div class="mc-value blue">' + grandTotal.count + '</div></div>';
-        cardsHtml += '<div class="monthly-card"><div class="mc-label">Total Amount</div><div class="mc-value blue">' + formatCurrency(grandTotal.total) + '</div></div>';
-        cardsHtml += '<div class="monthly-card"><div class="mc-label">Received</div><div class="mc-value green">' + formatCurrency(grandTotal.received) + '</div></div>';
-        cardsHtml += '<div class="monthly-card"><div class="mc-label">Pending Due</div><div class="mc-value red">' + formatCurrency(grandTotal.pending) + '</div></div>';
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Hotel Share (Debit)</div><div class="mc-value blue">' + formatCurrency(grandTotal.total) + '</div></div>';
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Received (Direct)</div><div class="mc-value green">' + formatCurrency(grandTotal.received) + '</div></div>';
+        if (agentSettled > 0) {
+          cardsHtml += '<div class="monthly-card"><div class="mc-label">Settled</div><div class="mc-value green">' + formatCurrency(agentSettled) + '</div></div>';
+        }
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Net Pending</div><div class="mc-value red">' + formatCurrency(grandTotal.pending) + '</div></div>';
       } else {
-        var agentNames = Object.keys(agentSums).sort();
-        agentNames.forEach(function(name) {
+        var agentNames2 = Object.keys(agentSums).sort();
+        agentNames2.forEach(function(name) {
           var s = agentSums[name];
           cardsHtml += '<div class="monthly-card">' +
             '<div class="mc-label">' + escapeHtml(name) + ' (' + s.count + ')</div>' +
             '<div class="mc-value ' + (s.pending > 0 ? 'red' : 'green') + '">' + formatCurrency(s.pending) + '</div>' +
-            '<div style="font-size:11px;color:#6b7280;margin-top:4px;">Total: ' + formatCurrency(s.total) + ' | Rcvd: ' + formatCurrency(s.received) + '</div>' +
+            '<div style="font-size:11px;color:#6b7280;margin-top:4px;">Hotel Share: ' + formatCurrency(s.total) + ' | Rcvd: ' + formatCurrency(s.received) + (s.settled > 0 ? ' | Settled: ' + formatCurrency(s.settled) : '') + '</div>' +
             '</div>';
         });
       }
@@ -6777,18 +8167,20 @@
       var container = document.getElementById('ledgerReportContent');
       if (filtered.length === 0) {
         container.innerHTML = '<p style="color:#6b7280;text-align:center;padding:20px;">No bookings found for selected filters</p>';
+        renderSettlementHistory();
         return;
       }
 
       var html = '<table class="report-table"><thead><tr>' +
         '<th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th>' +
-        '<th>Total</th><th>Received</th><th>Pending</th><th>Aging</th><th>Status</th>' +
+        '<th>Hotel Share</th><th>Received</th><th>Pending</th><th>Aging</th><th>Status</th>' +
         '</tr></thead><tbody>';
 
       filtered.forEach(function(b) {
-        var total = parseFloat(b.totalAmount) || 0;
+        var total = getHotelTotal(b);
         var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var pend = total - recv;
+        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
 
         var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
                           b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
@@ -6805,9 +8197,11 @@
           '<td>' + formatDate(b.checkOut) + '</td>' +
           '<td class="amount">' + formatCurrency(total) + '</td>' +
           '<td class="amount amount-received">' + formatCurrency(recv) + '</td>' +
-          '<td class="amount ' + (pend > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pend) + '</td>' +
+          '<td class="amount ' + (pend > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pend > 0 ? pend : 0) + '</td>' +
           '<td>' + (pend > 0 ? '<span class="aging-badge ' + agingBucket.cls + '">' + agingDays + 'd</span>' : '-') + '</td>' +
-          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span></td>' +
+          '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
+            (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
+          '</td>' +
           '</tr>';
       });
 
@@ -6820,6 +8214,9 @@
 
       html += '</tbody></table>';
       container.innerHTML = html;
+
+      // Render settlement history
+      renderSettlementHistory();
     }
 
     function exportLedgerCSV() {
@@ -7126,6 +8523,132 @@
       document.getElementById(id).classList.remove('active');
     }
 
+    // ========== DAY BOOK ACCESS CONTROL ==========
+    var _daybookDateLocked = false;
+
+    async function onDaybookDateChange() {
+      var date = getDayBookDate();
+      var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin');
+      var lockBanner = document.getElementById('daybookDateLock');
+      if (isAdmin) {
+        lockBanner.style.display = 'none';
+        _daybookDateLocked = false;
+        renderDayBook();
+        return;
+      }
+      // Non-admin: check access
+      try {
+        var access = await apiFetch('/daybook/check-access?date=' + encodeURIComponent(date));
+        if (access.hasAccess) {
+          lockBanner.style.display = 'none';
+          _daybookDateLocked = false;
+          renderDayBook();
+        } else {
+          _daybookDateLocked = true;
+          lockBanner.style.display = 'flex';
+          document.getElementById('dateLockMsg').textContent = 'You don\'t have access to ' + formatDate(date);
+          // Check if request already pending
+          document.getElementById('dateLockSubMsg').textContent = 'Request admin permission to view or modify entries for this date.';
+          // Still show data (read-only)
+          renderDayBook();
+          disableDaybookActions();
+        }
+      } catch(e) {
+        lockBanner.style.display = 'none';
+        _daybookDateLocked = false;
+        renderDayBook();
+      }
+    }
+
+    function disableDaybookActions() {
+      // Disable add income, add expense, auto-collect, delete buttons, set balance
+      var btns = document.querySelectorAll('#tab-daybook .btn');
+      btns.forEach(function(btn) {
+        if (btn.id === 'btnSetOpeningBalance' || btn.onclick || btn.textContent.indexOf('Add') >= 0 || btn.textContent.indexOf('Delete') >= 0 || btn.textContent.indexOf('Auto') >= 0) {
+          if (btn.id !== '' && btn.closest('#daybookDateLock')) return; // Don't disable the request button
+          btn.disabled = true;
+          btn.style.opacity = '0.4';
+          btn.style.pointerEvents = 'none';
+        }
+      });
+    }
+
+    function enableDaybookActions() {
+      var btns = document.querySelectorAll('#tab-daybook .btn');
+      btns.forEach(function(btn) {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.pointerEvents = '';
+      });
+    }
+
+    async function requestDaybookAccess() {
+      var date = getDayBookDate();
+      var reason = prompt('Reason for accessing ' + formatDate(date) + ':');
+      if (reason === null) return;
+      try {
+        var r = await apiFetch('/daybook/access-request', {
+          method: 'POST',
+          body: { date: date, reason: reason }
+        });
+        if (r.message === 'Request already pending') {
+          showToast('Request already pending for this date', 'error');
+        } else {
+          showToast('Access request sent to admin', 'success');
+        }
+        document.getElementById('dateLockSubMsg').textContent = 'Request sent. Waiting for admin approval.';
+      } catch(e) {
+        showToast('Failed to send request', 'error');
+      }
+    }
+
+    // Admin: Load and render pending access requests on dashboard
+    async function loadAccessRequests() {
+      var panel = document.getElementById('accessRequestsPanel');
+      if (!panel) return;
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'super_admin')) {
+        panel.style.display = 'none';
+        return;
+      }
+      try {
+        var requests = await apiFetch('/daybook/pending-requests');
+        if (!requests || requests.length === 0) {
+          panel.style.display = 'none';
+          return;
+        }
+        panel.style.display = 'block';
+        var listEl = document.getElementById('accessRequestsList');
+        listEl.innerHTML = requests.map(function(r) {
+          return '<div class="access-req-card">' +
+            '<div class="req-info">' +
+              '<strong>' + escapeHtml(r.userName) + '</strong> wants access to <strong>' + formatDate(r.requestedDate) + '</strong>' +
+              (r.reason ? '<small>Reason: ' + escapeHtml(r.reason) + '</small>' : '') +
+              '<small>Requested: ' + new Date(r.createdAt).toLocaleString('en-IN') + '</small>' +
+            '</div>' +
+            '<div class="req-actions">' +
+              '<button class="btn btn-small" style="background:#10b981;color:#fff;" onclick="respondAccessRequest(' + r.id + ',\'approved\')"><span class="material-icons" style="font-size:14px;">check</span> Approve</button>' +
+              '<button class="btn btn-small btn-danger" onclick="respondAccessRequest(' + r.id + ',\'denied\')"><span class="material-icons" style="font-size:14px;">close</span> Deny</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } catch(e) {
+        panel.style.display = 'none';
+      }
+    }
+
+    async function respondAccessRequest(id, status) {
+      try {
+        await apiFetch('/daybook/access-requests/' + id, {
+          method: 'PUT',
+          body: { status: status }
+        });
+        showToast('Request ' + status, 'success');
+        loadAccessRequests();
+      } catch(e) {
+        showToast('Failed to respond', 'error');
+      }
+    }
+
     // ========== DAY BOOK FUNCTIONS ==========
     async function renderDayBook() {
       var date = getDayBookDate();
@@ -7141,6 +8664,9 @@
         renderDayBookIncomeWithData(entries.filter(function(e) { return e.type === 'income'; }));
         renderDayBookExpensesWithData(entries.filter(function(e) { return e.type === 'expense'; }));
         renderDayBookClosingWithData(closing);
+        // Re-apply lock if needed
+        if (_daybookDateLocked) disableDaybookActions();
+        else enableDaybookActions();
       } catch(e) {
         // toast shown by apiFetch
       }
@@ -7175,7 +8701,7 @@
             '<td class="amount amount-received">' + formatCurrency(e.amount) + '</td>' +
             '<td><span class="payment-type">' + escapeHtml(e.paymentMode || '-') + '</span></td>' +
             '<td>' + escapeHtml(e.receivedIn || e.paymentSource || '-') + '</td>' +
-            '<td><button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button></td>' +
+            '<td>' + (currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button>' : '') + '</td>' +
             '</tr>';
         }).join('');
       }
@@ -7199,7 +8725,7 @@
             '<td>' + escapeHtml(e.description || '-') + '</td>' +
             '<td class="amount amount-pending">' + formatCurrency(e.amount) + '</td>' +
             '<td>' + escapeHtml(e.paymentSource || '-') + '</td>' +
-            '<td><button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button></td>' +
+            '<td>' + (currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button>' : '') + '</td>' +
             '</tr>';
         }).join('');
       }
@@ -7688,7 +9214,7 @@
           '<td>' + escapeHtml(adv.deductMonth || '-') + '</td>' +
           '<td>' + escapeHtml(adv.remarks || '-') + '</td>' +
           '<td>' + statusBadge + '</td>' +
-          '<td>' + (!adv.deducted ? '<button class="btn btn-danger btn-small" onclick="deleteAdvance(\'' + adv.id + '\')">Delete</button>' : '-') + '</td>' +
+          '<td>' + (!adv.deducted && currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-danger btn-small" onclick="deleteAdvance(\'' + adv.id + '\')">Delete</button>' : '-') + '</td>' +
           '</tr>';
       }).join('');
     }

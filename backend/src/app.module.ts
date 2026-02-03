@@ -10,6 +10,7 @@ import { DaybookModule } from './daybook/daybook.module';
 import { StaffModule } from './staff/staff.module';
 import { ReportsModule } from './reports/reports.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { KotModule } from './kot/kot.module';
 import { JwtAuthGuard } from './auth/auth.guard';
 import { PermissionsGuard } from './auth/permissions.guard';
 import { AuditInterceptor } from './audit/audit.interceptor';
@@ -35,6 +36,7 @@ import { AuditInterceptor } from './audit/audit.interceptor';
     StaffModule,
     ReportsModule,
     NotificationsModule,
+    KotModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
