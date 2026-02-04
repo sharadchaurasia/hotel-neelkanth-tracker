@@ -365,11 +365,11 @@ export class BookingsService {
       booking.status = 'COLLECTED';
       booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
         `[AKS Office checkout ₹${balance > 0 ? balance : 0} (${dto.subCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
-    } else if (dto.paymentMode && balance > 0 && dto.transferToAgentLedger && dto.collectAmount !== undefined) {
-      // Partial collection — remaining goes to agent ledger
+    } else if (balance > 0 && dto.transferToAgentLedger && dto.collectAmount !== undefined) {
+      // Agent ledger transfer — collect partial (or zero) from guest, rest to agent ledger
       const actualCollect = Math.min(Math.max(0, dto.collectAmount), balance);
       booking.balanceReceived = Number(booking.balanceReceived || 0) + actualCollect;
-      if (actualCollect > 0) {
+      if (actualCollect > 0 && dto.paymentMode) {
         booking.balancePaymentMode = dto.paymentMode;
         booking.balanceDate = today;
       }

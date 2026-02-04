@@ -3889,11 +3889,17 @@
 
         <!-- Agent Ledger Transfer Section -->
         <div id="agentLedgerSection" style="display:none;margin-top:12px;padding:14px;background:rgba(255,183,77,0.12);border-radius:10px;border:1px solid rgba(255,183,77,0.3);">
-          <div class="form-group" style="margin-bottom:8px;">
-            <label style="color:#996b2f;font-weight:600;">Collect Amount from Guest</label>
-            <input type="number" id="checkoutCollectAmount" placeholder="&#8377;" min="0" oninput="updateAgentLedgerInfo()">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:600;color:#996b2f;">
+            <input type="checkbox" id="checkoutAgentLedger" onchange="onAgentLedgerToggle()" style="width:18px;height:18px;accent-color:#996b2f;">
+            <span id="agentLedgerLabel">Transfer remaining to Agent's ledger</span>
+          </label>
+          <div id="agentCollectAmountGroup" style="display:none;margin-top:10px;">
+            <div class="form-group" style="margin-bottom:8px;">
+              <label style="color:#996b2f;font-weight:600;">Collect Amount from Guest</label>
+              <input type="number" id="checkoutCollectAmount" placeholder="&#8377;" min="0" oninput="updateAgentLedgerInfo()">
+            </div>
           </div>
-          <div id="agentLedgerInfo" style="font-size:13px;color:#996b2f;font-weight:500;padding:8px;background:rgba(255,255,255,0.5);border-radius:6px;"></div>
+          <div id="agentLedgerInfo" style="font-size:13px;font-weight:500;padding:8px;background:rgba(255,255,255,0.5);border-radius:6px;margin-top:8px;display:none;"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -7211,6 +7217,9 @@
       document.getElementById('checkoutSubCategory').selectedIndex = 0;
       document.getElementById('checkoutOtherSubCategory').value = '';
       document.getElementById('agentLedgerSection').style.display = 'none';
+      document.getElementById('checkoutAgentLedger').checked = false;
+      document.getElementById('agentCollectAmountGroup').style.display = 'none';
+      document.getElementById('agentLedgerInfo').style.display = 'none';
       document.getElementById('checkoutCollectAmount').value = '';
 
       // Restore existing add-ons if any
@@ -7221,6 +7230,7 @@
       }
 
       updateCheckoutTotals();
+      updateAgentLedgerSection();
     }
 
     function closeCheckoutModal() {
@@ -7314,8 +7324,12 @@
       var addOnTotal = getAddOnTotal();
       var payMode = document.getElementById('checkoutPayMode').value;
 
-      // Block checkout if bill not fully cleared — skip when a payment mode is selected (balance will be collected)
-      if (!payMode) {
+      // Check if agent ledger transfer is checked
+      var agentLedgerChecked = document.getElementById('checkoutAgentLedger').checked &&
+        document.getElementById('agentLedgerSection').style.display !== 'none';
+
+      // Block checkout if bill not fully cleared — skip when a payment mode is selected or agent ledger transfer is checked
+      if (!payMode && !agentLedgerChecked) {
         var b = checkoutBookingData;
         if (b) {
           var origTotal = parseFloat(b.totalAmount) || 0;
@@ -7347,21 +7361,24 @@
         reqBody.subCategory = subCat;
       }
 
-      // Agent ledger transfer: partial collection
-      var agentLedgerVisible = document.getElementById('agentLedgerSection').style.display !== 'none';
-      if (agentLedgerVisible && payMode && payMode !== 'AKS Office') {
-        var bk = checkoutBookingData;
-        if (bk) {
-          var origT = parseFloat(bk.totalAmount) || 0;
-          var gTotal = origT + kotAmt + addOnTotal;
-          var recv = (parseFloat(bk.advanceReceived) || 0) + (parseFloat(bk.balanceReceived) || 0);
-          var bal = gTotal - recv;
-          var collectAmt = parseFloat(document.getElementById('checkoutCollectAmount').value) || 0;
-          collectAmt = Math.min(Math.max(0, collectAmt), bal);
-          if (collectAmt < bal) {
+      // Agent ledger transfer
+      if (agentLedgerChecked) {
+        reqBody.transferToAgentLedger = true;
+        if (payMode && payMode !== 'AKS Office') {
+          // Partial collection: guest pays some, rest to agent ledger
+          var bk = checkoutBookingData;
+          if (bk) {
+            var origT = parseFloat(bk.totalAmount) || 0;
+            var gTotal = origT + kotAmt + addOnTotal;
+            var recv = (parseFloat(bk.advanceReceived) || 0) + (parseFloat(bk.balanceReceived) || 0);
+            var bal = gTotal - recv;
+            var collectAmt = parseFloat(document.getElementById('checkoutCollectAmount').value) || 0;
+            collectAmt = Math.min(Math.max(0, collectAmt), bal);
             reqBody.collectAmount = collectAmt;
-            reqBody.transferToAgentLedger = true;
           }
+        } else {
+          // No payment mode: entire remaining balance to agent ledger
+          reqBody.collectAmount = 0;
         }
       }
 
@@ -7399,25 +7416,55 @@
       if (mode !== 'AKS Office') {
         document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
       }
-      // Show agent ledger section for Agent/OTA bookings when a non-AKS payment mode is selected
+      updateAgentLedgerSection();
+    }
+
+    function updateAgentLedgerSection() {
       var b = checkoutBookingData;
       var agentSection = document.getElementById('agentLedgerSection');
-      if (b && (b.source === 'Agent' || b.source === 'OTA') && mode && mode !== 'AKS Office') {
+      var mode = document.getElementById('checkoutPayMode').value;
+      if (!b || (b.source !== 'Agent' && b.source !== 'OTA') || mode === 'AKS Office') {
+        agentSection.style.display = 'none';
+        return;
+      }
+      var origTotal = parseFloat(b.totalAmount) || 0;
+      var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
+      var addOnTotal = getAddOnTotal();
+      var grandTotal = origTotal + kotAmt + addOnTotal;
+      var received = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+      var balance = grandTotal - received;
+      if (balance > 0) {
+        agentSection.style.display = '';
+        var agentName = b.sourceName || 'Agent';
+        document.getElementById('agentLedgerLabel').textContent =
+          'Transfer \u20B9' + balance.toLocaleString('en-IN') + ' to ' + agentName + "'s ledger";
+      } else {
+        agentSection.style.display = 'none';
+      }
+      onAgentLedgerToggle();
+    }
+
+    function onAgentLedgerToggle() {
+      var checked = document.getElementById('checkoutAgentLedger').checked;
+      var mode = document.getElementById('checkoutPayMode').value;
+      var collectGroup = document.getElementById('agentCollectAmountGroup');
+      var infoEl = document.getElementById('agentLedgerInfo');
+      if (checked && mode && mode !== 'AKS Office') {
+        // Payment mode selected + agent ledger → show collect amount for partial payment
+        collectGroup.style.display = '';
+        infoEl.style.display = '';
+        var b = checkoutBookingData;
         var origTotal = parseFloat(b.totalAmount) || 0;
         var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
         var addOnTotal = getAddOnTotal();
         var grandTotal = origTotal + kotAmt + addOnTotal;
         var received = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
         var balance = grandTotal - received;
-        if (balance > 0) {
-          agentSection.style.display = '';
-          document.getElementById('checkoutCollectAmount').value = balance;
-          updateAgentLedgerInfo();
-        } else {
-          agentSection.style.display = 'none';
-        }
+        document.getElementById('checkoutCollectAmount').value = 0;
+        updateAgentLedgerInfo();
       } else {
-        agentSection.style.display = 'none';
+        collectGroup.style.display = 'none';
+        infoEl.style.display = 'none';
       }
     }
 
@@ -7436,10 +7483,10 @@
       var agentName = b.sourceName || 'Agent';
       var infoEl = document.getElementById('agentLedgerInfo');
       if (remaining > 0) {
-        infoEl.innerHTML = '&#8377;' + remaining.toLocaleString('en-IN') + ' will be added to <strong>' + escapeHtml(agentName) + '</strong>\'s ledger as pending';
+        infoEl.innerHTML = '\u20B9' + remaining.toLocaleString('en-IN') + ' will be added to <strong>' + escapeHtml(agentName) + '</strong>\'s ledger as pending';
         infoEl.style.color = '#b45309';
       } else {
-        infoEl.innerHTML = 'Full payment collected — no ledger transfer';
+        infoEl.innerHTML = 'Full payment collected \u2014 no ledger transfer';
         infoEl.style.color = '#059669';
       }
     }
@@ -11269,7 +11316,7 @@
   </script>
   <script>
     (function() {
-      var APP_VERSION = 33;
+      var APP_VERSION = 34;
       var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
       if (storedVersion < APP_VERSION) {
         localStorage.setItem('app_version', APP_VERSION);
