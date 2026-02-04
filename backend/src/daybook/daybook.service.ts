@@ -171,9 +171,47 @@ export class DaybookService {
   }
 
   async getClosing(date: string): Promise<any> {
-    const balance = await this.getBalance(date) || { cashOpening: 0, bankSbiOpening: 0 };
-    const entries = await this.entryRepo.find({ where: { date } });
+    let cashOp = 0;
+    let bankOp = 0;
 
+    const explicitBalance = await this.getBalance(date);
+    if (explicitBalance) {
+      cashOp = Number(explicitBalance.cashOpening) || 0;
+      bankOp = Number(explicitBalance.bankSbiOpening) || 0;
+    } else {
+      // Auto carry-forward: find the most recent date with an explicit balance
+      const lastBalance = await this.balanceRepo
+        .createQueryBuilder('b')
+        .where('b.date < :date', { date })
+        .orderBy('b.date', 'DESC')
+        .getOne();
+
+      if (lastBalance) {
+        // Compute running balance from lastBalance date to the day before requested date
+        let runCash = Number(lastBalance.cashOpening) || 0;
+        let runBank = Number(lastBalance.bankSbiOpening) || 0;
+
+        const interEntries = await this.entryRepo
+          .createQueryBuilder('e')
+          .where('e.date >= :from AND e.date < :to', { from: lastBalance.date, to: date })
+          .getMany();
+
+        for (const e of interEntries) {
+          const amt = Number(e.amount) || 0;
+          const src = e.type === 'income' ? (e.receivedIn || e.paymentSource || 'Cash') : (e.paymentSource || 'Cash');
+          if (e.type === 'income') {
+            if (src === 'Cash') runCash += amt; else runBank += amt;
+          } else {
+            if (src === 'Cash') runCash -= amt; else runBank -= amt;
+          }
+        }
+
+        cashOp = runCash;
+        bankOp = runBank;
+      }
+    }
+
+    const entries = await this.entryRepo.find({ where: { date } });
     let cashIncome = 0, bankIncome = 0, cashExpense = 0, bankExpense = 0;
 
     for (const e of entries) {
@@ -187,9 +225,6 @@ export class DaybookService {
         else bankExpense += amt;
       }
     }
-
-    const cashOp = Number(balance.cashOpening) || 0;
-    const bankOp = Number(balance.bankSbiOpening) || 0;
 
     return {
       cashOpening: cashOp,
