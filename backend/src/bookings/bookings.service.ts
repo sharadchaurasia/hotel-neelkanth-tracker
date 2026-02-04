@@ -365,6 +365,23 @@ export class BookingsService {
       booking.status = 'COLLECTED';
       booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
         `[AKS Office checkout ₹${balance > 0 ? balance : 0} (${dto.subCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
+    } else if (dto.paymentMode && balance > 0 && dto.transferToAgentLedger && dto.collectAmount !== undefined) {
+      // Partial collection — remaining goes to agent ledger
+      const actualCollect = Math.min(Math.max(0, dto.collectAmount), balance);
+      booking.balanceReceived = Number(booking.balanceReceived || 0) + actualCollect;
+      if (actualCollect > 0) {
+        booking.balancePaymentMode = dto.paymentMode;
+        booking.balanceDate = today;
+      }
+      booking.paymentType = 'Ledger';
+      const totalRecv = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
+      const pend = newTotal - totalRecv;
+      booking.status = pend <= 0 ? 'COLLECTED' : (totalRecv > 0 ? 'PARTIAL' : 'PENDING');
+      const ledgerAmt = balance - actualCollect;
+      if (ledgerAmt > 0) {
+        booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+          `[₹${ledgerAmt} transferred to ${booking.sourceName || 'Agent'} ledger by ${userName || 'unknown'} on ${today}]`;
+      }
     } else if (dto.paymentMode && balance > 0) {
       booking.balanceReceived = Number(booking.balanceReceived || 0) + balance;
       booking.balancePaymentMode = dto.paymentMode;
@@ -385,7 +402,10 @@ export class BookingsService {
 
     // Room rent balance entry (if balance paid at checkout) — skip for AKS Office
     if (!isAksOffice && dto.paymentMode && balance > 0) {
-      const roomRentPortion = balance - kotAmt - addOnTotal;
+      const actualCollected = (dto.transferToAgentLedger && dto.collectAmount !== undefined)
+        ? Math.min(Math.max(0, dto.collectAmount), balance)
+        : balance;
+      const roomRentPortion = actualCollected - kotAmt - addOnTotal;
       if (roomRentPortion > 0) {
         await this.createDaybookEntry({
           date: today,

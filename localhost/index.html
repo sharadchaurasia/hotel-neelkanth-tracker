@@ -3886,6 +3886,15 @@
           <label>Specify Sub-Category</label>
           <input type="text" id="checkoutOtherSubCategory" placeholder="Enter sub-category">
         </div>
+
+        <!-- Agent Ledger Transfer Section -->
+        <div id="agentLedgerSection" style="display:none;margin-top:12px;padding:14px;background:rgba(255,183,77,0.12);border-radius:10px;border:1px solid rgba(255,183,77,0.3);">
+          <div class="form-group" style="margin-bottom:8px;">
+            <label style="color:#996b2f;font-weight:600;">Collect Amount from Guest</label>
+            <input type="number" id="checkoutCollectAmount" placeholder="&#8377;" min="0" oninput="updateAgentLedgerInfo()">
+          </div>
+          <div id="agentLedgerInfo" style="font-size:13px;color:#996b2f;font-weight:500;padding:8px;background:rgba(255,255,255,0.5);border-radius:6px;"></div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
@@ -7201,6 +7210,8 @@
       document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
       document.getElementById('checkoutSubCategory').selectedIndex = 0;
       document.getElementById('checkoutOtherSubCategory').value = '';
+      document.getElementById('agentLedgerSection').style.display = 'none';
+      document.getElementById('checkoutCollectAmount').value = '';
 
       // Restore existing add-ons if any
       if (b.addOns && b.addOns.length > 0) {
@@ -7336,6 +7347,24 @@
         reqBody.subCategory = subCat;
       }
 
+      // Agent ledger transfer: partial collection
+      var agentLedgerVisible = document.getElementById('agentLedgerSection').style.display !== 'none';
+      if (agentLedgerVisible && payMode && payMode !== 'AKS Office') {
+        var bk = checkoutBookingData;
+        if (bk) {
+          var origT = parseFloat(bk.totalAmount) || 0;
+          var gTotal = origT + kotAmt + addOnTotal;
+          var recv = (parseFloat(bk.advanceReceived) || 0) + (parseFloat(bk.balanceReceived) || 0);
+          var bal = gTotal - recv;
+          var collectAmt = parseFloat(document.getElementById('checkoutCollectAmount').value) || 0;
+          collectAmt = Math.min(Math.max(0, collectAmt), bal);
+          if (collectAmt < bal) {
+            reqBody.collectAmount = collectAmt;
+            reqBody.transferToAgentLedger = true;
+          }
+        }
+      }
+
       try {
         await apiFetch('/bookings/' + backendId + '/checkout', {
           method: 'POST',
@@ -7369,6 +7398,49 @@
       document.getElementById('checkoutSubCatGroup').style.display = mode === 'AKS Office' ? '' : 'none';
       if (mode !== 'AKS Office') {
         document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
+      }
+      // Show agent ledger section for Agent/OTA bookings when a non-AKS payment mode is selected
+      var b = checkoutBookingData;
+      var agentSection = document.getElementById('agentLedgerSection');
+      if (b && (b.source === 'Agent' || b.source === 'OTA') && mode && mode !== 'AKS Office') {
+        var origTotal = parseFloat(b.totalAmount) || 0;
+        var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
+        var addOnTotal = getAddOnTotal();
+        var grandTotal = origTotal + kotAmt + addOnTotal;
+        var received = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var balance = grandTotal - received;
+        if (balance > 0) {
+          agentSection.style.display = '';
+          document.getElementById('checkoutCollectAmount').value = balance;
+          updateAgentLedgerInfo();
+        } else {
+          agentSection.style.display = 'none';
+        }
+      } else {
+        agentSection.style.display = 'none';
+      }
+    }
+
+    function updateAgentLedgerInfo() {
+      var b = checkoutBookingData;
+      if (!b) return;
+      var origTotal = parseFloat(b.totalAmount) || 0;
+      var kotAmt = parseFloat(document.getElementById('checkoutKotAmount').value) || 0;
+      var addOnTotal = getAddOnTotal();
+      var grandTotal = origTotal + kotAmt + addOnTotal;
+      var received = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+      var balance = grandTotal - received;
+      var collectAmt = parseFloat(document.getElementById('checkoutCollectAmount').value) || 0;
+      collectAmt = Math.min(Math.max(0, collectAmt), balance);
+      var remaining = balance - collectAmt;
+      var agentName = b.sourceName || 'Agent';
+      var infoEl = document.getElementById('agentLedgerInfo');
+      if (remaining > 0) {
+        infoEl.innerHTML = '&#8377;' + remaining.toLocaleString('en-IN') + ' will be added to <strong>' + escapeHtml(agentName) + '</strong>\'s ledger as pending';
+        infoEl.style.color = '#b45309';
+      } else {
+        infoEl.innerHTML = 'Full payment collected — no ledger transfer';
+        infoEl.style.color = '#059669';
       }
     }
     function toggleCheckoutOtherInput() {
@@ -11197,7 +11269,7 @@
   </script>
   <script>
     (function() {
-      var APP_VERSION = 32;
+      var APP_VERSION = 33;
       var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
       if (storedVersion < APP_VERSION) {
         localStorage.setItem('app_version', APP_VERSION);

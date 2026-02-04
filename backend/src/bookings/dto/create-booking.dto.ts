@@ -38,6 +38,8 @@ export class CheckoutDto {
   addOns?: { type: string; amount: number }[];
   paymentMode?: string;
   subCategory?: string;
+  collectAmount?: number;
+  transferToAgentLedger?: boolean;
 }
 
 export class CancelDto {
