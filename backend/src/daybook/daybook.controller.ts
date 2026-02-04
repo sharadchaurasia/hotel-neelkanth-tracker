@@ -38,6 +38,9 @@ export class DaybookController {
   @Put('balance')
   @RequirePermissions('daybook', 'edit')
   setBalance(@Body() dto: SetBalanceDto, @CurrentUser() user: User) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can set opening balance');
+    }
     return this.daybookService.setBalance(dto, user.id, user.role);
   }
 
