@@ -4465,10 +4465,9 @@
       // KOT tab
       var kotTabBtn = document.getElementById('tab-btn-kot');
       if (kotTabBtn) kotTabBtn.style.display = hasPermission('kot', 'view') ? '' : 'none';
-      // Opening Balance button - admin only (cards visible to all)
-      var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin');
+      // Opening Balance button - super_admin only
       var obBtn = document.getElementById('btnSetOpeningBalance');
-      if (obBtn) obBtn.style.display = isAdmin ? '' : 'none';
+      if (obBtn) obBtn.style.display = (currentUser && currentUser.role === 'super_admin') ? '' : 'none';
     }
 
     // ========== USER MANAGEMENT (Admin) ==========
@@ -11316,7 +11315,7 @@
   </script>
   <script>
     (function() {
-      var APP_VERSION = 34;
+      var APP_VERSION = 35;
       var storedVersion = parseInt(localStorage.getItem('app_version') || '0', 10);
       if (storedVersion < APP_VERSION) {
         localStorage.setItem('app_version', APP_VERSION);
