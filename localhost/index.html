@@ -790,13 +790,15 @@
 
       /* Tabs - icon only, touch-friendly, scrollable */
       .nav-tabs { margin-bottom: 8px; border-radius: 6px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
-      .nav-tabs button {
+      .nav-tabs > button, .nav-more-wrap > button {
         font-size: 0; padding: 12px 0; gap: 0;
         flex: 0 0 auto; min-width: 44px; min-height: 44px; justify-content: center;
         border-bottom-width: 2px;
         padding-left: 8px; padding-right: 8px;
       }
       .nav-tabs button .material-icons { font-size: 20px; }
+      .nav-more-menu { right: auto; left: 0; }
+      .nav-more-menu button { font-size: 13px !important; padding: 10px 14px; }
 
       /* Dashboard cards */
       .dashboard { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
@@ -1364,6 +1366,41 @@
     .nav-tabs button:hover:not(.active) {
       background: rgba(153, 107, 47, 0.05);
     }
+
+    .nav-more-wrap { position: relative; flex: 1 1 auto; }
+    .nav-more-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      border: 1px solid rgba(153, 107, 47, 0.2);
+      z-index: 1000;
+      min-width: 180px;
+      padding: 6px 0;
+    }
+    .nav-more-menu.open { display: block; }
+    .nav-more-menu button {
+      display: flex !important;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      color: #7a7060;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border-bottom: none;
+      justify-content: flex-start;
+    }
+    .nav-more-menu button:hover { background: rgba(153, 107, 47, 0.08); }
+    .nav-more-menu button.active { color: #996b2f; background: rgba(153, 107, 47, 0.1); }
+    .nav-more-menu button .material-icons { font-size: 20px; }
 
     .tab-content {
       display: none;
@@ -2112,39 +2149,46 @@
       <button class="active" onclick="switchTab('dashboard')">
         <span class="material-icons">dashboard</span> Dashboard
       </button>
-      <button onclick="switchTab('inventory')">
-        <span class="material-icons">meeting_room</span> Inventory
-      </button>
-      <button onclick="switchTab('ledger')">
-        <span class="material-icons">account_balance</span> Ledger
-      </button>
-      <button onclick="switchTab('reports')">
-        <span class="material-icons">assessment</span> Reports
+      <button onclick="switchTab('roomdash')">
+        <span class="material-icons">grid_view</span> Rooms
       </button>
       <button onclick="switchTab('daybook')">
         <span class="material-icons">menu_book</span> Day Book
       </button>
-      <button onclick="switchTab('salary')">
-        <span class="material-icons">badge</span> Salary
-      </button>
-      <button onclick="switchTab('roomdash')">
-        <span class="material-icons">grid_view</span> Rooms
-      </button>
-      <button onclick="switchTab('calendar')">
-        <span class="material-icons">calendar_month</span> Calendar
-      </button>
-      <button onclick="switchTab('aksoffice')">
-        <span class="material-icons">business</span> AKS Office
+      <button onclick="switchTab('ledger')">
+        <span class="material-icons">account_balance</span> Ledger
       </button>
       <button id="tab-btn-kot" onclick="switchTab('kot')">
         <span class="material-icons">restaurant_menu</span> KOT
       </button>
-      <button id="tab-btn-users" onclick="switchTab('users')" style="display:none">
-        <span class="material-icons">people</span> Users
+      <button onclick="switchTab('calendar')">
+        <span class="material-icons">calendar_month</span> Calendar
       </button>
-      <button id="tab-btn-audit" onclick="switchTab('audit')" style="display:none">
-        <span class="material-icons">history</span> Audit Log
-      </button>
+      <div class="nav-more-wrap" style="position:relative">
+        <button onclick="toggleMoreMenu(event)" id="nav-more-btn">
+          <span class="material-icons">more_horiz</span> More
+        </button>
+        <div id="nav-more-menu" class="nav-more-menu">
+          <button onclick="switchTab('inventory');closeMoreMenu()">
+            <span class="material-icons">meeting_room</span> Inventory
+          </button>
+          <button onclick="switchTab('reports');closeMoreMenu()">
+            <span class="material-icons">assessment</span> Reports
+          </button>
+          <button onclick="switchTab('aksoffice');closeMoreMenu()">
+            <span class="material-icons">business</span> AKS Office
+          </button>
+          <button onclick="switchTab('salary');closeMoreMenu()">
+            <span class="material-icons">badge</span> Salary
+          </button>
+          <button id="tab-btn-users" onclick="switchTab('users');closeMoreMenu()" style="display:none">
+            <span class="material-icons">people</span> Users
+          </button>
+          <button id="tab-btn-audit" onclick="switchTab('audit');closeMoreMenu()" style="display:none">
+            <span class="material-icons">history</span> Audit Log
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== DASHBOARD TAB ==================== -->
@@ -5101,17 +5145,36 @@
     });
 
     // ========== TABS ==========
+    function toggleMoreMenu(e) {
+      e.stopPropagation();
+      var menu = document.getElementById('nav-more-menu');
+      menu.classList.toggle('open');
+    }
+    function closeMoreMenu() {
+      document.getElementById('nav-more-menu').classList.remove('open');
+    }
+    document.addEventListener('click', function(e) {
+      var menu = document.getElementById('nav-more-menu');
+      if (menu && !e.target.closest('.nav-more-wrap')) menu.classList.remove('open');
+    });
+
     function switchTab(tab, skipSave) {
       // Toggle tab buttons
-      var btns = document.querySelectorAll('.nav-tabs button');
+      var btns = document.querySelectorAll('.nav-tabs > button, .nav-more-menu button');
       btns.forEach(function(btn) { btn.classList.remove('active'); });
       // Find and activate the correct button
+      var moreTabs = ['inventory', 'reports', 'aksoffice', 'salary', 'users', 'audit'];
+      var isMoreTab = moreTabs.indexOf(tab) !== -1;
       btns.forEach(function(btn) {
         if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + tab + "'") !== -1) {
           btn.classList.add('active');
         }
       });
-      if (event && event.currentTarget) event.currentTarget.classList.add('active');
+      // Highlight "More" button when a dropdown tab is active
+      var moreBtn = document.getElementById('nav-more-btn');
+      if (moreBtn) {
+        if (isMoreTab) { moreBtn.classList.add('active'); } else { moreBtn.classList.remove('active'); }
+      }
 
       // Toggle tab content
       document.querySelectorAll('.tab-content').forEach(function(el) {
@@ -8823,7 +8886,14 @@
           '<td class="amount ' + (pend > 0 ? 'amount-pending' : pend < 0 ? 'amount-received' : '') + '">' + (pend < 0 ? '<span style="color:#16a34a">Extra Paid ' + formatCurrency(Math.abs(pend)) + '</span>' : formatCurrency(pend > 0 ? pend : 0)) + '</td>' +
           '<td>' + (pend > 0 ? '<span class="aging-badge ' + agingBucket.cls + '">' + agingDays + 'd</span>' : '-') + '</td>' +
           '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
-            (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
+            (function() {
+              var payMode = b.balancePaymentMode || b.paymentMode || '';
+              if (!payMode) return isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '';
+              if (payMode.indexOf('AKS Office') !== -1) return '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>';
+              if (payMode === 'Cash') return '<br><span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 6px;border-radius:4px;">Cash</span>';
+              if (payMode === 'Card') return '<br><span style="font-size:10px;background:#2563eb;color:#fff;padding:1px 6px;border-radius:4px;">Card</span>';
+              return '<br><span style="font-size:10px;background:#0891b2;color:#fff;padding:1px 6px;border-radius:4px;">Bank Transfer</span>';
+            })() +
           '</td>' +
           '</tr>';
       });
