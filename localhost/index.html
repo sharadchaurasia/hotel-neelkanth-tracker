@@ -8686,6 +8686,9 @@
           if (advMode && advMode.indexOf('AKS Office') === -1) advRecv = parseFloat(b.advanceReceived) || 0;
           if (balMode && balMode.indexOf('AKS Office') === -1) balRecv = parseFloat(b.balanceReceived) || 0;
           recv = advRecv + balRecv;
+          // Cap at totalAmount (includes AKS portion hotel may have collected)
+          var bookingTotal = parseFloat(b.totalAmount) || 0;
+          return Math.min(recv, bookingTotal);
         }
         if (isAgentBooking(b)) {
           // Cap at hotel share — excess is hotel's direct income (KOT/add-ons)
@@ -8697,14 +8700,14 @@
 
       // Summary by agent
       var agentSums = {};
-      var grandTotal = { total: 0, received: 0, pending: 0, settled: 0, count: 0 };
+      var grandTotal = { total: 0, received: 0, pending: 0, settled: 0, count: 0, extraPaid: 0 };
 
       // Aging buckets for pending amounts
       var agingBuckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
 
       filtered.forEach(function(b) {
         var name = b.sourceName || 'Unknown';
-        if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, settled: 0, count: 0 };
+        if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, settled: 0, count: 0, extraPaid: 0 };
         var total = getHotelTotal(b);
         var recv = getHotelReceived(b);
         var pend = total - recv;
@@ -8713,12 +8716,14 @@
         }
         agentSums[name].total += total;
         agentSums[name].received += recv;
-        if (pend > 0) agentSums[name].pending += pend;
+        agentSums[name].pending += pend;
+        if (pend < 0) agentSums[name].extraPaid += Math.abs(pend);
         agentSums[name].count++;
         grandTotal.total += total;
         grandTotal.received += recv;
+        grandTotal.pending += pend;
+        if (pend < 0) grandTotal.extraPaid += Math.abs(pend);
         if (pend > 0) {
-          grandTotal.pending += pend;
           var bucket = getAgingBucket(calculateAgingDays(b.checkOut));
           agingBuckets[bucket.label] += pend;
         }
@@ -8751,6 +8756,8 @@
         cardsHtml += '<div class="monthly-card"><div class="mc-label">' + escapeHtml(agent) + ' - Bookings</div><div class="mc-value blue">' + grandTotal.count + '</div></div>';
         cardsHtml += '<div class="monthly-card"><div class="mc-label">Hotel Share (Debit)</div><div class="mc-value blue">' + formatCurrency(grandTotal.total) + '</div></div>';
         cardsHtml += '<div class="monthly-card"><div class="mc-label">Received (Direct)</div><div class="mc-value green">' + formatCurrency(grandTotal.received) + '</div></div>';
+        var grossPending = grandTotal.total - grandTotal.received;
+        cardsHtml += '<div class="monthly-card"><div class="mc-label">Pending (Gross)</div><div class="mc-value" style="color:#ea580c">' + formatCurrency(grossPending) + '</div></div>';
         if (agentSettled > 0) {
           cardsHtml += '<div class="monthly-card"><div class="mc-label">Settled</div><div class="mc-value green">' + formatCurrency(agentSettled) + '</div></div>';
         }
@@ -8798,8 +8805,10 @@
         var advAmt = parseFloat(b.advanceReceived) || 0;
         var balAmt = parseFloat(b.balanceReceived) || 0;
         var dates = [];
-        if (advAmt > 0 && b.advanceDate) dates.push(b.advanceDate);
-        if (balAmt > 0 && b.balanceDate && b.balanceDate !== b.advanceDate) dates.push(b.balanceDate);
+        if (recv > 0) {
+          if (advAmt > 0 && b.advanceDate) dates.push(b.advanceDate);
+          if (balAmt > 0 && b.balanceDate && b.balanceDate !== b.advanceDate) dates.push(b.balanceDate);
+        }
         if (dates.length > 0) recvDates = '<div style="font-size:10px;color:#9ca3af">' + dates.map(formatDate).join(', ') + '</div>';
 
         html += '<tr>' +
@@ -8811,7 +8820,7 @@
           '<td>' + formatDate(b.checkOut) + '</td>' +
           '<td class="amount">' + formatCurrency(total) + '</td>' +
           '<td class="amount amount-received">' + formatCurrency(recv) + recvDates + '</td>' +
-          '<td class="amount ' + (pend > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pend > 0 ? pend : 0) + '</td>' +
+          '<td class="amount ' + (pend > 0 ? 'amount-pending' : pend < 0 ? 'amount-received' : '') + '">' + (pend < 0 ? '<span style="color:#16a34a">Extra Paid ' + formatCurrency(Math.abs(pend)) + '</span>' : formatCurrency(pend > 0 ? pend : 0)) + '</td>' +
           '<td>' + (pend > 0 ? '<span class="aging-badge ' + agingBucket.cls + '">' + agingDays + 'd</span>' : '-') + '</td>' +
           '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
             (isAksOffice ? '<br><span style="font-size:10px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:4px;">AKS Office</span>' : '') +
@@ -8845,7 +8854,7 @@
         var total = getHotelTotal(b);
         var recv = getHotelReceived(b);
         var pend = total - recv;
-        return [b.id, b.guestName, b.sourceName||'', b.roomNo||'', b.checkIn, b.checkOut, total, recv, pend > 0 ? pend : 0, calculateAgingDays(b.checkOut), b.status];
+        return [b.id, b.guestName, b.sourceName||'', b.roomNo||'', b.checkIn, b.checkOut, total, recv, pend, calculateAgingDays(b.checkOut), b.status];
       });
 
       var csv = [headers].concat(rows).map(function(r) {
