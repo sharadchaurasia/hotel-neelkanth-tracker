@@ -2048,7 +2048,8 @@
     <div class="auth-card">
       <div class="auth-logo">🔐</div>
       <h2>Reset Password</h2>
-      <p>Enter the OTP sent to your email</p>
+      <div id="otpSentMsg" style="background:#d4edda;color:#155724;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:14px;display:none"></div>
+      <p>Enter the 6-digit OTP and set your new PIN</p>
       <input type="text" id="otpCode" maxlength="6" placeholder="6-digit OTP" inputmode="numeric">
       <input type="password" id="otpNewPin" maxlength="4" placeholder="New 4-digit PIN" inputmode="numeric">
       <input type="password" id="otpConfirmPin" maxlength="4" placeholder="Confirm PIN" inputmode="numeric" onkeydown="if(event.key==='Enter')doVerifyOtp()">
@@ -2955,7 +2956,10 @@
       <div class="section-card" style="padding:24px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
           <h2>User Management</h2>
-          <button class="btn btn-primary" onclick="openUserModal()"><span class="material-icons">person_add</span> Add User</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="resetAllPasswords()"><span class="material-icons">lock_reset</span> Reset All PINs</button>
+            <button class="btn btn-primary" onclick="openUserModal()"><span class="material-icons">person_add</span> Add User</button>
+          </div>
         </div>
         <table class="data-table" style="width:100%">
           <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Permissions</th><th>Actions</th></tr></thead>
@@ -3246,10 +3250,23 @@
           </div>
           <div class="form-group" style="margin-bottom:12px">
             <label>Payment Mode *</label>
-            <select id="settlementPayMode">
-              <option value="Bank Transfer">SBI Neelkanth (Bank Transfer)</option>
+            <select id="settlementPayMode" onchange="toggleSettlementAksSubCat()">
+              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
               <option value="Cash">Cash</option>
               <option value="Card">Card</option>
+              <option value="AKS Office">AKS Office</option>
+            </select>
+          </div>
+          <div class="form-group" id="settlementAksSubCatGroup" style="display:none;margin-bottom:12px">
+            <label>Sub-Category *</label>
+            <select id="settlementAksSubCat">
+              <option value="Office (SBI)">Office (SBI)</option>
+              <option value="Getaway">Getaway</option>
+              <option value="Rajat">Rajat</option>
+              <option value="Happy">Happy</option>
+              <option value="Fyra">Fyra</option>
+              <option value="Vishal">Vishal</option>
+              <option value="Other">Other</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:12px">
@@ -3536,13 +3553,26 @@
           </div>
           <div class="form-group">
             <label>Payment Mode</label>
-            <select id="paymentMode">
+            <select id="paymentMode" onchange="toggleBookingAksSubCat()">
               <option value="">Select</option>
               <option value="Cash">Cash</option>
               <option value="Card">Card</option>
               <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+              <option value="AKS Office">AKS Office</option>
             </select>
           </div>
+        </div>
+        <div class="form-group" id="bookingAksSubCatGroup" style="display:none;margin-top:8px;">
+          <label>AKS Sub-Category *</label>
+          <select id="bookingAksSubCat">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
 
         <!-- Prepaid fields (shown when paymentType === 'Prepaid') -->
@@ -3718,9 +3748,23 @@
 
         <div class="form-group" style="margin-bottom:16px;">
           <label>Refund Mode *</label>
-          <select id="refundMode">
+          <select id="refundMode" onchange="toggleRefundAksSubCat()">
             <option value="Cash">Cash</option>
-            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Card">Card</option>
+            <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <option value="AKS Office">AKS Office</option>
+          </select>
+        </div>
+        <div class="form-group" id="refundAksSubCatGroup" style="display:none;margin-bottom:16px;">
+          <label>Sub-Category *</label>
+          <select id="refundAksSubCat">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
           </select>
         </div>
 
@@ -3887,6 +3931,31 @@
           <input type="text" id="checkoutOtherSubCategory" placeholder="Enter sub-category">
         </div>
 
+        <div class="form-row" id="kotPayModeGroup" style="margin-top:12px;display:none;">
+          <div class="form-group">
+            <label>KOT &amp; Add-On Payment Mode</label>
+            <select id="checkoutKotPayMode" onchange="toggleKotAksSubCat()">
+              <option value="">Same as Balance Mode</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+              <option value="AKS Office">AKS Office</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="kotAksSubCatGroup" style="display:none;margin-top:8px;">
+          <label>KOT Sub-Category *</label>
+          <select id="kotAksSubCat">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
         <!-- Agent Ledger Transfer Section -->
         <div id="agentLedgerSection" style="display:none;margin-top:12px;padding:14px;background:rgba(255,183,77,0.12);border-radius:10px;border:1px solid rgba(255,183,77,0.3);">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:600;color:#996b2f;">
@@ -3906,6 +3975,57 @@
         <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
         <button class="btn btn-primary" onclick="processCheckout()" id="checkoutBtn">
           <span class="material-icons">logout</span> Check Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Daybook Entry Modal -->
+  <div class="modal-overlay" id="editDaybookModal">
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-header">
+        <h3>Edit Daybook Entry</h3>
+        <button class="modal-close" onclick="closeModal('editDaybookModal')">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editDaybookEntryId">
+        <div id="editDaybookInfo" style="margin-bottom:16px;padding:12px;background:rgba(20,20,40,0.6);border-radius:10px;font-size:13px;"></div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Amount</label>
+          <input type="number" id="editDaybookAmount" placeholder="&#8377;" min="0" step="1">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Description</label>
+          <input type="text" id="editDaybookDesc" placeholder="Description">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Payment Mode</label>
+          <select id="editDaybookPayMode" onchange="toggleEditDaybookSubCat()">
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <option value="AKS Office">AKS Office</option>
+          </select>
+        </div>
+        <div class="form-group" id="editDaybookSubCatGroup" style="display:none;margin-bottom:12px;">
+          <label>Sub-Category *</label>
+          <select id="editDaybookSubCat">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('editDaybookModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDaybookEdit()">
+          <span class="material-icons">save</span> Save
         </button>
       </div>
     </div>
@@ -3988,9 +4108,23 @@
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label>Payment From *</label>
-          <select id="expensePayFrom">
+          <select id="expensePayFrom" onchange="toggleExpenseAksSubCat()">
             <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
             <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <option value="AKS Office">AKS Office</option>
+          </select>
+        </div>
+        <div class="form-group" id="expenseAksSubCatGroup" style="display:none;margin-bottom:16px;">
+          <label>Sub-Category *</label>
+          <select id="expenseAksSubCat">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
           </select>
         </div>
         <div class="form-group">
@@ -4031,17 +4165,32 @@
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label>Payment Mode *</label>
-          <select id="incomePayMode">
+          <select id="incomePayMode" onchange="syncIncomeReceivedIn(); toggleIncomeAksSubCat()">
             <option value="Cash">Cash</option>
             <option value="Card">Card</option>
             <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <option value="AKS Office">AKS Office</option>
+          </select>
+        </div>
+        <div class="form-group" id="incomeAksSubCatGroup" style="display:none;margin-bottom:16px;">
+          <label>Sub-Category *</label>
+          <select id="incomeAksSubCat">
+            <option value="Office (SBI)">Office (SBI)</option>
+            <option value="Getaway">Getaway</option>
+            <option value="Rajat">Rajat</option>
+            <option value="Happy">Happy</option>
+            <option value="Fyra">Fyra</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Other">Other</option>
           </select>
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label>Received In *</label>
           <select id="incomeReceivedIn">
             <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
             <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <option value="AKS Office">AKS Office</option>
           </select>
         </div>
         <div class="form-group">
@@ -4358,6 +4507,9 @@
         var r = await apiFetch('/auth/forgot-password', { method: 'POST', body: { email: email } });
         if (r.userId) {
           _pendingOtpUserId = r.userId;
+          var msgEl = document.getElementById('otpSentMsg');
+          msgEl.innerHTML = '&#10004; OTP sent to <strong>' + email + '</strong>. Check your inbox & spam folder.';
+          msgEl.style.display = 'block';
           showScreen('otp-screen');
           showToast('OTP bheja gaya hai aapki email pe', 'success');
         } else {
@@ -4402,7 +4554,10 @@
       if (!_pendingOtpUserId) return;
       try {
         await apiFetch('/auth/resend-otp', { method: 'POST', body: { userId: _pendingOtpUserId } });
-        showToast('OTP resent to your email', 'success');
+        var msgEl = document.getElementById('otpSentMsg');
+        msgEl.innerHTML = '&#10004; New OTP sent! Check your inbox & spam folder.';
+        msgEl.style.display = 'block';
+        showToast('Naya OTP bheja gaya hai', 'success');
       } catch(e) {}
     }
 
@@ -4553,6 +4708,14 @@
       try { await apiFetch('/users/' + id + '/reset-password', { method: 'POST' }); showToast('Password reset to 1234', 'success'); } catch(e) {}
     }
 
+    async function resetAllPasswords() {
+      if (!confirm('Sabhi users ka PIN reset hokar 1234 ho jayega. Continue?')) return;
+      try {
+        await apiFetch('/users/reset-all-passwords', { method: 'POST' });
+        showToast('All PINs reset to 1234', 'success');
+      } catch(e) {}
+    }
+
     async function deleteUserConfirm(id) {
       if (!confirm('Delete this user permanently?')) return;
       try { await apiFetch('/users/' + id, { method: 'DELETE' }); showToast('User deleted', 'success'); loadUsersTable(); } catch(e) {}
@@ -4666,9 +4829,15 @@
       try {
         var resp = await fetch(API_BASE + path, options);
         if (resp.status === 401) {
-          clearAuth();
-          showScreen('login-screen');
-          throw new Error('Session expired. Please login again.');
+          var errBody401 = null;
+          try { errBody401 = await resp.json(); } catch(e) {}
+          var msg401 = (errBody401 && errBody401.message) ? errBody401.message : 'Invalid credentials';
+          if (path !== '/auth/login') {
+            clearAuth();
+            showScreen('login-screen');
+            msg401 = 'Session expired. Please login again.';
+          }
+          throw new Error(msg401);
         }
         if (!resp.ok) {
           var errBody = null;
@@ -4679,7 +4848,7 @@
         var text = await resp.text();
         return text ? JSON.parse(text) : null;
       } catch(e) {
-        if (e.message !== 'Session expired. Please login again.') {
+        if (e.message !== 'Session expired. Please login again.' && e.message !== 'Invalid credentials') {
           showToast('API Error: ' + e.message, 'error');
         }
         throw e;
@@ -4912,6 +5081,13 @@
         await Promise.all([loadBookingsFromAPI(), loadStaffFromAPI(), loadAdvancesFromAPI()]);
         renderBookings();
         updateDashboard();
+
+        // Restore last active tab and its filters
+        var savedTab = localStorage.getItem('nk_active_tab');
+        if (savedTab && document.getElementById('tab-' + savedTab)) {
+          restoreTabFilters(savedTab);
+          switchTab(savedTab);
+        }
       } catch(e) {
         showToast('Failed to load data from server: ' + e.message, 'error');
       } finally {
@@ -4925,17 +5101,26 @@
     });
 
     // ========== TABS ==========
-    function switchTab(tab) {
+    function switchTab(tab, skipSave) {
       // Toggle tab buttons
       var btns = document.querySelectorAll('.nav-tabs button');
       btns.forEach(function(btn) { btn.classList.remove('active'); });
-      event.currentTarget.classList.add('active');
+      // Find and activate the correct button
+      btns.forEach(function(btn) {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + tab + "'") !== -1) {
+          btn.classList.add('active');
+        }
+      });
+      if (event && event.currentTarget) event.currentTarget.classList.add('active');
 
       // Toggle tab content
       document.querySelectorAll('.tab-content').forEach(function(el) {
         el.classList.remove('active');
       });
       document.getElementById('tab-' + tab).classList.add('active');
+
+      // Save current tab to localStorage
+      if (!skipSave) localStorage.setItem('nk_active_tab', tab);
 
       if (tab === 'inventory') {
         renderInventory();
@@ -4975,6 +5160,43 @@
       if (tab === 'kot') {
         initKotTab();
       }
+    }
+
+    // Save/restore tab filters to localStorage
+    function saveTabFilters(tab) {
+      var filters = {};
+      if (tab === 'ledger') {
+        filters.agent = document.getElementById('ledgerAgent').value;
+        filters.from = document.getElementById('ledgerFrom').value;
+        filters.to = document.getElementById('ledgerTo').value;
+      } else if (tab === 'aksoffice') {
+        filters.from = document.getElementById('aksFrom').value;
+        filters.to = document.getElementById('aksTo').value;
+        var subCatEl = document.getElementById('aksSubCatFilter');
+        if (subCatEl) filters.subCat = subCatEl.value;
+      } else if (tab === 'daybook') {
+        filters.date = document.getElementById('daybookDate').value;
+      }
+      localStorage.setItem('nk_filters_' + tab, JSON.stringify(filters));
+    }
+
+    function restoreTabFilters(tab) {
+      try {
+        var saved = JSON.parse(localStorage.getItem('nk_filters_' + tab));
+        if (!saved) return;
+        if (tab === 'ledger') {
+          if (saved.agent) document.getElementById('ledgerAgent').value = saved.agent;
+          if (saved.from) document.getElementById('ledgerFrom').value = saved.from;
+          if (saved.to) document.getElementById('ledgerTo').value = saved.to;
+        } else if (tab === 'aksoffice') {
+          if (saved.from) document.getElementById('aksFrom').value = saved.from;
+          if (saved.to) document.getElementById('aksTo').value = saved.to;
+          var subCatEl = document.getElementById('aksSubCatFilter');
+          if (subCatEl && saved.subCat) subCatEl.value = saved.subCat;
+        } else if (tab === 'daybook') {
+          if (saved.date) document.getElementById('daybookDate').value = saved.date;
+        }
+      } catch(e) {}
     }
 
     // Dashboard view toggle removed - now shows 3 colored guest lists
@@ -6397,6 +6619,33 @@
     // ========== PREPAID FIELDS TOGGLE & PAYMENT PROOF ==========
     var _paymentProofFile = null;
 
+    function toggleAksSubCat(modeId, groupId) {
+      var mode = document.getElementById(modeId).value;
+      var group = document.getElementById(groupId);
+      if (group) group.style.display = mode === 'AKS Office' ? '' : 'none';
+    }
+    function toggleBookingAksSubCat() { toggleAksSubCat('paymentMode', 'bookingAksSubCatGroup'); }
+    function toggleKotAksSubCat() { toggleAksSubCat('checkoutKotPayMode', 'kotAksSubCatGroup'); }
+    function toggleIncomeAksSubCat() { toggleAksSubCat('incomePayMode', 'incomeAksSubCatGroup'); }
+    function toggleSettlementAksSubCat() { toggleAksSubCat('settlementPayMode', 'settlementAksSubCatGroup'); }
+    function toggleRefundAksSubCat() { toggleAksSubCat('refundMode', 'refundAksSubCatGroup'); }
+    function toggleExpenseAksSubCat() { toggleAksSubCat('expensePayFrom', 'expenseAksSubCatGroup'); }
+
+    function getAksSubCatMode(baseMode, subCatId) {
+      if (baseMode !== 'AKS Office') return baseMode;
+      var subCat = document.getElementById(subCatId);
+      return subCat ? 'AKS Office - ' + subCat.value : baseMode;
+    }
+
+    function syncIncomeReceivedIn() {
+      var mode = document.getElementById('incomePayMode').value;
+      var receivedIn = document.getElementById('incomeReceivedIn');
+      if (mode === 'Cash') receivedIn.value = 'Cash';
+      else if (mode === 'Card') receivedIn.value = 'Card';
+      else if (mode === 'AKS Office') receivedIn.value = 'AKS Office';
+      else receivedIn.value = 'Bank Transfer';
+    }
+
     function togglePrepaidFields() {
       var pt = document.getElementById('paymentType').value;
       var group = document.getElementById('prepaidFieldsGroup');
@@ -6538,7 +6787,8 @@
       var totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
       var paymentType = document.getElementById('paymentType').value;
       var advanceReceived = parseFloat(document.getElementById('advanceReceived').value) || 0;
-      var paymentMode = document.getElementById('paymentMode').value;
+      var paymentModeRaw = document.getElementById('paymentMode').value;
+      var paymentMode = getAksSubCatMode(paymentModeRaw, 'bookingAksSubCat');
       var remarks = document.getElementById('remarks').value.trim();
 
       // Validation
@@ -6800,7 +7050,7 @@
       var backendId = document.getElementById('refundBackendId').value;
       var refundDate = document.getElementById('refundDate').value;
       var refundAmount = parseFloat(document.getElementById('refundAmount').value) || 0;
-      var refundMode = document.getElementById('refundMode').value;
+      var refundMode = getAksSubCatMode(document.getElementById('refundMode').value, 'refundAksSubCat');
       var deleteDaybookEntry = document.getElementById('deleteDaybookEntry').checked;
 
       if (!refundDate) {
@@ -7304,6 +7554,12 @@
       document.getElementById('checkoutGrandTotal').textContent = formatCurrency(grandTotal);
       document.getElementById('checkoutReceived').textContent = formatCurrency(received);
       document.getElementById('checkoutBalance').textContent = formatCurrency(balance > 0 ? balance : 0);
+
+      // Show/hide KOT & Add-On Payment Mode dropdown
+      var kotPayGroup = document.getElementById('kotPayModeGroup');
+      if (kotPayGroup) {
+        kotPayGroup.style.display = (kotAmt > 0 || addOnTotal > 0) ? '' : 'none';
+      }
     }
 
     async function processCheckout() {
@@ -7344,10 +7600,13 @@
         }
       }
 
+      var kotPayModeRaw = document.getElementById('checkoutKotPayMode').value;
+      var kotPayMode = kotPayModeRaw ? getAksSubCatMode(kotPayModeRaw, 'kotAksSubCat') : undefined;
       var reqBody = {
         kotAmount: kotAmt,
         addOns: addOnItems,
-        paymentMode: payMode || undefined
+        paymentMode: payMode || undefined,
+        kotPaymentMode: kotPayMode
       };
 
       // Include subCategory for AKS Office
@@ -7414,6 +7673,11 @@
       document.getElementById('checkoutSubCatGroup').style.display = mode === 'AKS Office' ? '' : 'none';
       if (mode !== 'AKS Office') {
         document.getElementById('checkoutOtherSubCatGroup').style.display = 'none';
+      }
+      // When AKS Office selected, default KOT mode to Cash (hotel's direct income)
+      var kotPayMode = document.getElementById('checkoutKotPayMode');
+      if (kotPayMode && mode === 'AKS Office') {
+        kotPayMode.value = 'Cash';
       }
       updateAgentLedgerSection();
     }
@@ -7670,6 +7934,7 @@
       var from = document.getElementById('aksFrom').value;
       var to = document.getElementById('aksTo').value;
       var subCat = document.getElementById('aksSubCatFilter').value;
+      saveTabFilters('aksoffice');
 
       var params = [];
       if (from) params.push('from=' + from);
@@ -7787,7 +8052,8 @@
     async function submitSettlement() {
       var agent = document.getElementById('settlementAgent').value;
       var amount = parseFloat(document.getElementById('settlementAmount').value) || 0;
-      var payMode = document.getElementById('settlementPayMode').value;
+      var payModeRaw = document.getElementById('settlementPayMode').value;
+      var payMode = getAksSubCatMode(payModeRaw, 'settlementAksSubCat');
       var date = document.getElementById('settlementDate').value;
       var ref = document.getElementById('settlementRef').value.trim();
 
@@ -8366,6 +8632,7 @@
       var agent = document.getElementById('ledgerAgent').value;
       var from = document.getElementById('ledgerFrom').value;
       var to = document.getElementById('ledgerTo').value;
+      saveTabFilters('ledger');
 
       // Load settlements
       await loadAgentSettlements(agent, from, to);
@@ -8388,13 +8655,34 @@
 
       ledgerFilteredBookings = filtered;
 
+      // Helper: check if booking is AKS Office managed
+      function isAksOfficeBooking(b) {
+        return b.sourceName === 'AKS Office' || (b.remarks || '').indexOf('[AKS Office') !== -1;
+      }
+
       // Helper: get hotel's share for a booking
       function getHotelTotal(b) {
-        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
-        if (isAksOffice) {
-          return (parseFloat(b.actualRoomRent) || 0) + (parseFloat(b.addOnAmount) || 0);
+        if (isAksOfficeBooking(b)) {
+          // AKS owes only room rent; add-ons/KOT are hotel's direct income
+          return parseFloat(b.actualRoomRent) || 0;
         }
         return parseFloat(b.totalAmount) || 0;
+      }
+
+      // Helper: get what hotel received directly (not via AKS)
+      function getHotelReceived(b) {
+        if (!isAksOfficeBooking(b)) {
+          return (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        }
+        // For AKS Office: only count payments that came directly to hotel (not via AKS)
+        var advRecv = 0, balRecv = 0;
+        var advMode = (b.paymentMode || '');
+        var balMode = (b.balancePaymentMode || '');
+        if (advMode && advMode.indexOf('AKS Office') === -1) advRecv = parseFloat(b.advanceReceived) || 0;
+        if (balMode && balMode.indexOf('AKS Office') === -1) balRecv = parseFloat(b.balanceReceived) || 0;
+        // Cap at hotel share — excess is hotel's direct income (add-ons/KOT)
+        var hotelShare = parseFloat(b.actualRoomRent) || 0;
+        return Math.min(advRecv + balRecv, hotelShare);
       }
 
       // Summary by agent
@@ -8408,7 +8696,7 @@
         var name = b.sourceName || 'Unknown';
         if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, settled: 0, count: 0 };
         var total = getHotelTotal(b);
-        var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var recv = getHotelReceived(b);
         var pend = total - recv;
         if (b.status === 'COLLECTED' && pend > 0) {
           // AKS Office collected — pending is what AKS Office owes
@@ -8485,15 +8773,24 @@
 
       filtered.forEach(function(b) {
         var total = getHotelTotal(b);
-        var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var isAksOffice = isAksOfficeBooking(b);
+        var recv = getHotelReceived(b);
         var pend = total - recv;
-        var isAksOffice = (b.remarks || '').indexOf('[AKS Office') !== -1;
 
         var statusClass = b.status === 'COLLECTED' ? 'badge-collected' :
                           b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
 
         var agingDays = calculateAgingDays(b.checkOut);
         var agingBucket = getAgingBucket(agingDays);
+
+        // Build payment date info
+        var recvDates = '';
+        var advAmt = parseFloat(b.advanceReceived) || 0;
+        var balAmt = parseFloat(b.balanceReceived) || 0;
+        var dates = [];
+        if (advAmt > 0 && b.advanceDate) dates.push(b.advanceDate);
+        if (balAmt > 0 && b.balanceDate && b.balanceDate !== b.advanceDate) dates.push(b.balanceDate);
+        if (dates.length > 0) recvDates = '<div style="font-size:10px;color:#9ca3af">' + dates.map(formatDate).join(', ') + '</div>';
 
         html += '<tr>' +
           '<td><strong>' + escapeHtml(b.id) + '</strong></td>' +
@@ -8503,7 +8800,7 @@
           '<td>' + formatDate(b.checkIn) + '</td>' +
           '<td>' + formatDate(b.checkOut) + '</td>' +
           '<td class="amount">' + formatCurrency(total) + '</td>' +
-          '<td class="amount amount-received">' + formatCurrency(recv) + '</td>' +
+          '<td class="amount amount-received">' + formatCurrency(recv) + recvDates + '</td>' +
           '<td class="amount ' + (pend > 0 ? 'amount-pending' : '') + '">' + formatCurrency(pend > 0 ? pend : 0) + '</td>' +
           '<td>' + (pend > 0 ? '<span class="aging-badge ' + agingBucket.cls + '">' + agingDays + 'd</span>' : '-') + '</td>' +
           '<td><span class="badge ' + statusClass + '">' + escapeHtml(b.status) + '</span>' +
@@ -8535,9 +8832,10 @@
 
       var headers = ['Booking ID','Guest','Agent','Room','Check-in','Checkout','Total','Received','Pending','Aging Days','Status'];
       var rows = ledgerFilteredBookings.map(function(b) {
-        var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
-        var pend = (parseFloat(b.totalAmount) || 0) - recv;
-        return [b.id, b.guestName, b.sourceName||'', b.roomNo||'', b.checkIn, b.checkOut, b.totalAmount, recv, pend > 0 ? pend : 0, calculateAgingDays(b.checkOut), b.status];
+        var total = getHotelTotal(b);
+        var recv = getHotelReceived(b);
+        var pend = total - recv;
+        return [b.id, b.guestName, b.sourceName||'', b.roomNo||'', b.checkIn, b.checkOut, total, recv, pend > 0 ? pend : 0, calculateAgingDays(b.checkOut), b.status];
       });
 
       var csv = [headers].concat(rows).map(function(r) {
@@ -8835,6 +9133,7 @@
 
     async function onDaybookDateChange() {
       var date = getDayBookDate();
+      saveTabFilters('daybook');
       var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin');
       var lockBanner = document.getElementById('daybookDateLock');
       if (isAdmin) {
@@ -8990,9 +9289,13 @@
       document.getElementById('dbBankClosing').textContent = formatCurrency(closing.bankClosing || 0);
     }
 
+    var _daybookEntriesCache = {};
+
     function renderDayBookIncomeWithData(entries) {
       var tbody = document.getElementById('dayBookIncomeTable');
       var total = 0;
+
+      entries.forEach(function(e) { _daybookEntriesCache[e.id] = e; });
 
       if (entries.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">No income entries</td></tr>';
@@ -9008,7 +9311,7 @@
             '<td class="amount amount-received">' + formatCurrency(e.amount) + '</td>' +
             '<td><span class="payment-type">' + escapeHtml(e.paymentMode || '-') + '</span></td>' +
             '<td>' + escapeHtml(e.receivedIn || e.paymentSource || '-') + '</td>' +
-            '<td>' + (currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button>' : '') + '</td>' +
+            '<td>' + (currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-secondary btn-small" onclick="openEditDaybookEntry(' + e.id + ')">Edit</button> <button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button>' : '') + '</td>' +
             '</tr>';
         }).join('');
       }
@@ -9018,6 +9321,8 @@
     function renderDayBookExpensesWithData(entries) {
       var tbody = document.getElementById('dayBookExpenseTable');
       var total = 0;
+
+      entries.forEach(function(e) { _daybookEntriesCache[e.id] = e; });
 
       if (entries.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">No expense entries</td></tr>';
@@ -9032,7 +9337,7 @@
             '<td>' + escapeHtml(e.description || '-') + '</td>' +
             '<td class="amount amount-pending">' + formatCurrency(e.amount) + '</td>' +
             '<td>' + escapeHtml(e.paymentSource || '-') + '</td>' +
-            '<td>' + (currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button>' : '') + '</td>' +
+            '<td>' + (currentUser && currentUser.role === 'super_admin' ? '<button class="btn btn-secondary btn-small" onclick="openEditDaybookEntry(' + e.id + ')">Edit</button> <button class="btn btn-danger btn-small" onclick="deleteDayBookEntry(\'' + e.id + '\')">Delete</button>' : '') + '</td>' +
             '</tr>';
         }).join('');
       }
@@ -9077,6 +9382,56 @@
         await apiFetch('/daybook/entries/' + id, { method: 'DELETE' });
         await renderDayBook();
         showToast('Entry deleted', 'success');
+      } catch(e) { /* toast shown */ }
+    }
+
+    function toggleEditDaybookSubCat() {
+      var mode = document.getElementById('editDaybookPayMode').value;
+      document.getElementById('editDaybookSubCatGroup').style.display = mode === 'AKS Office' ? '' : 'none';
+    }
+
+    function openEditDaybookEntry(id) {
+      var e = _daybookEntriesCache[id];
+      if (!e) { showToast('Entry not found', 'error'); return; }
+      document.getElementById('editDaybookEntryId').value = id;
+      var source = e.incomeSource || e.category || '-';
+      var desc = e.description || '';
+      document.getElementById('editDaybookInfo').innerHTML =
+        '<div><strong>' + escapeHtml(source) + '</strong></div>' +
+        (e.guestName ? '<div style="color:#9ca3af;margin-top:2px;">' + escapeHtml(e.guestName) + '</div>' : '') +
+        (e.bookingId ? '<div style="color:#9ca3af;font-size:12px;">' + escapeHtml(e.bookingId) + '</div>' : '');
+      document.getElementById('editDaybookAmount').value = parseFloat(e.amount) || 0;
+      document.getElementById('editDaybookDesc').value = desc;
+      var mode = e.paymentMode || e.paymentSource || 'Cash';
+      document.getElementById('editDaybookPayMode').value = mode;
+      toggleEditDaybookSubCat();
+      document.getElementById('editDaybookModal').classList.add('active');
+    }
+
+    async function saveDaybookEdit() {
+      var id = document.getElementById('editDaybookEntryId').value;
+      var newMode = document.getElementById('editDaybookPayMode').value;
+      var newAmount = parseFloat(document.getElementById('editDaybookAmount').value) || 0;
+      var newDesc = document.getElementById('editDaybookDesc').value.trim();
+      if (!newAmount) { showToast('Amount cannot be zero', 'error'); return; }
+      // Append sub-category to paymentMode for AKS Office
+      var finalMode = newMode;
+      if (newMode === 'AKS Office') {
+        var subCat = document.getElementById('editDaybookSubCat').value;
+        finalMode = 'AKS Office - ' + subCat;
+      }
+      try {
+        await apiFetch('/daybook/entries/' + id, {
+          method: 'PATCH',
+          body: {
+            paymentMode: finalMode,
+            amount: newAmount,
+            description: newDesc
+          }
+        });
+        closeModal('editDaybookModal');
+        await renderDayBook();
+        showToast('Entry updated', 'success');
       } catch(e) { /* toast shown */ }
     }
 
@@ -9162,7 +9517,7 @@
       var cat = document.getElementById('expenseCategory').value;
       var subItem = document.getElementById('expenseSubItem').value;
       var amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-      var payFrom = document.getElementById('expensePayFrom').value;
+      var payFrom = getAksSubCatMode(document.getElementById('expensePayFrom').value, 'expenseAksSubCat');
       var desc = document.getElementById('expenseDescription').value.trim();
 
       if (!cat || !amount) {
@@ -9216,7 +9571,7 @@
     async function saveManualIncome() {
       var source = document.getElementById('incomeSource').value;
       var amount = parseFloat(document.getElementById('incomeAmount').value) || 0;
-      var mode = document.getElementById('incomePayMode').value;
+      var mode = getAksSubCatMode(document.getElementById('incomePayMode').value, 'incomeAksSubCat');
       var receivedIn = document.getElementById('incomeReceivedIn').value;
       var desc = document.getElementById('incomeDescription').value.trim();
 

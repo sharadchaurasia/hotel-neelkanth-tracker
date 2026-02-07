@@ -37,6 +37,7 @@ export class CheckoutDto {
   kotAmount?: number;
   addOns?: { type: string; amount: number }[];
   paymentMode?: string;
+  kotPaymentMode?: string;
   subCategory?: string;
   collectAmount?: number;
   transferToAgentLedger?: boolean;

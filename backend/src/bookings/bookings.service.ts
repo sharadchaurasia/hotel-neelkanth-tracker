@@ -26,7 +26,7 @@ export class BookingsService {
   private normalizePaymentMode(mode: string): string {
     if (!mode || mode === 'Cash') return 'Cash';
     if (mode === 'Card') return 'Card';
-    if (mode === 'AKS Office') return 'AKS Office';
+    if (mode === 'AKS Office' || (mode && mode.startsWith('AKS Office'))) return 'AKS Office';
     return 'Bank Transfer';
   }
 
@@ -399,6 +399,7 @@ export class BookingsService {
 
     // Auto-create daybook entries at checkout
     const checkoutMode = isAksOffice ? 'Cash' : (dto.paymentMode || booking.balancePaymentMode || booking.paymentMode || 'Cash');
+    const kotMode = dto.kotPaymentMode || checkoutMode;
 
     // Room rent balance entry (if balance paid at checkout) — skip for AKS Office
     if (!isAksOffice && dto.paymentMode && balance > 0) {
@@ -420,10 +421,10 @@ export class BookingsService {
       }
     }
 
-    // AKS Office: create AKS payment record for hotel's share
+    // AKS Office: create AKS payment record (room rent only — KOT & add-ons are hotel's direct income)
     if (isAksOffice) {
       const hotelShare = Math.max(0,
-        Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0) + kotAmt + addOnTotal
+        Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
         - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
       );
       if (hotelShare > 0) {
@@ -450,7 +451,7 @@ export class BookingsService {
         incomeSource: 'KOT',
         description: `KOT - ${booking.guestName}`,
         amount: kotAmt,
-        paymentMode: checkoutMode,
+        paymentMode: kotMode,
         refBookingId: booking.bookingId,
         guestName: booking.guestName,
       });
@@ -465,7 +466,7 @@ export class BookingsService {
         incomeSource: 'Add-On',
         description: `Add-On (${addonDesc}) - ${booking.guestName}`,
         amount: addOnTotal,
-        paymentMode: checkoutMode,
+        paymentMode: kotMode,
         refBookingId: booking.bookingId,
         guestName: booking.guestName,
       });

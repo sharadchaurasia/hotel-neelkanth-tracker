@@ -143,6 +143,31 @@ export class DaybookService {
     return this.entryRepo.save(entry);
   }
 
+  async updateEntry(id: number, updates: Partial<Pick<DaybookEntry, 'paymentMode' | 'receivedIn' | 'paymentSource' | 'amount' | 'description'>>, userId?: number, role?: string): Promise<DaybookEntry> {
+    const entry = await this.entryRepo.findOne({ where: { id } });
+    if (!entry) throw new NotFoundException('Entry not found');
+    if (userId && role) {
+      await this.validateDateAccess(userId, role, entry.date);
+    }
+    if (updates.paymentMode !== undefined) {
+      entry.paymentMode = updates.paymentMode;
+      // Auto-derive receivedIn and paymentSource from paymentMode
+      const normalized = this.normalizeDaybookPayMode(updates.paymentMode);
+      entry.receivedIn = normalized;
+      entry.paymentSource = normalized;
+    }
+    if (updates.amount !== undefined) entry.amount = updates.amount;
+    if (updates.description !== undefined) entry.description = updates.description;
+    return this.entryRepo.save(entry);
+  }
+
+  private normalizeDaybookPayMode(mode: string): string {
+    if (!mode || mode === 'Cash') return 'Cash';
+    if (mode === 'Card') return 'Card';
+    if (mode === 'AKS Office' || (mode && mode.startsWith('AKS Office'))) return 'AKS Office';
+    return 'Bank Transfer';
+  }
+
   async deleteEntry(id: number, userId?: number, role?: string): Promise<void> {
     const entry = await this.entryRepo.findOne({ where: { id } });
     if (!entry) throw new NotFoundException('Entry not found');

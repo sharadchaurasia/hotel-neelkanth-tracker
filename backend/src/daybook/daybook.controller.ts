@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, ForbiddenException } from '@nestjs/common';
 import { DaybookService } from './daybook.service';
 import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
 import { RequirePermissions, CurrentUser } from '../auth/decorators';
@@ -18,6 +18,19 @@ export class DaybookController {
   @RequirePermissions('daybook', 'create')
   createEntry(@Body() dto: CreateDaybookEntryDto, @CurrentUser() user: User) {
     return this.daybookService.createEntry(dto, user.id, user.role);
+  }
+
+  @Patch('entries/:id')
+  @RequirePermissions('daybook', 'edit')
+  updateEntry(
+    @Param('id') id: string,
+    @Body() body: { paymentMode?: string; receivedIn?: string; paymentSource?: string; amount?: number; description?: string },
+    @CurrentUser() user: User,
+  ) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can edit daybook entries');
+    }
+    return this.daybookService.updateEntry(+id, body, user.id, user.role);
   }
 
   @Delete('entries/:id')
