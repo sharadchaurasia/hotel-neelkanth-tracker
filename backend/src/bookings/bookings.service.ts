@@ -258,12 +258,16 @@ export class BookingsService {
     const today = new Date().toISOString().split('T')[0];
 
     if (dto.paymentMode === 'AKS Office') {
-      // AKS Office: do NOT add to balanceReceived, do NOT create daybook entry
+      // AKS Office: track in balanceReceived (so checkout knows), but no daybook entry
       // Hotel's share = actualRoomRent + addOnAmount - what hotel already received
+      const totalDue = Number(booking.totalAmount || 0) - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0);
       const hotelShare = Math.max(0,
         Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
         - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
       );
+      booking.balanceReceived = Number(booking.balanceReceived || 0) + totalDue;
+      booking.balancePaymentMode = 'AKS Office' + (dto.subCategory ? ' - ' + dto.subCategory : '');
+      booking.balanceDate = today;
       booking.status = 'COLLECTED';
       booking.lastModifiedBy = userName || booking.lastModifiedBy;
       booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
@@ -384,7 +388,11 @@ export class BookingsService {
       }
     } else if (dto.paymentMode && balance > 0) {
       booking.balanceReceived = Number(booking.balanceReceived || 0) + balance;
-      booking.balancePaymentMode = dto.paymentMode;
+      // Don't overwrite AKS Office payment mode when only collecting KOT/add-ons
+      const roomRentPortion = balance - kotAmt - addOnTotal;
+      if (roomRentPortion > 0 || !booking.balancePaymentMode || !booking.balancePaymentMode.startsWith('AKS Office')) {
+        booking.balancePaymentMode = dto.paymentMode;
+      }
       booking.balanceDate = today;
       booking.status = 'COLLECTED';
     } else {
