@@ -64,6 +64,9 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(emailOrPhone: string, password: string) {
+    if (!emailOrPhone || !password) {
+      throw new UnauthorizedException('Email and password are required');
+    }
     const user = await this.userRepo.findOne({
       where: [{ email: emailOrPhone }, { phone: emailOrPhone }],
     });
@@ -74,7 +77,7 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Password not set. Contact admin.');
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(String(password), String(user.passwordHash));
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -88,13 +91,16 @@ export class AuthService implements OnModuleInit {
   }
 
   async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    if (!oldPassword || !newPassword) {
+      throw new BadRequestException('Old and new password are required');
+    }
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const valid = await bcrypt.compare(oldPassword, user.passwordHash);
+    const valid = await bcrypt.compare(String(oldPassword), String(user.passwordHash));
     if (!valid) throw new UnauthorizedException('Current password is incorrect');
 
-    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.passwordHash = await bcrypt.hash(String(newPassword), 12);
     user.mustChangePassword = false;
     await this.userRepo.save(user);
     return { success: true };
@@ -144,6 +150,9 @@ export class AuthService implements OnModuleInit {
   }
 
   async verifyOtpAndResetPassword(userId: number, code: string, newPassword: string) {
+    if (!code || !newPassword) {
+      throw new BadRequestException('OTP and new password are required');
+    }
     const otp = await this.otpRepo.findOne({
       where: { userId, code, used: false },
       order: { createdAt: 'DESC' },
@@ -158,7 +167,7 @@ export class AuthService implements OnModuleInit {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.passwordHash = await bcrypt.hash(String(newPassword), 12);
     user.mustChangePassword = false;
     await this.userRepo.save(user);
 
@@ -231,6 +240,17 @@ export class AuthService implements OnModuleInit {
     user.mustChangePassword = true;
     await this.userRepo.save(user);
     return { success: true };
+  }
+
+  async resetAllPasswords() {
+    const users = await this.userRepo.find();
+    const hash = await bcrypt.hash('1234', 12);
+    for (const user of users) {
+      user.passwordHash = hash;
+      user.mustChangePassword = true;
+    }
+    await this.userRepo.save(users);
+    return { success: true, count: users.length };
   }
 
   // Only super_admin keeps delete permissions

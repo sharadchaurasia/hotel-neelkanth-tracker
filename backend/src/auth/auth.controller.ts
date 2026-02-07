@@ -28,6 +28,12 @@ import {
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  private assertAdmin(user: User) {
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
+      throw new ForbiddenException('Admin only');
+    }
+  }
+
   @Public()
   @Post('auth/verify-passkey')
   @HttpCode(200)
@@ -77,13 +83,13 @@ export class AuthController {
   // User management (admin only)
   @Get('users')
   findAllUsers(@CurrentUser() user: User) {
-    if (user.role !== 'admin') throw new Error('Admin only');
+    this.assertAdmin(user);
     return this.authService.findAllUsers();
   }
 
   @Post('users')
   createUser(@CurrentUser() user: User, @Body() dto: CreateUserDto) {
-    if (user.role !== 'admin') throw new Error('Admin only');
+    this.assertAdmin(user);
     return this.authService.createUser(dto);
   }
 
@@ -93,7 +99,7 @@ export class AuthController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
   ) {
-    if (user.role !== 'admin') throw new Error('Admin only');
+    this.assertAdmin(user);
     return this.authService.updateUser(id, dto);
   }
 
@@ -106,13 +112,20 @@ export class AuthController {
     return this.authService.deleteUser(id);
   }
 
+  @Post('users/reset-all-passwords')
+  @HttpCode(200)
+  resetAllPasswords(@CurrentUser() user: User) {
+    this.assertAdmin(user);
+    return this.authService.resetAllPasswords();
+  }
+
   @Post('users/:id/reset-password')
   @HttpCode(200)
   resetPassword(
     @CurrentUser() user: User,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    if (user.role !== 'admin') throw new Error('Admin only');
+    this.assertAdmin(user);
     return this.authService.resetUserPassword(id);
   }
 }
