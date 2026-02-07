@@ -8660,29 +8660,39 @@
         return b.sourceName === 'AKS Office' || (b.remarks || '').indexOf('[AKS Office') !== -1;
       }
 
+      // Helper: check if booking is from any agent (not direct/self)
+      function isAgentBooking(b) {
+        var src = (b.sourceName || '').trim();
+        return src && src !== 'Self';
+      }
+
       // Helper: get hotel's share for a booking
       function getHotelTotal(b) {
-        if (isAksOfficeBooking(b)) {
-          // AKS owes only room rent; add-ons/KOT are hotel's direct income
+        if (isAgentBooking(b)) {
+          // Agent bookings: hotel share = room rent only; KOT/add-ons are hotel's direct income
           return parseFloat(b.actualRoomRent) || 0;
         }
         return parseFloat(b.totalAmount) || 0;
       }
 
-      // Helper: get what hotel received directly (not via AKS)
+      // Helper: get what hotel received directly
       function getHotelReceived(b) {
-        if (!isAksOfficeBooking(b)) {
-          return (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        var recv = (parseFloat(b.advanceReceived) || 0) + (parseFloat(b.balanceReceived) || 0);
+        if (isAksOfficeBooking(b)) {
+          // For AKS Office: only count payments that came directly to hotel (not via AKS)
+          var advRecv = 0, balRecv = 0;
+          var advMode = (b.paymentMode || '');
+          var balMode = (b.balancePaymentMode || '');
+          if (advMode && advMode.indexOf('AKS Office') === -1) advRecv = parseFloat(b.advanceReceived) || 0;
+          if (balMode && balMode.indexOf('AKS Office') === -1) balRecv = parseFloat(b.balanceReceived) || 0;
+          recv = advRecv + balRecv;
         }
-        // For AKS Office: only count payments that came directly to hotel (not via AKS)
-        var advRecv = 0, balRecv = 0;
-        var advMode = (b.paymentMode || '');
-        var balMode = (b.balancePaymentMode || '');
-        if (advMode && advMode.indexOf('AKS Office') === -1) advRecv = parseFloat(b.advanceReceived) || 0;
-        if (balMode && balMode.indexOf('AKS Office') === -1) balRecv = parseFloat(b.balanceReceived) || 0;
-        // Cap at hotel share — excess is hotel's direct income (add-ons/KOT)
-        var hotelShare = parseFloat(b.actualRoomRent) || 0;
-        return Math.min(advRecv + balRecv, hotelShare);
+        if (isAgentBooking(b)) {
+          // Cap at hotel share — excess is hotel's direct income (KOT/add-ons)
+          var hotelShare = parseFloat(b.actualRoomRent) || 0;
+          return Math.min(recv, hotelShare);
+        }
+        return recv;
       }
 
       // Summary by agent
