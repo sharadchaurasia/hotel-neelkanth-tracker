@@ -3998,9 +3998,14 @@
             <span class="material-icons" style="font-size:16px;vertical-align:middle">restaurant</span> Pending KOT Orders
           </label>
           <div id="checkoutKotList" style="background:rgba(20,20,40,0.4);border-radius:10px;padding:12px;max-height:200px;overflow-y:auto;"></div>
-          <div style="display:flex;justify-content:space-between;margin-top:8px;font-weight:700;font-size:15px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-weight:700;font-size:15px;">
             <span>KOT Total:</span>
-            <span style="color:#c99b1a" id="checkoutKotTotalLabel">&#8377;0</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:#c99b1a" id="checkoutKotTotalLabel">&#8377;0</span>
+              <button onclick="viewCombinedKotBill()" style="background:#1e3a5f;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;" title="View Combined KOT Bill">
+                <span class="material-icons" style="font-size:14px">receipt_long</span> Bill
+              </button>
+            </div>
           </div>
         </div>
         <input type="hidden" id="checkoutKotAmount" value="0">
@@ -8293,7 +8298,6 @@
     function viewKotBill(id) {
       var url = API_BASE + '/kot/' + id + '/bill';
       var token = localStorage.getItem('token');
-      // Fetch bill HTML and open in new tab
       fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
         .then(function(res) { return res.text(); })
         .then(function(html) {
@@ -8302,6 +8306,23 @@
           w.document.close();
         })
         .catch(function() { showToast('Failed to load bill', 'error'); });
+    }
+
+    function viewCombinedKotBill() {
+      if (!checkoutBookingData || !checkoutBookingData.bookingId) {
+        showToast('No booking selected', 'error');
+        return;
+      }
+      var url = API_BASE + '/kot/combined-bill/' + encodeURIComponent(checkoutBookingData.bookingId);
+      var token = localStorage.getItem('token');
+      fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(function(res) { return res.text(); })
+        .then(function(html) {
+          var w = window.open('', '_blank');
+          w.document.write(html);
+          w.document.close();
+        })
+        .catch(function() { showToast('Failed to load combined KOT bill', 'error'); });
     }
 
     async function deleteKotOrder(id) {

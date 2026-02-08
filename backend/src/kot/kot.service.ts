@@ -361,4 +361,168 @@ ${order.status === 'PAID' ? 'PAID' + (order.paymentMode ? ' (' + order.paymentMo
 </body>
 </html>`;
   }
+
+  async generateCombinedBillHtml(bookingId: string): Promise<string> {
+    const orders = await this.kotRepo.find({
+      where: { bookingId },
+      relations: ['items'],
+      order: { orderDate: 'ASC', createdAt: 'ASC' },
+    });
+    if (orders.length === 0) throw new NotFoundException('No KOT orders found for this booking');
+
+    // Get booking info for guest/room
+    const booking = await this.bookingRepo.findOne({ where: { bookingId } });
+    const guestName = booking?.guestName || orders[0].customerName || 'Guest';
+    const roomNo = booking?.roomNo || orders[0].roomNo || '';
+
+    const guestLine = roomNo
+      ? `${this.escapeHtml(guestName)} (Room ${this.escapeHtml(roomNo)})`
+      : this.escapeHtml(guestName);
+
+    // Group orders by date
+    const byDate: Record<string, KotOrder[]> = {};
+    for (const o of orders) {
+      if (!byDate[o.orderDate]) byDate[o.orderDate] = [];
+      byDate[o.orderDate].push(o);
+    }
+
+    let grandSubtotal = 0;
+    let grandGst = 0;
+    let grandTotal = 0;
+
+    let sectionsHtml = '';
+    const sortedDates = Object.keys(byDate).sort();
+
+    for (const date of sortedDates) {
+      const dateOrders = byDate[date];
+      const dateObj = new Date(date + 'T00:00:00');
+      const dateStr = dateObj.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+      let daySubtotal = 0;
+      let itemRows = '';
+
+      for (const order of dateOrders) {
+        const timeStr = order.createdAt
+          ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+          : '';
+
+        if (order.items && order.items.length > 0) {
+          for (const item of order.items) {
+            const itemTotal = Number(item.total);
+            daySubtotal += itemTotal;
+            itemRows += `<tr>
+              <td>${this.escapeHtml(item.itemName)}</td>
+              <td class="text-right">${item.quantity}</td>
+              <td class="text-right">${this.formatCurrency(Number(item.rate))}</td>
+              <td class="text-right">${this.formatCurrency(itemTotal)}</td>
+            </tr>`;
+          }
+        } else {
+          const amt = Number(order.subtotal) || Number(order.amount) || 0;
+          daySubtotal += amt;
+          itemRows += `<tr>
+            <td>${this.escapeHtml(order.description)}${timeStr ? ' <small style="color:#999">(' + timeStr + ')</small>' : ''}</td>
+            <td class="text-right">1</td>
+            <td class="text-right">${this.formatCurrency(amt)}</td>
+            <td class="text-right">${this.formatCurrency(amt)}</td>
+          </tr>`;
+        }
+      }
+
+      const dayGst = Math.round(daySubtotal * 0.05 * 100) / 100;
+      const dayTotal = daySubtotal + dayGst;
+      grandSubtotal += daySubtotal;
+      grandGst += dayGst;
+      grandTotal += dayTotal;
+
+      sectionsHtml += `
+      <div class="day-section">
+        <div class="day-header">${dateStr}</div>
+        <table>
+        <thead><tr>
+          <th>Item</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Amount</th>
+        </tr></thead>
+        <tbody>
+        ${itemRows}
+        </tbody>
+        </table>
+        <div class="day-total">
+          <span>Day Subtotal: ${this.formatCurrency(daySubtotal)}</span>
+          <span>GST 5%: ${this.formatCurrency(dayGst)}</span>
+          <span style="font-weight:700">Day Total: ${this.formatCurrency(dayTotal)}</span>
+        </div>
+      </div>`;
+    }
+
+    const checkIn = booking ? new Date(booking.checkIn + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const checkOut = booking ? new Date(booking.checkOut + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const stayLine = checkIn && checkOut ? `${checkIn} - ${checkOut}` : '';
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>KOT Summary - ${this.escapeHtml(bookingId)}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; color: #1c2038; padding: 0; }
+.bill { max-width: 500px; margin: 0 auto; padding: 30px; }
+.bill-header { text-align: center; border-bottom: 2px solid #1e3a5f; padding-bottom: 16px; margin-bottom: 16px; }
+.bill-header h1 { font-size: 20px; color: #1e3a5f; margin-bottom: 2px; }
+.bill-header h2 { font-size: 14px; color: #4b5563; font-weight: 400; margin-bottom: 8px; }
+.bill-header p { font-size: 11px; color: #6b7280; line-height: 1.5; }
+.bill-meta { margin-bottom: 16px; font-size: 13px; }
+.bill-meta p { margin-bottom: 4px; }
+.bill-meta strong { color: #1f2937; }
+.day-section { margin-bottom: 20px; }
+.day-header { background: #f0f4f8; color: #1e3a5f; font-weight: 700; font-size: 13px; padding: 8px 10px; border-radius: 4px; margin-bottom: 4px; }
+table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+th { background: #1e3a5f; color: white; padding: 6px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
+td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
+.text-right { text-align: right; }
+.day-total { display: flex; justify-content: flex-end; gap: 16px; font-size: 12px; color: #4b5563; padding: 6px 10px; border-top: 1px dashed #d1d5db; }
+.grand-totals { border-top: 3px solid #1e3a5f; margin-top: 12px; padding-top: 12px; }
+.grand-totals table { margin: 0; }
+.grand-totals td { padding: 6px 10px; font-size: 13px; border: none; }
+.grand-totals .grand { font-weight: 700; font-size: 16px; background: #f0f9ff; }
+.bill-footer { text-align: center; margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 12px; font-size: 11px; color: #9ca3af; }
+@media print { body { padding: 0; } .bill { padding: 10px; } .no-print { display: none !important; } }
+</style>
+</head>
+<body>
+<div class="bill">
+
+<div class="no-print" style="text-align:right;margin-bottom:16px;">
+<button onclick="window.print()" style="padding:8px 20px;background:#1e3a5f;color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">Print Bill</button>
+</div>
+
+<div class="bill-header">
+<h1>The Neelkanth Grand</h1>
+<h2>KOT Summary Bill</h2>
+<p>Naggar Road, Manali, HP<br>Contact: 8922032843</p>
+</div>
+
+<div class="bill-meta">
+<p><strong>Booking:</strong> ${this.escapeHtml(bookingId)}</p>
+<p><strong>Guest:</strong> ${guestLine}</p>
+${stayLine ? '<p><strong>Stay:</strong> ' + stayLine + '</p>' : ''}
+<p><strong>Total Orders:</strong> ${orders.length}</p>
+</div>
+
+${sectionsHtml}
+
+<div class="grand-totals">
+<table>
+<tr><td>Grand Subtotal</td><td class="text-right">${this.formatCurrency(grandSubtotal)}</td></tr>
+<tr><td>Total GST @ 5%</td><td class="text-right">${this.formatCurrency(grandGst)}</td></tr>
+<tr class="grand"><td>Grand Total</td><td class="text-right">${this.formatCurrency(grandTotal)}</td></tr>
+</table>
+</div>
+
+<div class="bill-footer">Thank you! | The Neelkanth Grand | AKS Hospitality</div>
+
+</div>
+</body>
+</html>`;
+  }
 }

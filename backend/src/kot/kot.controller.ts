@@ -52,6 +52,14 @@ export class KotController {
     return this.kotService.getUnpaidByBooking(bookingId);
   }
 
+  @Get('combined-bill/:bookingId')
+  @RequirePermissions('kot', 'view')
+  async getCombinedBill(@Param('bookingId') bookingId: string, @Res() res: Response) {
+    const html = await this.kotService.generateCombinedBillHtml(bookingId);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
   @Get(':id/bill')
   @RequirePermissions('kot', 'view')
   async getBill(@Param('id') id: string, @Res() res: Response) {
