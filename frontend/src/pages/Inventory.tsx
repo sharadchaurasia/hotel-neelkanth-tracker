@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { ALL_ROOMS, ROOM_TYPE } from '../types';
-import { formatDate, getToday, getCurrentMonth } from '../hooks/useApi';
+import { getToday, getCurrentMonth } from '../hooks/useApi';
 
 export default function Inventory() {
   const [date, setDate] = useState(getToday());
