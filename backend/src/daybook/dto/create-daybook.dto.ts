@@ -13,6 +13,8 @@ export class CreateDaybookEntryDto {
   receivedIn?: string;
   employeeId?: number;
   employeeName?: string;
+  linkToAksOffice?: boolean;
+  aksSubCategory?: string;
 }
 
 export class SetBalanceDto {

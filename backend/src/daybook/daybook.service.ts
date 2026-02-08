@@ -6,6 +6,7 @@ import { DaybookBalance } from './daybook-balance.entity';
 import { DaybookAccessRequest } from './daybook-access-request.entity';
 import { Booking } from '../bookings/booking.entity';
 import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
+import { AksOfficePayment } from '../bookings/aks-office-payment.entity';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -19,6 +20,8 @@ export class DaybookService {
     private accessRepo: Repository<DaybookAccessRequest>,
     @InjectRepository(Booking)
     private bookingRepo: Repository<Booking>,
+    @InjectRepository(AksOfficePayment)
+    private aksOfficeRepo: Repository<AksOfficePayment>,
     private auditService: AuditService,
   ) {}
 
@@ -135,12 +138,29 @@ export class DaybookService {
     });
   }
 
-  async createEntry(dto: CreateDaybookEntryDto, userId?: number, role?: string): Promise<DaybookEntry> {
+  async createEntry(dto: CreateDaybookEntryDto, userId?: number, role?: string, userName?: string): Promise<DaybookEntry> {
     if (userId && role) {
       await this.validateDateAccess(userId, role, dto.date);
     }
-    const entry = this.entryRepo.create(dto);
-    return this.entryRepo.save(entry);
+    const { linkToAksOffice, aksSubCategory, ...entryData } = dto;
+    const entry = this.entryRepo.create(entryData);
+    const saved = await this.entryRepo.save(entry);
+
+    // If expense paid from SBI/Cash but linked to AKS Office, create AKS Office pending entry
+    if (linkToAksOffice && dto.type === 'expense' && dto.amount > 0) {
+      const aksPayment = this.aksOfficeRepo.create({
+        refBookingId: 'EXP-' + saved.id,
+        guestName: dto.description || dto.category || 'Expense',
+        amount: dto.amount,
+        subCategory: aksSubCategory || undefined,
+        date: dto.date,
+        context: 'expense',
+        createdBy: userName || 'System',
+      });
+      await this.aksOfficeRepo.save(aksPayment);
+    }
+
+    return saved;
   }
 
   async updateEntry(id: number, updates: Partial<Pick<DaybookEntry, 'paymentMode' | 'receivedIn' | 'paymentSource' | 'amount' | 'description'>>, userId?: number, role?: string): Promise<DaybookEntry> {

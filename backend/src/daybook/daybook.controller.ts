@@ -17,7 +17,7 @@ export class DaybookController {
   @Post('entries')
   @RequirePermissions('daybook', 'create')
   createEntry(@Body() dto: CreateDaybookEntryDto, @CurrentUser() user: User) {
-    return this.daybookService.createEntry(dto, user.id, user.role);
+    return this.daybookService.createEntry(dto, user.id, user.role, user.name);
   }
 
   @Patch('entries/:id')

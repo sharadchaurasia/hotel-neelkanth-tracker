@@ -4270,6 +4270,24 @@
             <option value="Other">Other</option>
           </select>
         </div>
+        <div id="expenseLinkAksGroup" style="display:none;margin-bottom:16px;background:rgba(201,155,26,0.1);border:1px solid rgba(201,155,26,0.3);border-radius:10px;padding:12px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#c99b1a;">
+            <input type="checkbox" id="expenseLinkAks" onchange="toggleExpenseLinkAksSubCat()">
+            Link to AKS Office (add to pending)
+          </label>
+          <div id="expenseLinkAksSubCatGroup" style="display:none;margin-top:10px;">
+            <label style="font-size:12px;">AKS Sub-Category *</label>
+            <select id="expenseLinkAksSubCat" style="margin-top:4px;">
+              <option value="Office (SBI)">Office (SBI)</option>
+              <option value="Getaway">Getaway</option>
+              <option value="Rajat">Rajat</option>
+              <option value="Happy">Happy</option>
+              <option value="Fyra">Fyra</option>
+              <option value="Vishal">Vishal</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
         <div class="form-group">
           <label>Description</label>
           <input type="text" id="expenseDescription" placeholder="Notes...">
@@ -6791,7 +6809,23 @@
     function toggleIncomeAksSubCat() { toggleAksSubCat('incomePayMode', 'incomeAksSubCatGroup'); }
     function toggleSettlementAksSubCat() { toggleAksSubCat('settlementPayMode', 'settlementAksSubCatGroup'); }
     function toggleRefundAksSubCat() { toggleAksSubCat('refundMode', 'refundAksSubCatGroup'); }
-    function toggleExpenseAksSubCat() { toggleAksSubCat('expensePayFrom', 'expenseAksSubCatGroup'); }
+    function toggleExpenseAksSubCat() {
+      toggleAksSubCat('expensePayFrom', 'expenseAksSubCatGroup');
+      var mode = document.getElementById('expensePayFrom').value;
+      var linkGroup = document.getElementById('expenseLinkAksGroup');
+      // Show "Link to AKS Office" only for non-AKS payment modes (Cash, Card, Bank Transfer)
+      if (mode && mode !== 'AKS Office') {
+        linkGroup.style.display = '';
+      } else {
+        linkGroup.style.display = 'none';
+        document.getElementById('expenseLinkAks').checked = false;
+        document.getElementById('expenseLinkAksSubCatGroup').style.display = 'none';
+      }
+    }
+    function toggleExpenseLinkAksSubCat() {
+      var checked = document.getElementById('expenseLinkAks').checked;
+      document.getElementById('expenseLinkAksSubCatGroup').style.display = checked ? '' : 'none';
+    }
 
     function getAksSubCatMode(baseMode, subCatId) {
       if (baseMode !== 'AKS Office') return baseMode;
@@ -10184,6 +10218,10 @@
       document.getElementById('expenseAmount').value = prefillAmount || '';
       document.getElementById('expensePayFrom').value = 'Cash';
       document.getElementById('expenseDescription').value = '';
+      document.getElementById('expenseLinkAks').checked = false;
+      document.getElementById('expenseLinkAksGroup').style.display = 'none';
+      document.getElementById('expenseLinkAksSubCatGroup').style.display = 'none';
+      document.getElementById('expenseAksSubCatGroup').style.display = 'none';
       updateExpenseSubItems();
       if (prefillEmployee) {
         document.getElementById('expenseEmployee').value = prefillEmployee;
@@ -10248,6 +10286,15 @@
         }
       }
 
+      // Check if linked to AKS Office
+      var linkToAks = false;
+      var aksSubCat = undefined;
+      var linkCheckbox = document.getElementById('expenseLinkAks');
+      if (linkCheckbox && linkCheckbox.checked) {
+        linkToAks = true;
+        aksSubCat = document.getElementById('expenseLinkAksSubCat').value;
+      }
+
       try {
         await apiFetch('/daybook/entries', {
           method: 'POST',
@@ -10260,12 +10307,14 @@
             amount: amount,
             paymentSource: payFrom,
             employeeId: backendEmpId || undefined,
-            employeeName: empName || undefined
+            employeeName: empName || undefined,
+            linkToAksOffice: linkToAks || undefined,
+            aksSubCategory: aksSubCat || undefined
           }
         });
         closeModal('addExpenseModal');
         await renderDayBook();
-        showToast('Expense added', 'success');
+        showToast(linkToAks ? 'Expense added + AKS Office ledger updated' : 'Expense added', 'success');
       } catch(e) { /* toast shown */ }
     }
 
