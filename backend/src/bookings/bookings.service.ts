@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from './booking.entity';
@@ -8,6 +8,7 @@ import { AgentSettlement } from './agent-settlement.entity';
 import { DaybookEntry } from '../daybook/daybook-entry.entity';
 import { KotService } from '../kot/kot.service';
 import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto, AgentSettlementDto, RefundDto } from './dto/create-booking.dto';
+import { ErrorLogger } from '../common/logger/error-logger';
 
 @Injectable()
 export class BookingsService {
@@ -121,71 +122,81 @@ export class BookingsService {
   }
 
   async create(dto: CreateBookingDto): Promise<Booking> {
-    const bookingId = await this.generateBookingId();
-    const advanceReceived = dto.advanceReceived || 0;
-    const pending = dto.totalAmount - advanceReceived;
-    let status = 'PENDING';
-    if (pending <= 0) status = 'COLLECTED';
-    else if (advanceReceived > 0) status = 'PARTIAL';
+    try {
+      const bookingId = await this.generateBookingId();
+      const advanceReceived = dto.advanceReceived || 0;
+      const pending = dto.totalAmount - advanceReceived;
+      let status = 'PENDING';
+      if (pending <= 0) status = 'COLLECTED';
+      else if (advanceReceived > 0) status = 'PARTIAL';
 
-    const addOnAmount = dto.addOnAmount || 0;
+      const addOnAmount = dto.addOnAmount || 0;
 
-    const booking = this.bookingRepo.create({
-      bookingId,
-      guestName: dto.guestName,
-      phone: dto.phone,
-      pax: dto.pax || 1,
-      kot: dto.kot,
-      roomNo: dto.roomNo,
-      noOfRooms: dto.noOfRooms || 1,
-      roomCategory: dto.roomCategory,
-      checkIn: dto.checkIn,
-      checkOut: dto.checkOut,
-      mealPlan: dto.mealPlan,
-      source: dto.source || 'Walk-in',
-      sourceName: (dto.source === 'OTA' || dto.source === 'Agent') ? dto.sourceName : '',
-      complimentary: dto.complimentary,
-      addOnAmount,
-      actualRoomRent: dto.actualRoomRent || 0,
-      totalAmount: dto.totalAmount,
-      paymentType: dto.paymentType || 'Postpaid',
-      advanceReceived,
-      advanceDate: dto.advanceDate || (advanceReceived > 0 ? new Date().toISOString().split('T')[0] : undefined),
-      balanceReceived: 0,
-      paymentMode: dto.paymentMode,
-      status,
-      remarks: dto.remarks,
-      kotAmount: 0,
-      checkedIn: false,
-      checkedOut: false,
-    } as Partial<Booking>);
-
-    const saved = await this.bookingRepo.save(booking) as Booking;
-
-    // Create BookingAddon record if addOnAmount > 0 and complimentary is set
-    if (addOnAmount > 0 && dto.complimentary) {
-      const addon = new BookingAddon();
-      addon.booking = saved;
-      addon.type = dto.complimentary;
-      addon.amount = addOnAmount;
-      await this.addonRepo.save(addon);
-    }
-
-    // Auto-create daybook entry for advance payment
-    if (advanceReceived > 0 && dto.paymentMode) {
-      await this.createDaybookEntry({
-        date: new Date().toISOString().split('T')[0],
-        category: 'Room Rent',
-        incomeSource: 'Room Rent (Advance)',
-        description: `Advance - ${dto.guestName}`,
-        amount: advanceReceived,
-        paymentMode: dto.paymentMode,
-        refBookingId: saved.bookingId,
+      const booking = this.bookingRepo.create({
+        bookingId,
         guestName: dto.guestName,
-      });
-    }
+        phone: dto.phone,
+        pax: dto.pax || 1,
+        kot: dto.kot,
+        roomNo: dto.roomNo,
+        noOfRooms: dto.noOfRooms || 1,
+        roomCategory: dto.roomCategory,
+        checkIn: dto.checkIn,
+        checkOut: dto.checkOut,
+        mealPlan: dto.mealPlan,
+        source: dto.source || 'Walk-in',
+        sourceName: (dto.source === 'OTA' || dto.source === 'Agent') ? dto.sourceName : '',
+        complimentary: dto.complimentary,
+        addOnAmount,
+        actualRoomRent: dto.actualRoomRent || 0,
+        totalAmount: dto.totalAmount,
+        paymentType: dto.paymentType || 'Postpaid',
+        advanceReceived,
+        advanceDate: dto.advanceDate || (advanceReceived > 0 ? new Date().toISOString().split('T')[0] : undefined),
+        balanceReceived: 0,
+        paymentMode: dto.paymentMode,
+        status,
+        remarks: dto.remarks,
+        kotAmount: 0,
+        checkedIn: false,
+        checkedOut: false,
+      } as Partial<Booking>);
 
-    return this.findOne(saved.id);
+      const saved = await this.bookingRepo.save(booking) as Booking;
+
+      // Create BookingAddon record if addOnAmount > 0 and complimentary is set
+      if (addOnAmount > 0 && dto.complimentary) {
+        const addon = new BookingAddon();
+        addon.booking = saved;
+        addon.type = dto.complimentary;
+        addon.amount = addOnAmount;
+        await this.addonRepo.save(addon);
+      }
+
+      // Auto-create daybook entry for advance payment
+      if (advanceReceived > 0 && dto.paymentMode) {
+        await this.createDaybookEntry({
+          date: new Date().toISOString().split('T')[0],
+          category: 'Room Rent',
+          incomeSource: 'Room Rent (Advance)',
+          description: `Advance - ${dto.guestName}`,
+          amount: advanceReceived,
+          paymentMode: dto.paymentMode,
+          refBookingId: saved.bookingId,
+          guestName: dto.guestName,
+        });
+      }
+
+      return this.findOne(saved.id);
+    } catch (error) {
+      ErrorLogger.logServiceError('BookingsService', 'create', error, {
+        guestName: dto.guestName,
+        phone: dto.phone,
+        checkIn: dto.checkIn,
+        totalAmount: dto.totalAmount,
+      });
+      throw new InternalServerErrorException('Failed to create booking. Please try again.');
+    }
   }
 
   async update(id: number, dto: Partial<CreateBookingDto>, userName?: string): Promise<Booking> {
@@ -253,74 +264,83 @@ export class BookingsService {
   }
 
   async collectPayment(id: number, dto: CollectPaymentDto, userName?: string): Promise<Booking> {
-    const booking = await this.findOne(id);
-    if (booking.status === 'COLLECTED') {
-      throw new NotFoundException('Payment already collected for this booking');
-    }
-    const today = new Date().toISOString().split('T')[0];
+    try {
+      const booking = await this.findOne(id);
+      if (booking.status === 'COLLECTED') {
+        throw new NotFoundException('Payment already collected for this booking');
+      }
+      const today = new Date().toISOString().split('T')[0];
 
-    if (dto.paymentMode === 'AKS Office') {
-      // AKS Office: track in balanceReceived (so checkout knows), but no daybook entry
-      // Hotel's share = actualRoomRent + addOnAmount - what hotel already received
-      const totalDue = Number(booking.totalAmount || 0) - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0);
-      const hotelShare = Math.max(0,
-        Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
-        - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
-      );
-      booking.balanceReceived = Number(booking.balanceReceived || 0) + totalDue;
-      booking.balancePaymentMode = 'AKS Office' + (dto.subCategory ? ' - ' + dto.subCategory : '');
+      if (dto.paymentMode === 'AKS Office') {
+        // AKS Office: track in balanceReceived (so checkout knows), but no daybook entry
+        // Hotel's share = actualRoomRent + addOnAmount - what hotel already received
+        const totalDue = Number(booking.totalAmount || 0) - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0);
+        const hotelShare = Math.max(0,
+          Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
+          - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
+        );
+        booking.balanceReceived = Number(booking.balanceReceived || 0) + totalDue;
+        booking.balancePaymentMode = 'AKS Office' + (dto.subCategory ? ' - ' + dto.subCategory : '');
+        booking.balanceDate = today;
+        booking.status = 'COLLECTED';
+        booking.lastModifiedBy = userName || booking.lastModifiedBy;
+        booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+          `[AKS Office collection ₹${hotelShare} (${dto.subCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
+        const saved = await this.bookingRepo.save(booking);
+
+        // Create AKS Office payment record with hotel's share
+        if (hotelShare > 0) {
+          const aksPayment = this.aksOfficeRepo.create({
+            booking: saved,
+            refBookingId: booking.bookingId,
+            guestName: booking.guestName,
+            roomNo: booking.roomNo,
+            amount: hotelShare,
+            subCategory: dto.subCategory,
+            date: today,
+            context: 'collect',
+            createdBy: userName,
+          });
+          await this.aksOfficeRepo.save(aksPayment);
+        }
+
+        return saved;
+      }
+
+      booking.balanceReceived = Number(booking.balanceReceived || 0) + dto.amount;
+      booking.balancePaymentMode = dto.paymentMode || booking.balancePaymentMode;
       booking.balanceDate = today;
-      booking.status = 'COLLECTED';
       booking.lastModifiedBy = userName || booking.lastModifiedBy;
-      booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
-        `[AKS Office collection ₹${hotelShare} (${dto.subCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
+
+      const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
+      const pending = Number(booking.totalAmount || 0) - totalReceived;
+      booking.status = pending <= 0 ? 'COLLECTED' : 'PARTIAL';
+
       const saved = await this.bookingRepo.save(booking);
 
-      // Create AKS Office payment record with hotel's share
-      if (hotelShare > 0) {
-        const aksPayment = this.aksOfficeRepo.create({
-          booking: saved,
+      // Auto-create daybook entry for collected payment
+      if (dto.amount > 0 && dto.paymentMode) {
+        await this.createDaybookEntry({
+          date: today,
+          category: 'Room Rent',
+          incomeSource: 'Room Rent (Collection)',
+          description: `Payment collected - ${booking.guestName}`,
+          amount: dto.amount,
+          paymentMode: dto.paymentMode,
           refBookingId: booking.bookingId,
           guestName: booking.guestName,
-          roomNo: booking.roomNo,
-          amount: hotelShare,
-          subCategory: dto.subCategory,
-          date: today,
-          context: 'collect',
-          createdBy: userName,
         });
-        await this.aksOfficeRepo.save(aksPayment);
       }
 
       return saved;
+    } catch (error) {
+      // Don't wrap NotFoundException - let it pass through
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      ErrorLogger.logPaymentError('collectPayment', booking?.bookingId || 'unknown', dto.amount, error);
+      throw new InternalServerErrorException('Failed to collect payment. Please verify the transaction and try again.');
     }
-
-    booking.balanceReceived = Number(booking.balanceReceived || 0) + dto.amount;
-    booking.balancePaymentMode = dto.paymentMode || booking.balancePaymentMode;
-    booking.balanceDate = today;
-    booking.lastModifiedBy = userName || booking.lastModifiedBy;
-
-    const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
-    const pending = Number(booking.totalAmount || 0) - totalReceived;
-    booking.status = pending <= 0 ? 'COLLECTED' : 'PARTIAL';
-
-    const saved = await this.bookingRepo.save(booking);
-
-    // Auto-create daybook entry for collected payment
-    if (dto.amount > 0 && dto.paymentMode) {
-      await this.createDaybookEntry({
-        date: today,
-        category: 'Room Rent',
-        incomeSource: 'Room Rent (Collection)',
-        description: `Payment collected - ${booking.guestName}`,
-        amount: dto.amount,
-        paymentMode: dto.paymentMode,
-        refBookingId: booking.bookingId,
-        guestName: booking.guestName,
-      });
-    }
-
-    return saved;
   }
 
   async checkin(id: number, dto: CheckinDto, userName?: string): Promise<Booking> {
@@ -334,10 +354,11 @@ export class BookingsService {
   }
 
   async checkout(id: number, dto: CheckoutDto, userName?: string): Promise<Booking> {
-    const booking = await this.findOne(id);
-    if (booking.checkedOut) {
-      throw new NotFoundException('Booking already checked out');
-    }
+    try {
+      const booking = await this.findOne(id);
+      if (booking.checkedOut) {
+        throw new NotFoundException('Booking already checked out');
+      }
     const kotAmt = dto.kotAmount || 0;
     booking.kotAmount = kotAmt;
     booking.checkedOut = true;
@@ -487,6 +508,19 @@ export class BookingsService {
     }
 
     return saved;
+    } catch (error) {
+      // Don't wrap NotFoundException - let it pass through
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      ErrorLogger.logServiceError('BookingsService', 'checkout', error, {
+        bookingId: booking?.bookingId || id,
+        guestName: booking?.guestName,
+        kotAmount: dto.kotAmount,
+        totalAddOns: dto.addOns?.length || 0,
+      });
+      throw new InternalServerErrorException('Failed to complete checkout. Please verify all transactions and try again.');
+    }
   }
 
   async cancel(id: number, userName?: string): Promise<Booking> {
@@ -497,38 +531,47 @@ export class BookingsService {
   }
 
   async refund(id: number, dto: RefundDto, userName?: string): Promise<Booking> {
-    const booking = await this.findOne(id);
-    if (booking.status !== 'CANCELLED') {
-      throw new NotFoundException('Booking must be cancelled before processing refund');
+    try {
+      const booking = await this.findOne(id);
+      if (booking.status !== 'CANCELLED') {
+        throw new NotFoundException('Booking must be cancelled before processing refund');
+      }
+
+      // Delete daybook income entries if requested
+      if (dto.deleteDaybookEntry) {
+        await this.daybookRepo.delete({ refBookingId: booking.bookingId, type: 'income' });
+      }
+
+      // Create daybook expense entry for refund
+      if (dto.refundAmount > 0) {
+        const refundEntry = this.daybookRepo.create({
+          date: dto.refundDate,
+          type: 'expense',
+          category: 'Refund',
+          description: `Refund - ${booking.guestName} (${booking.bookingId})`,
+          amount: dto.refundAmount,
+          paymentSource: this.normalizePaymentMode(dto.refundMode),
+          paymentMode: dto.refundMode || 'Cash',
+          refBookingId: booking.bookingId,
+          guestName: booking.guestName,
+        });
+        await this.daybookRepo.save(refundEntry);
+      }
+
+      // Update booking remarks with refund note
+      const refundNote = `[Refund ₹${dto.refundAmount} via ${dto.refundMode} on ${dto.refundDate} by ${userName || 'unknown'}]`;
+      booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') + refundNote;
+      booking.lastModifiedBy = userName || booking.lastModifiedBy;
+
+      return this.bookingRepo.save(booking);
+    } catch (error) {
+      // Don't wrap NotFoundException - let it pass through
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      ErrorLogger.logPaymentError('refund', booking?.bookingId || 'unknown', dto.refundAmount, error);
+      throw new InternalServerErrorException('Failed to process refund. Please verify the transaction and try again.');
     }
-
-    // Delete daybook income entries if requested
-    if (dto.deleteDaybookEntry) {
-      await this.daybookRepo.delete({ refBookingId: booking.bookingId, type: 'income' });
-    }
-
-    // Create daybook expense entry for refund
-    if (dto.refundAmount > 0) {
-      const refundEntry = this.daybookRepo.create({
-        date: dto.refundDate,
-        type: 'expense',
-        category: 'Refund',
-        description: `Refund - ${booking.guestName} (${booking.bookingId})`,
-        amount: dto.refundAmount,
-        paymentSource: this.normalizePaymentMode(dto.refundMode),
-        paymentMode: dto.refundMode || 'Cash',
-        refBookingId: booking.bookingId,
-        guestName: booking.guestName,
-      });
-      await this.daybookRepo.save(refundEntry);
-    }
-
-    // Update booking remarks with refund note
-    const refundNote = `[Refund ₹${dto.refundAmount} via ${dto.refundMode} on ${dto.refundDate} by ${userName || 'unknown'}]`;
-    booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') + refundNote;
-    booking.lastModifiedBy = userName || booking.lastModifiedBy;
-
-    return this.bookingRepo.save(booking);
   }
 
   async reschedule(id: number, dto: RescheduleDto, userName?: string): Promise<Booking> {
@@ -577,31 +620,36 @@ export class BookingsService {
 
   // ===== Agent Settlements =====
   async createAgentSettlement(dto: AgentSettlementDto, userName?: string): Promise<AgentSettlement> {
-    const settlement = this.settlementRepo.create({
-      agentName: dto.agentName,
-      amount: dto.amount,
-      paymentMode: dto.paymentMode || 'Bank Transfer',
-      date: dto.date,
-      reference: dto.reference,
-      createdBy: userName,
-    });
-    const saved = await this.settlementRepo.save(settlement);
-
-    // Create daybook entry — money actually came to hotel
-    if (dto.amount > 0) {
-      await this.createDaybookEntry({
-        date: dto.date,
-        category: 'Room Rent',
-        incomeSource: 'Agent Settlement',
-        description: `Settlement from ${dto.agentName}${dto.reference ? ' - ' + dto.reference : ''}`,
+    try {
+      const settlement = this.settlementRepo.create({
+        agentName: dto.agentName,
         amount: dto.amount,
         paymentMode: dto.paymentMode || 'Bank Transfer',
-        refBookingId: 'SETTLEMENT-' + saved.id,
-        guestName: dto.agentName,
+        date: dto.date,
+        reference: dto.reference,
+        createdBy: userName,
       });
-    }
+      const saved = await this.settlementRepo.save(settlement);
 
-    return saved;
+      // Create daybook entry — money actually came to hotel
+      if (dto.amount > 0) {
+        await this.createDaybookEntry({
+          date: dto.date,
+          category: 'Room Rent',
+          incomeSource: 'Agent Settlement',
+          description: `Settlement from ${dto.agentName}${dto.reference ? ' - ' + dto.reference : ''}`,
+          amount: dto.amount,
+          paymentMode: dto.paymentMode || 'Bank Transfer',
+          refBookingId: 'SETTLEMENT-' + saved.id,
+          guestName: dto.agentName,
+        });
+      }
+
+      return saved;
+    } catch (error) {
+      ErrorLogger.logPaymentError('createAgentSettlement', dto.agentName, dto.amount, error);
+      throw new InternalServerErrorException('Failed to create agent settlement. Please verify the details and try again.');
+    }
   }
 
   async getAgentSettlements(filters: { agent?: string; from?: string; to?: string }): Promise<AgentSettlement[]> {

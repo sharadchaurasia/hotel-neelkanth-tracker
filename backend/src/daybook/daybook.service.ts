@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DaybookEntry } from './daybook-entry.entity';
@@ -8,6 +8,7 @@ import { Booking } from '../bookings/booking.entity';
 import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
 import { AksOfficePayment } from '../bookings/aks-office-payment.entity';
 import { AuditService } from '../audit/audit.service';
+import { ErrorLogger } from '../common/logger/error-logger';
 
 @Injectable()
 export class DaybookService {
@@ -139,28 +140,42 @@ export class DaybookService {
   }
 
   async createEntry(dto: CreateDaybookEntryDto, userId?: number, role?: string, userName?: string): Promise<DaybookEntry> {
-    if (userId && role) {
-      await this.validateDateAccess(userId, role, dto.date);
-    }
-    const { linkToAksOffice, aksSubCategory, ...entryData } = dto;
-    const entry = this.entryRepo.create(entryData);
-    const saved = await this.entryRepo.save(entry);
+    try {
+      if (userId && role) {
+        await this.validateDateAccess(userId, role, dto.date);
+      }
+      const { linkToAksOffice, aksSubCategory, ...entryData } = dto;
+      const entry = this.entryRepo.create(entryData);
+      const saved = await this.entryRepo.save(entry);
 
-    // If expense paid from SBI/Cash but linked to AKS Office, create AKS Office pending entry
-    if (linkToAksOffice && dto.type === 'expense' && dto.amount > 0) {
-      const aksPayment = this.aksOfficeRepo.create({
-        refBookingId: 'EXP-' + saved.id,
-        guestName: dto.description || dto.category || 'Expense',
-        amount: dto.amount,
-        subCategory: aksSubCategory || undefined,
+      // If expense paid from SBI/Cash but linked to AKS Office, create AKS Office pending entry
+      if (linkToAksOffice && dto.type === 'expense' && dto.amount > 0) {
+        const aksPayment = this.aksOfficeRepo.create({
+          refBookingId: 'EXP-' + saved.id,
+          guestName: dto.description || dto.category || 'Expense',
+          amount: dto.amount,
+          subCategory: aksSubCategory || undefined,
+          date: dto.date,
+          context: 'expense',
+          createdBy: userName || 'System',
+        });
+        await this.aksOfficeRepo.save(aksPayment);
+      }
+
+      return saved;
+    } catch (error) {
+      // Don't wrap ForbiddenException - let it pass through
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      ErrorLogger.logServiceError('DaybookService', 'createEntry', error, {
         date: dto.date,
-        context: 'expense',
-        createdBy: userName || 'System',
+        type: dto.type,
+        category: dto.category,
+        amount: dto.amount,
       });
-      await this.aksOfficeRepo.save(aksPayment);
+      throw new InternalServerErrorException('Failed to create daybook entry. Please try again.');
     }
-
-    return saved;
   }
 
   async updateEntry(id: number, updates: Partial<Pick<DaybookEntry, 'paymentMode' | 'receivedIn' | 'paymentSource' | 'amount' | 'description'>>, userId?: number, role?: string): Promise<DaybookEntry> {
@@ -202,17 +217,30 @@ export class DaybookService {
   }
 
   async setBalance(dto: SetBalanceDto, userId?: number, role?: string): Promise<DaybookBalance> {
-    if (userId && role) {
-      await this.validateDateAccess(userId, role, dto.date);
+    try {
+      if (userId && role) {
+        await this.validateDateAccess(userId, role, dto.date);
+      }
+      let balance = await this.balanceRepo.findOne({ where: { date: dto.date } });
+      if (balance) {
+        balance.cashOpening = dto.cashOpening;
+        balance.bankSbiOpening = dto.bankSbiOpening;
+      } else {
+        balance = this.balanceRepo.create(dto);
+      }
+      return this.balanceRepo.save(balance);
+    } catch (error) {
+      // Don't wrap ForbiddenException - let it pass through
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      ErrorLogger.logServiceError('DaybookService', 'setBalance', error, {
+        date: dto.date,
+        cashOpening: dto.cashOpening,
+        bankSbiOpening: dto.bankSbiOpening,
+      });
+      throw new InternalServerErrorException('Failed to set opening balance. Please try again.');
     }
-    let balance = await this.balanceRepo.findOne({ where: { date: dto.date } });
-    if (balance) {
-      balance.cashOpening = dto.cashOpening;
-      balance.bankSbiOpening = dto.bankSbiOpening;
-    } else {
-      balance = this.balanceRepo.create(dto);
-    }
-    return this.balanceRepo.save(balance);
   }
 
   async getClosing(date: string): Promise<any> {
@@ -284,71 +312,80 @@ export class DaybookService {
   }
 
   async autoCollect(date: string, userId?: number, role?: string): Promise<{ added: number }> {
-    if (userId && role) {
-      await this.validateDateAccess(userId, role, date);
-    }
-    const existingEntries = await this.entryRepo.find({ where: { date } });
-    const existingKeys = new Set(
-      existingEntries
-        .filter(e => e.refBookingId)
-        .map(e => `${e.refBookingId}-${e.incomeSource || ''}`),
-    );
+    try {
+      if (userId && role) {
+        await this.validateDateAccess(userId, role, date);
+      }
+      const existingEntries = await this.entryRepo.find({ where: { date } });
+      const existingKeys = new Set(
+        existingEntries
+          .filter(e => e.refBookingId)
+          .map(e => `${e.refBookingId}-${e.incomeSource || ''}`),
+      );
 
-    const bookings = await this.bookingRepo.find();
-    let added = 0;
-    const newEntries: Partial<DaybookEntry>[] = [];
+      const bookings = await this.bookingRepo.find();
+      let added = 0;
+      const newEntries: Partial<DaybookEntry>[] = [];
 
-    for (const b of bookings) {
-      if (b.status === 'CANCELLED') continue;
+      for (const b of bookings) {
+        if (b.status === 'CANCELLED') continue;
 
-      const advAmt = Number(b.advanceReceived) || 0;
-      if (advAmt > 0 && b.advanceDate === date) {
-        const key = `${b.bookingId}-Room Rent (Advance)`;
-        if (!existingKeys.has(key)) {
-          newEntries.push({
-            date,
-            type: 'income',
-            category: 'Room Rent',
-            incomeSource: 'Room Rent (Advance)',
-            description: `Advance - ${b.guestName}`,
-            amount: advAmt,
-            paymentSource: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank Transfer',
-            paymentMode: b.paymentMode || 'Cash',
-            receivedIn: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank Transfer',
-            refBookingId: b.bookingId,
-            guestName: b.guestName,
-          });
-          added++;
+        const advAmt = Number(b.advanceReceived) || 0;
+        if (advAmt > 0 && b.advanceDate === date) {
+          const key = `${b.bookingId}-Room Rent (Advance)`;
+          if (!existingKeys.has(key)) {
+            newEntries.push({
+              date,
+              type: 'income',
+              category: 'Room Rent',
+              incomeSource: 'Room Rent (Advance)',
+              description: `Advance - ${b.guestName}`,
+              amount: advAmt,
+              paymentSource: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank Transfer',
+              paymentMode: b.paymentMode || 'Cash',
+              receivedIn: (b.paymentMode === 'Cash' || !b.paymentMode) ? 'Cash' : 'Bank Transfer',
+              refBookingId: b.bookingId,
+              guestName: b.guestName,
+            });
+            added++;
+          }
+        }
+
+        const balAmt = Number(b.balanceReceived) || 0;
+        if (balAmt > 0 && b.balanceDate === date) {
+          const balKey = `${b.bookingId}-Room Rent (Balance)`;
+          const collKey = `${b.bookingId}-Room Rent (Collection)`;
+          if (!existingKeys.has(balKey) && !existingKeys.has(collKey)) {
+            newEntries.push({
+              date,
+              type: 'income',
+              category: 'Room Rent',
+              incomeSource: 'Room Rent (Balance)',
+              description: `Balance - ${b.guestName}`,
+              amount: balAmt,
+              paymentSource: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank Transfer',
+              paymentMode: b.balancePaymentMode || 'Cash',
+              receivedIn: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank Transfer',
+              refBookingId: b.bookingId,
+              guestName: b.guestName,
+            });
+            added++;
+          }
         }
       }
 
-      const balAmt = Number(b.balanceReceived) || 0;
-      if (balAmt > 0 && b.balanceDate === date) {
-        const balKey = `${b.bookingId}-Room Rent (Balance)`;
-        const collKey = `${b.bookingId}-Room Rent (Collection)`;
-        if (!existingKeys.has(balKey) && !existingKeys.has(collKey)) {
-          newEntries.push({
-            date,
-            type: 'income',
-            category: 'Room Rent',
-            incomeSource: 'Room Rent (Balance)',
-            description: `Balance - ${b.guestName}`,
-            amount: balAmt,
-            paymentSource: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank Transfer',
-            paymentMode: b.balancePaymentMode || 'Cash',
-            receivedIn: (b.balancePaymentMode === 'Cash' || !b.balancePaymentMode) ? 'Cash' : 'Bank Transfer',
-            refBookingId: b.bookingId,
-            guestName: b.guestName,
-          });
-          added++;
-        }
+      if (newEntries.length > 0) {
+        await this.entryRepo.save(newEntries.map(e => this.entryRepo.create(e)));
       }
-    }
 
-    if (newEntries.length > 0) {
-      await this.entryRepo.save(newEntries.map(e => this.entryRepo.create(e)));
+      return { added };
+    } catch (error) {
+      // Don't wrap ForbiddenException - let it pass through
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      ErrorLogger.logServiceError('DaybookService', 'autoCollect', error, { date });
+      throw new InternalServerErrorException('Failed to auto-collect daybook entries. Please try again.');
     }
-
-    return { added };
   }
 }
