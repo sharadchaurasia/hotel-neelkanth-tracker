@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, ForbiddenException, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { KotService } from './kot.service';
 import { RequirePermissions, CurrentUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
@@ -13,10 +14,14 @@ export class KotController {
     @Body() dto: {
       orderDate?: string;
       customerName?: string;
-      description: string;
-      amount: number;
-      paymentMode: string;
+      description?: string;
+      amount?: number;
+      paymentMode?: string;
       subCategory?: string;
+      bookingId?: string;
+      roomNo?: string;
+      status?: string;
+      items?: { itemName: string; quantity: number; rate: number }[];
     },
     @CurrentUser() user: User,
   ) {
@@ -25,8 +30,44 @@ export class KotController {
 
   @Get()
   @RequirePermissions('kot', 'view')
-  findAll(@Query('date') date?: string) {
-    return this.kotService.findAll(date);
+  findAll(@Query('date') date?: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.kotService.findAll(date, from, to);
+  }
+
+  @Get('checked-in-guests')
+  @RequirePermissions('kot', 'view')
+  getCheckedInGuests() {
+    return this.kotService.getCheckedInGuests();
+  }
+
+  @Get('by-booking/:bookingId')
+  @RequirePermissions('kot', 'view')
+  findByBooking(@Param('bookingId') bookingId: string) {
+    return this.kotService.findByBooking(bookingId);
+  }
+
+  @Get('unpaid/:bookingId')
+  @RequirePermissions('kot', 'view')
+  getUnpaid(@Param('bookingId') bookingId: string) {
+    return this.kotService.getUnpaidByBooking(bookingId);
+  }
+
+  @Get(':id/bill')
+  @RequirePermissions('kot', 'view')
+  async getBill(@Param('id') id: string, @Res() res: Response) {
+    const html = await this.kotService.generateBillHtml(+id);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  @Post('mark-paid/:bookingId')
+  @RequirePermissions('kot', 'create')
+  markPaid(
+    @Param('bookingId') bookingId: string,
+    @Body() body: { paymentMode: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.kotService.markPaidByBooking(bookingId, body.paymentMode, user.name);
   }
 
   @Delete(':id')

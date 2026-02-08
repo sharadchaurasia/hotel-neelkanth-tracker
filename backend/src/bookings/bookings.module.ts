@@ -9,9 +9,13 @@ import { DaybookEntry } from '../daybook/daybook-entry.entity';
 import { BookingsService } from './bookings.service';
 import { InvoiceService } from './invoice.service';
 import { BookingsController } from './bookings.controller';
+import { KotModule } from '../kot/kot.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Booking, BookingAddon, InvoiceCounter, AksOfficePayment, AgentSettlement, DaybookEntry])],
+  imports: [
+    TypeOrmModule.forFeature([Booking, BookingAddon, InvoiceCounter, AksOfficePayment, AgentSettlement, DaybookEntry]),
+    KotModule,
+  ],
   controllers: [BookingsController],
   providers: [BookingsService, InvoiceService],
   exports: [BookingsService, TypeOrmModule],

@@ -3165,40 +3165,85 @@
     <!-- ==================== KOT TAB ==================== -->
     <div class="tab-content" id="tab-kot">
       <div class="section-card" style="padding:24px">
-        <h2 style="margin-bottom:16px"><span class="material-icons" style="vertical-align:middle;color:#c99b1a">restaurant_menu</span> Kitchen Order Tokens (Walk-in)</h2>
-        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
-          <div class="filter-group">
-            <label>Date</label>
-            <input type="date" id="kotDate" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd" onchange="loadKotOrders()">
-          </div>
-          <button class="btn btn-primary btn-small" onclick="openKotModal()" style="height:38px;background:#c99b1a;border-color:#c99b1a;">
-            <span class="material-icons" style="font-size:16px">add</span> New KOT
+        <h2 style="margin-bottom:16px"><span class="material-icons" style="vertical-align:middle;color:#c99b1a">restaurant_menu</span> Kitchen Order Tokens</h2>
+
+        <!-- View Toggle: Orders / Report -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;">
+          <button class="btn btn-small" id="kotViewOrdersBtn" onclick="switchKotView('orders')" style="background:#c99b1a;border-color:#c99b1a;color:#fff;font-weight:600;">
+            <span class="material-icons" style="font-size:16px">list_alt</span> Orders
+          </button>
+          <button class="btn btn-small btn-secondary" id="kotViewReportBtn" onclick="switchKotView('report')">
+            <span class="material-icons" style="font-size:16px">bar_chart</span> Monthly Report
           </button>
         </div>
-        <div id="kotSummary" style="margin-bottom:16px"></div>
-        <div style="overflow-x:auto">
-          <table class="data-table" style="width:100%">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>KOT ID</th>
-                <th>Customer</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Payment Mode</th>
-                <th>Created By</th>
-                <th id="kotDeleteColHeader" style="display:none">Action</th>
-              </tr>
-            </thead>
-            <tbody id="kotTableBody"></tbody>
-          </table>
+
+        <!-- Orders View -->
+        <div id="kotOrdersView">
+          <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+            <div class="filter-group">
+              <label>Date</label>
+              <input type="date" id="kotDate" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd" onchange="loadKotOrders()">
+            </div>
+            <button class="btn btn-primary btn-small" onclick="openKotModal()" style="height:38px;background:#c99b1a;border-color:#c99b1a;">
+              <span class="material-icons" style="font-size:16px">add</span> New KOT
+            </button>
+          </div>
+          <div id="kotSummary" style="margin-bottom:16px"></div>
+          <div style="overflow-x:auto">
+            <table class="data-table" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Date / Time</th>
+                  <th>KOT ID</th>
+                  <th>Room / Customer</th>
+                  <th>Items</th>
+                  <th style="text-align:right">Total</th>
+                  <th>Status</th>
+                  <th>Payment</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="kotTableBody"></tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- Report View -->
+        <div id="kotReportView" style="display:none;">
+          <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+            <div class="filter-group">
+              <label>Period</label>
+              <select id="kotReportPeriod" onchange="onKotReportPeriodChange()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+                <option value="month">This Month</option>
+                <option value="lastmonth">Last Month</option>
+                <option value="custom">Custom Dates</option>
+              </select>
+            </div>
+            <div class="filter-group" id="kotReportMonthGroup">
+              <label>Month</label>
+              <input type="month" id="kotReportMonth" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+            </div>
+            <div class="filter-group" id="kotReportFromGroup" style="display:none">
+              <label>From</label>
+              <input type="date" id="kotReportFrom" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+            </div>
+            <div class="filter-group" id="kotReportToGroup" style="display:none">
+              <label>To</label>
+              <input type="date" id="kotReportTo" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+            </div>
+            <button class="btn btn-primary btn-small" onclick="loadKotReport()" style="height:38px;background:#c99b1a;border-color:#c99b1a;">
+              <span class="material-icons" style="font-size:16px">search</span> Generate
+            </button>
+          </div>
+          <div id="kotReportContent"></div>
+        </div>
+
       </div>
     </div>
 
     <!-- KOT Modal -->
     <div class="modal-overlay" id="kotModal">
-      <div class="modal" style="max-width: 460px;">
+      <div class="modal" style="max-width: 600px;">
         <div class="modal-header">
           <h3><span class="material-icons" style="vertical-align:middle;color:#c99b1a">restaurant</span> New KOT Order</h3>
           <button class="modal-close" onclick="closeKotModal()">
@@ -3206,42 +3251,85 @@
           </button>
         </div>
         <div class="modal-body">
-          <div class="form-group" style="margin-bottom:12px">
+          <!-- Guest Type Toggle -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <button class="btn btn-small" id="kotGuestTypeInHouse" onclick="setKotGuestType('inhouse')" style="flex:1;background:#c99b1a;border-color:#c99b1a;color:#fff;font-weight:600;">In-House Guest</button>
+            <button class="btn btn-small btn-secondary" id="kotGuestTypeWalkin" onclick="setKotGuestType('walkin')" style="flex:1;">Walk-in</button>
+          </div>
+
+          <!-- In-House Guest Dropdown -->
+          <div class="form-group" id="kotInHouseGroup" style="margin-bottom:12px">
+            <label>Select Room / Guest</label>
+            <select id="kotBookingSelect" onchange="onKotBookingSelect()">
+              <option value="">-- Select checked-in guest --</option>
+            </select>
+          </div>
+
+          <!-- Walk-in Name -->
+          <div class="form-group" id="kotWalkinGroup" style="margin-bottom:12px;display:none">
             <label>Customer Name</label>
-            <input type="text" id="kotCustomerName" placeholder="Walk-in customer (optional)">
+            <input type="text" id="kotCustomerName" placeholder="Walk-in customer name">
           </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Description / Items *</label>
-            <input type="text" id="kotDescription" placeholder="e.g. 2x Dal, 1x Rice, 1x Roti">
+
+          <!-- Items Table -->
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;font-weight:600;color:#5c5040;display:block;margin-bottom:8px;">Food Items</label>
+            <div id="kotItemsContainer"></div>
+            <button class="btn btn-secondary btn-small" onclick="addKotItemRow()" style="margin-top:8px;">
+              <span class="material-icons" style="font-size:14px">add</span> Add Item
+            </button>
           </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Amount *</label>
-            <input type="number" id="kotAmount" min="0" placeholder="&#8377;">
+
+          <!-- Totals -->
+          <div style="padding:14px;background:rgba(20,20,40,0.6);border-radius:12px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span>Subtotal:</span>
+              <strong id="kotSubtotalDisplay">&#8377;0</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span>GST (5%):</span>
+              <strong id="kotGstDisplay">&#8377;0</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-top:2px solid #1e3a5f;padding-top:6px;font-size:16px;">
+              <span>Total:</span>
+              <strong style="color:#c99b1a" id="kotTotalDisplay">&#8377;0</strong>
+            </div>
           </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Payment Mode *</label>
-            <select id="kotPaymentMode" onchange="toggleKotSubCategory()">
-              <option value="Cash">Cash</option>
-              <option value="Card">Card</option>
-              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
-              <option value="AKS Office">AKS Office</option>
-            </select>
-          </div>
-          <div class="form-group" id="kotSubCatGroup" style="display:none;margin-top:12px">
-            <label>Sub-Category *</label>
-            <select id="kotSubCategory" onchange="toggleKotOtherInput()">
-              <option value="Office (SBI)">Office (SBI)</option>
-              <option value="Getaway">Getaway</option>
-              <option value="Rajat">Rajat</option>
-              <option value="Happy">Happy</option>
-              <option value="Fyra">Fyra</option>
-              <option value="Vishal">Vishal</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-group" id="kotOtherSubCatGroup" style="display:none;margin-top:8px">
-            <label>Specify Sub-Category</label>
-            <input type="text" id="kotOtherSubCategory" placeholder="Enter sub-category">
+
+          <!-- Payment Options -->
+          <div id="kotPaymentSection">
+            <div class="form-group" style="margin-bottom:12px" id="kotPaymentToggleGroup">
+              <label>Payment</label>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-small" id="kotPayNowBtn" onclick="setKotPayment('paynow')" style="flex:1;background:#16a34a;border-color:#16a34a;color:#fff;font-weight:600;">Pay Now</button>
+                <button class="btn btn-small btn-secondary" id="kotCollectLaterBtn" onclick="setKotPayment('later')" style="flex:1;">Collect at Checkout</button>
+              </div>
+            </div>
+            <div class="form-group" id="kotPayModeGroup" style="margin-bottom:12px">
+              <label>Payment Mode *</label>
+              <select id="kotPaymentMode" onchange="toggleKotSubCategory()">
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+                <option value="AKS Office">AKS Office</option>
+              </select>
+            </div>
+            <div class="form-group" id="kotSubCatGroup" style="display:none;margin-top:12px">
+              <label>Sub-Category *</label>
+              <select id="kotSubCategory" onchange="toggleKotOtherInput()">
+                <option value="Office (SBI)">Office (SBI)</option>
+                <option value="Getaway">Getaway</option>
+                <option value="Rajat">Rajat</option>
+                <option value="Happy">Happy</option>
+                <option value="Fyra">Fyra</option>
+                <option value="Vishal">Vishal</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" id="kotOtherSubCatGroup" style="display:none;margin-top:8px">
+              <label>Specify Sub-Category</label>
+              <input type="text" id="kotOtherSubCategory" placeholder="Enter sub-category">
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -3904,12 +3992,18 @@
         <input type="hidden" id="checkoutBookingId">
         <div id="checkoutGuestInfo" style="margin-bottom:20px;padding:16px;background:rgba(20,20,40,0.6);border-radius:12px;"></div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>KOT Amount</label>
-            <input type="number" id="checkoutKotAmount" placeholder="&#8377;" min="0" value="0" oninput="updateCheckoutTotals()">
+        <!-- Pending KOT Orders (auto-fetched) -->
+        <div id="checkoutKotSection" style="display:none;margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;color:#c99b1a;display:block;margin-bottom:8px;">
+            <span class="material-icons" style="font-size:16px;vertical-align:middle">restaurant</span> Pending KOT Orders
+          </label>
+          <div id="checkoutKotList" style="background:rgba(20,20,40,0.4);border-radius:10px;padding:12px;max-height:200px;overflow-y:auto;"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-weight:700;font-size:15px;">
+            <span>KOT Total:</span>
+            <span style="color:#c99b1a" id="checkoutKotTotalLabel">&#8377;0</span>
           </div>
         </div>
+        <input type="hidden" id="checkoutKotAmount" value="0">
 
         <div style="margin-bottom:16px;">
           <label style="font-size:13px;font-weight:600;color:#5c5040;display:block;margin-bottom:8px;">Add-On Charges</label>
@@ -3925,7 +4019,7 @@
             <strong id="checkoutOrigTotal">&#8377;0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-            <span>+ KOT Amount:</span>
+            <span>+ KOT (Pending):</span>
             <strong id="checkoutKotDisplay">&#8377;0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
@@ -3975,7 +4069,7 @@
           <input type="text" id="checkoutOtherSubCategory" placeholder="Enter sub-category">
         </div>
 
-        <div class="form-row" id="kotPayModeGroup" style="margin-top:12px;display:none;">
+        <div class="form-row" id="checkoutKotPayModeGroup" style="margin-top:12px;display:none;">
           <div class="form-group">
             <label>KOT &amp; Add-On Payment Mode</label>
             <select id="checkoutKotPayMode" onchange="toggleKotAksSubCat()">
@@ -7502,7 +7596,9 @@
     // ========== CHECKOUT ==========
     var checkoutBookingData = null;
 
-    function openCheckoutModal(id) {
+    var checkoutUnpaidKot = [];
+
+    async function openCheckoutModal(id) {
       var b = bookings.find(function(bk) { return bk.id === id; });
       if (!b) return;
       checkoutBookingData = b;
@@ -7521,7 +7617,6 @@
         '<div><small style="color:#6b7280">Plan</small><br>' + escapeHtml(b.mealPlan || '-') + '</div>' +
         '</div>';
 
-      document.getElementById('checkoutKotAmount').value = b.kotAmount || 0;
       document.getElementById('addOnChargesContainer').innerHTML = '';
       document.getElementById('checkoutPayMode').value = '';
       document.getElementById('checkoutSubCatGroup').style.display = 'none';
@@ -7539,6 +7634,53 @@
         b.addOns.forEach(function(ao) {
           addAddOnRow(ao.type, ao.amount);
         });
+      }
+
+      // Auto-fetch unpaid KOT orders for this booking
+      checkoutUnpaidKot = [];
+      var kotSection = document.getElementById('checkoutKotSection');
+      var kotList = document.getElementById('checkoutKotList');
+      document.getElementById('checkoutKotAmount').value = 0;
+
+      try {
+        checkoutUnpaidKot = await apiFetch('/kot/unpaid/' + b.bookingId);
+      } catch (e) {
+        checkoutUnpaidKot = [];
+      }
+
+      if (checkoutUnpaidKot.length > 0) {
+        kotSection.style.display = '';
+        var kotTotal = 0;
+        var listHtml = '';
+        // Group by date
+        var byDate = {};
+        checkoutUnpaidKot.forEach(function(o) {
+          if (!byDate[o.orderDate]) byDate[o.orderDate] = [];
+          byDate[o.orderDate].push(o);
+        });
+        Object.keys(byDate).sort().forEach(function(date) {
+          var dateOrders = byDate[date];
+          dateOrders.forEach(function(o) {
+            var amt = Number(o.totalAmount) || Number(o.amount) || 0;
+            kotTotal += amt;
+            var itemsSummary = getKotItemsSummary(o);
+            var timeStr = '';
+            if (o.createdAt) {
+              try { timeStr = new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); } catch(e) {}
+            }
+            listHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:13px;">';
+            listHtml += '<div><span style="color:#c99b1a;font-weight:600;">' + formatDate(date) + '</span>';
+            if (timeStr) listHtml += ' <span style="color:#999;font-size:11px;">' + timeStr + '</span>';
+            listHtml += '<br><span style="color:#d1d5db;">' + escapeHtml(itemsSummary) + '</span></div>';
+            listHtml += '<div style="font-weight:600;white-space:nowrap;padding-left:12px;">' + formatCurrency(amt) + '</div>';
+            listHtml += '</div>';
+          });
+        });
+        kotList.innerHTML = listHtml;
+        document.getElementById('checkoutKotTotalLabel').textContent = formatCurrency(kotTotal);
+        document.getElementById('checkoutKotAmount').value = kotTotal;
+      } else {
+        kotSection.style.display = 'none';
       }
 
       updateCheckoutTotals();
@@ -7618,10 +7760,10 @@
       document.getElementById('checkoutReceived').textContent = formatCurrency(received);
       document.getElementById('checkoutBalance').textContent = formatCurrency(balance > 0 ? balance : 0);
 
-      // Show/hide KOT & Add-On Payment Mode dropdown
-      var kotPayGroup = document.getElementById('kotPayModeGroup');
-      if (kotPayGroup) {
-        kotPayGroup.style.display = (kotAmt > 0 || addOnTotal > 0) ? '' : 'none';
+      // Show/hide KOT & Add-On Payment Mode dropdown (for checkout)
+      var kotPayGroupCheckout = document.getElementById('checkoutKotPayModeGroup');
+      if (kotPayGroupCheckout) {
+        kotPayGroupCheckout.style.display = (kotAmt > 0 || addOnTotal > 0) ? '' : 'none';
       }
     }
 
@@ -7821,8 +7963,11 @@
       document.getElementById('checkoutOtherSubCatGroup').style.display = val === 'Other' ? '' : 'none';
     }
 
-    // ========== KOT (Walk-in Food Orders) ==========
+    // ========== KOT (Kitchen Order Tokens) ==========
     var kotOrders = [];
+    var kotGuestType = 'inhouse';
+    var kotPaymentType = 'paynow';
+    var kotCheckedInGuests = [];
 
     function initKotTab() {
       if (!document.getElementById('kotDate').value) {
@@ -7831,16 +7976,154 @@
       loadKotOrders();
     }
 
-    function openKotModal() {
+    function setKotGuestType(type) {
+      kotGuestType = type;
+      var inhouseBtn = document.getElementById('kotGuestTypeInHouse');
+      var walkinBtn = document.getElementById('kotGuestTypeWalkin');
+      var inhouseGroup = document.getElementById('kotInHouseGroup');
+      var walkinGroup = document.getElementById('kotWalkinGroup');
+      var payToggle = document.getElementById('kotPaymentToggleGroup');
+
+      if (type === 'inhouse') {
+        inhouseBtn.style.background = '#c99b1a'; inhouseBtn.style.borderColor = '#c99b1a'; inhouseBtn.style.color = '#fff';
+        walkinBtn.style.background = ''; walkinBtn.style.borderColor = ''; walkinBtn.style.color = '';
+        walkinBtn.className = 'btn btn-small btn-secondary';
+        inhouseGroup.style.display = '';
+        walkinGroup.style.display = 'none';
+        payToggle.style.display = '';
+      } else {
+        walkinBtn.style.background = '#c99b1a'; walkinBtn.style.borderColor = '#c99b1a'; walkinBtn.style.color = '#fff';
+        inhouseBtn.style.background = ''; inhouseBtn.style.borderColor = ''; inhouseBtn.style.color = '';
+        inhouseBtn.className = 'btn btn-small btn-secondary';
+        inhouseGroup.style.display = 'none';
+        walkinGroup.style.display = '';
+        payToggle.style.display = 'none';
+        setKotPayment('paynow');
+      }
+    }
+
+    function setKotPayment(type) {
+      kotPaymentType = type;
+      var payNowBtn = document.getElementById('kotPayNowBtn');
+      var laterBtn = document.getElementById('kotCollectLaterBtn');
+      var payModeGroup = document.getElementById('kotPayModeGroup');
+
+      if (type === 'paynow') {
+        payNowBtn.style.background = '#16a34a'; payNowBtn.style.borderColor = '#16a34a'; payNowBtn.style.color = '#fff';
+        laterBtn.style.background = ''; laterBtn.style.borderColor = ''; laterBtn.style.color = '';
+        laterBtn.className = 'btn btn-small btn-secondary';
+        payModeGroup.style.display = '';
+      } else {
+        laterBtn.style.background = '#ea580c'; laterBtn.style.borderColor = '#ea580c'; laterBtn.style.color = '#fff';
+        payNowBtn.style.background = ''; payNowBtn.style.borderColor = ''; payNowBtn.style.color = '';
+        payNowBtn.className = 'btn btn-small btn-secondary';
+        payModeGroup.style.display = 'none';
+        document.getElementById('kotSubCatGroup').style.display = 'none';
+        document.getElementById('kotOtherSubCatGroup').style.display = 'none';
+      }
+    }
+
+    function onKotBookingSelect() {
+      var sel = document.getElementById('kotBookingSelect');
+      var opt = sel.options[sel.selectedIndex];
+      // Auto-fill customer name from booking
+      if (opt && opt.dataset.guest) {
+        document.getElementById('kotCustomerName').value = opt.dataset.guest;
+      }
+    }
+
+    function addKotItemRow(itemName, qty, rate) {
+      var container = document.getElementById('kotItemsContainer');
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;';
+      row.innerHTML =
+        '<input type="text" placeholder="Item name" value="' + escapeHtml(itemName || '') + '" ' +
+          'style="padding:8px 10px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;flex:2;min-width:0;">' +
+        '<input type="number" placeholder="Qty" value="' + (qty || 1) + '" min="1" ' +
+          'style="padding:8px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;width:60px;text-align:center;" ' +
+          'oninput="updateKotItemTotals()">' +
+        '<input type="number" placeholder="Rate" value="' + (rate || '') + '" min="0" ' +
+          'style="padding:8px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;width:80px;text-align:right;" ' +
+          'oninput="updateKotItemTotals()">' +
+        '<span style="min-width:70px;text-align:right;font-weight:600;font-size:13px;color:#c99b1a;" class="kot-item-total">&#8377;0</span>' +
+        '<button onclick="this.parentElement.remove();updateKotItemTotals();" ' +
+          'style="background:#fee2e2;border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+          '<span class="material-icons" style="font-size:14px;color:#ef4444;">close</span></button>';
+      container.appendChild(row);
+      updateKotItemTotals();
+    }
+
+    function updateKotItemTotals() {
+      var container = document.getElementById('kotItemsContainer');
+      var rows = container.children;
+      var subtotal = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var inputs = rows[i].querySelectorAll('input[type="number"]');
+        var qty = parseInt(inputs[0].value) || 0;
+        var rate = parseFloat(inputs[1].value) || 0;
+        var total = qty * rate;
+        subtotal += total;
+        rows[i].querySelector('.kot-item-total').textContent = formatCurrency(total);
+      }
+      var gst = Math.round(subtotal * 0.05 * 100) / 100;
+      var grandTotal = subtotal + gst;
+      document.getElementById('kotSubtotalDisplay').textContent = formatCurrency(subtotal);
+      document.getElementById('kotGstDisplay').textContent = formatCurrency(gst);
+      document.getElementById('kotTotalDisplay').textContent = formatCurrency(grandTotal);
+    }
+
+    function getKotItems() {
+      var container = document.getElementById('kotItemsContainer');
+      var rows = container.children;
+      var items = [];
+      for (var i = 0; i < rows.length; i++) {
+        var nameInput = rows[i].querySelector('input[type="text"]');
+        var numInputs = rows[i].querySelectorAll('input[type="number"]');
+        var name = nameInput.value.trim();
+        var qty = parseInt(numInputs[0].value) || 0;
+        var rate = parseFloat(numInputs[1].value) || 0;
+        if (name && qty > 0 && rate > 0) {
+          items.push({ itemName: name, quantity: qty, rate: rate });
+        }
+      }
+      return items;
+    }
+
+    async function openKotModal() {
       document.getElementById('kotModal').classList.add('active');
+
+      // Reset form
+      setKotGuestType('inhouse');
+      setKotPayment('paynow');
       document.getElementById('kotCustomerName').value = '';
-      document.getElementById('kotDescription').value = '';
-      document.getElementById('kotAmount').value = '';
+      document.getElementById('kotItemsContainer').innerHTML = '';
       document.getElementById('kotPaymentMode').value = 'Cash';
       document.getElementById('kotSubCatGroup').style.display = 'none';
       document.getElementById('kotOtherSubCatGroup').style.display = 'none';
       document.getElementById('kotSubCategory').selectedIndex = 0;
       document.getElementById('kotOtherSubCategory').value = '';
+
+      // Add one empty item row
+      addKotItemRow();
+
+      // Load checked-in guests
+      try {
+        kotCheckedInGuests = await apiFetch('/kot/checked-in-guests');
+      } catch (e) {
+        kotCheckedInGuests = [];
+      }
+      var sel = document.getElementById('kotBookingSelect');
+      sel.innerHTML = '<option value="">-- Select checked-in guest --</option>';
+      kotCheckedInGuests.forEach(function(g) {
+        var opt = document.createElement('option');
+        opt.value = g.bookingId;
+        opt.dataset.guest = g.guestName;
+        opt.dataset.room = g.roomNo || '';
+        opt.textContent = 'Room ' + (g.roomNo || '?') + ' - ' + g.guestName;
+        sel.appendChild(opt);
+      });
+
+      updateKotItemTotals();
     }
 
     function closeKotModal() {
@@ -7868,25 +8151,40 @@
       try { await _doSaveKotOrder(); } finally { unlockBtn(btn); _submitting = false; }
     }
     async function _doSaveKotOrder() {
-      var description = document.getElementById('kotDescription').value.trim();
-      var amount = parseFloat(document.getElementById('kotAmount').value) || 0;
-      var paymentMode = document.getElementById('kotPaymentMode').value;
-      var customerName = document.getElementById('kotCustomerName').value.trim();
+      var items = getKotItems();
+      if (items.length === 0) {
+        showToast('Please add at least one item with name, quantity and rate', 'error');
+        return;
+      }
 
-      if (!description) {
-        showToast('Please enter order description', 'error');
-        return;
+      var customerName = '';
+      var bookingId = null;
+      var roomNo = null;
+
+      if (kotGuestType === 'inhouse') {
+        var sel = document.getElementById('kotBookingSelect');
+        if (!sel.value) {
+          showToast('Please select a checked-in guest', 'error');
+          return;
+        }
+        bookingId = sel.value;
+        var opt = sel.options[sel.selectedIndex];
+        customerName = opt.dataset.guest || '';
+        roomNo = opt.dataset.room || '';
+      } else {
+        customerName = document.getElementById('kotCustomerName').value.trim();
       }
-      if (amount <= 0) {
-        showToast('Please enter a valid amount', 'error');
-        return;
-      }
+
+      var status = (kotGuestType === 'inhouse' && kotPaymentType === 'later') ? 'UNPAID' : 'PAID';
+      var paymentMode = status === 'PAID' ? document.getElementById('kotPaymentMode').value : undefined;
 
       var body = {
         orderDate: getToday(),
         customerName: customerName,
-        description: description,
-        amount: amount,
+        items: items,
+        bookingId: bookingId,
+        roomNo: roomNo,
+        status: status,
         paymentMode: paymentMode
       };
 
@@ -7904,7 +8202,7 @@
 
       try {
         await apiFetch('/kot', { method: 'POST', body: body });
-        showToast('KOT order saved successfully', 'success');
+        showToast('KOT order saved!', 'success');
         closeKotModal();
         loadKotOrders();
       } catch (e) {
@@ -7922,46 +8220,85 @@
       renderKotTable();
     }
 
+    function getKotItemsSummary(order) {
+      if (order.items && order.items.length > 0) {
+        var parts = order.items.slice(0, 2).map(function(i) { return i.quantity + 'x ' + i.itemName; });
+        if (order.items.length > 2) parts.push('+' + (order.items.length - 2) + ' more');
+        return parts.join(', ');
+      }
+      return order.description || '-';
+    }
+
     function renderKotTable() {
       var tbody = document.getElementById('kotTableBody');
       var isSuperAdmin = currentUser && currentUser.role === 'super_admin';
 
-      // Show/hide delete column
-      var delHeader = document.getElementById('kotDeleteColHeader');
-      if (delHeader) delHeader.style.display = isSuperAdmin ? '' : 'none';
-
       if (!kotOrders || kotOrders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="' + (isSuperAdmin ? 8 : 7) + '" style="text-align:center;padding:24px;color:#999">No KOT orders for this date</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#999">No KOT orders for this date</td></tr>';
         document.getElementById('kotSummary').innerHTML = '';
         return;
       }
 
-      var total = 0;
+      var totalAmt = 0;
+      var paidCount = 0;
+      var unpaidCount = 0;
       var html = '';
       kotOrders.forEach(function(o) {
-        var amt = Number(o.amount) || 0;
-        total += amt;
-        var payLabel = o.paymentMode;
-        if (o.paymentMode === 'AKS Office' && o.subCategory) {
-          payLabel += ' (' + escapeHtml(o.subCategory) + ')';
+        var amt = Number(o.totalAmount) || Number(o.amount) || 0;
+        totalAmt += amt;
+        if (o.status === 'PAID') paidCount++; else unpaidCount++;
+
+        var timeStr = '';
+        if (o.createdAt) {
+          try { timeStr = new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); } catch(e) {}
         }
+        var guestLabel = o.roomNo ? 'Room ' + escapeHtml(o.roomNo) + ' - ' + escapeHtml(o.customerName || 'Guest') : escapeHtml(o.customerName || 'Walk-in');
+        var statusBadge = o.status === 'PAID'
+          ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">PAID</span>'
+          : '<span style="background:#fff7ed;color:#9a3412;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">UNPAID</span>';
+        var payLabel = o.paymentMode || '-';
+        if (o.paymentMode === 'AKS Office' && o.subCategory) payLabel += ' (' + escapeHtml(o.subCategory) + ')';
+
         html += '<tr>';
-        html += '<td>' + escapeHtml(o.orderDate) + '</td>';
+        html += '<td><div>' + escapeHtml(o.orderDate) + '</div><div style="font-size:11px;color:#999">' + timeStr + '</div></td>';
         html += '<td><strong>' + escapeHtml(o.kotId) + '</strong></td>';
-        html += '<td>' + escapeHtml(o.customerName || 'Walk-in') + '</td>';
-        html += '<td>' + escapeHtml(o.description) + '</td>';
-        html += '<td style="text-align:right">' + formatCurrency(amt) + '</td>';
-        html += '<td>' + escapeHtml(payLabel) + '</td>';
-        html += '<td>' + escapeHtml(o.createdBy || '') + '</td>';
+        html += '<td>' + guestLabel + '</td>';
+        html += '<td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(o.description || '') + '">' + escapeHtml(getKotItemsSummary(o)) + '</td>';
+        html += '<td style="text-align:right"><strong>' + formatCurrency(amt) + '</strong></td>';
+        html += '<td>' + statusBadge + '</td>';
+        html += '<td style="font-size:12px">' + escapeHtml(payLabel) + '</td>';
+        html += '<td>';
+        html += '<button class="btn btn-small" style="background:#1e3a5f;color:#fff;padding:4px 8px;font-size:11px;margin-right:4px;" onclick="viewKotBill(' + o.id + ')" title="View Bill"><span class="material-icons" style="font-size:14px">receipt</span></button>';
         if (isSuperAdmin) {
-          html += '<td><button class="btn btn-small" style="background:#ef4444;color:#fff;padding:4px 8px;font-size:12px" onclick="deleteKotOrder(' + o.id + ')"><span class="material-icons" style="font-size:14px">delete</span></button></td>';
+          html += '<button class="btn btn-small" style="background:#ef4444;color:#fff;padding:4px 8px;font-size:11px" onclick="deleteKotOrder(' + o.id + ')" title="Delete"><span class="material-icons" style="font-size:14px">delete</span></button>';
         }
+        html += '</td>';
         html += '</tr>';
       });
       tbody.innerHTML = html;
 
       // Summary
-      document.getElementById('kotSummary').innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap"><div style="background:#fef3c7;padding:12px 20px;border-radius:10px;border:1px solid #f59e0b33"><strong style="color:#92400e">Total Orders:</strong> ' + kotOrders.length + '</div><div style="background:#d1fae5;padding:12px 20px;border-radius:10px;border:1px solid #10b98133"><strong style="color:#065f46">Total Amount:</strong> ' + formatCurrency(total) + '</div></div>';
+      var summaryHtml = '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+      summaryHtml += '<div style="background:#fef3c7;padding:10px 16px;border-radius:10px;border:1px solid #f59e0b33"><strong style="color:#92400e">Orders:</strong> ' + kotOrders.length + '</div>';
+      summaryHtml += '<div style="background:#d1fae5;padding:10px 16px;border-radius:10px;border:1px solid #10b98133"><strong style="color:#065f46">Total:</strong> ' + formatCurrency(totalAmt) + '</div>';
+      if (paidCount > 0) summaryHtml += '<div style="background:#dcfce7;padding:10px 16px;border-radius:10px;border:1px solid #16a34a33"><strong style="color:#166534">Paid:</strong> ' + paidCount + '</div>';
+      if (unpaidCount > 0) summaryHtml += '<div style="background:#fff7ed;padding:10px 16px;border-radius:10px;border:1px solid #ea580c33"><strong style="color:#9a3412">Unpaid:</strong> ' + unpaidCount + '</div>';
+      summaryHtml += '</div>';
+      document.getElementById('kotSummary').innerHTML = summaryHtml;
+    }
+
+    function viewKotBill(id) {
+      var url = API_BASE + '/kot/' + id + '/bill';
+      var token = localStorage.getItem('token');
+      // Fetch bill HTML and open in new tab
+      fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(function(res) { return res.text(); })
+        .then(function(html) {
+          var w = window.open('', '_blank');
+          w.document.write(html);
+          w.document.close();
+        })
+        .catch(function() { showToast('Failed to load bill', 'error'); });
     }
 
     async function deleteKotOrder(id) {
@@ -7973,6 +8310,267 @@
       } catch (e) {
         // Error handled by apiFetch
       }
+    }
+
+    // ========== KOT REPORT ==========
+    function switchKotView(view) {
+      var ordersView = document.getElementById('kotOrdersView');
+      var reportView = document.getElementById('kotReportView');
+      var ordersBtn = document.getElementById('kotViewOrdersBtn');
+      var reportBtn = document.getElementById('kotViewReportBtn');
+
+      if (view === 'orders') {
+        ordersView.style.display = '';
+        reportView.style.display = 'none';
+        ordersBtn.style.background = '#c99b1a'; ordersBtn.style.borderColor = '#c99b1a'; ordersBtn.style.color = '#fff';
+        ordersBtn.className = 'btn btn-small';
+        reportBtn.style.background = ''; reportBtn.style.borderColor = ''; reportBtn.style.color = '';
+        reportBtn.className = 'btn btn-small btn-secondary';
+      } else {
+        ordersView.style.display = 'none';
+        reportView.style.display = '';
+        reportBtn.style.background = '#c99b1a'; reportBtn.style.borderColor = '#c99b1a'; reportBtn.style.color = '#fff';
+        reportBtn.className = 'btn btn-small';
+        ordersBtn.style.background = ''; ordersBtn.style.borderColor = ''; ordersBtn.style.color = '';
+        ordersBtn.className = 'btn btn-small btn-secondary';
+        initKotReport();
+      }
+    }
+
+    function initKotReport() {
+      var monthInput = document.getElementById('kotReportMonth');
+      if (!monthInput.value) {
+        var now = new Date();
+        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      }
+      onKotReportPeriodChange();
+    }
+
+    function onKotReportPeriodChange() {
+      var period = document.getElementById('kotReportPeriod').value;
+      document.getElementById('kotReportMonthGroup').style.display = (period === 'month' || period === 'lastmonth') ? '' : 'none';
+      document.getElementById('kotReportFromGroup').style.display = period === 'custom' ? '' : 'none';
+      document.getElementById('kotReportToGroup').style.display = period === 'custom' ? '' : 'none';
+
+      var monthInput = document.getElementById('kotReportMonth');
+      var now = new Date();
+      if (period === 'month') {
+        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      } else if (period === 'lastmonth') {
+        var lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        monthInput.value = lastMonth.getFullYear() + '-' + String(lastMonth.getMonth() + 1).padStart(2, '0');
+      }
+    }
+
+    function getKotReportDates() {
+      var period = document.getElementById('kotReportPeriod').value;
+      var from, to;
+      if (period === 'custom') {
+        from = document.getElementById('kotReportFrom').value;
+        to = document.getElementById('kotReportTo').value;
+      } else {
+        var monthVal = document.getElementById('kotReportMonth').value;
+        if (!monthVal) return null;
+        var parts = monthVal.split('-');
+        var y = parseInt(parts[0]);
+        var m = parseInt(parts[1]);
+        from = y + '-' + String(m).padStart(2, '0') + '-01';
+        var lastDay = new Date(y, m, 0).getDate();
+        to = y + '-' + String(m).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
+      }
+      if (!from || !to) return null;
+      return { from: from, to: to };
+    }
+
+    async function loadKotReport() {
+      var dates = getKotReportDates();
+      if (!dates) {
+        showToast('Please select a date range', 'error');
+        return;
+      }
+
+      var contentEl = document.getElementById('kotReportContent');
+      contentEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999"><span class="material-icons" style="font-size:32px;animation:spin 1s linear infinite">sync</span><br>Loading...</div>';
+
+      var orders = [];
+      try {
+        orders = await apiFetch('/kot?from=' + dates.from + '&to=' + dates.to);
+      } catch (e) {
+        contentEl.innerHTML = '<div style="text-align:center;padding:30px;color:#ef4444">Failed to load data</div>';
+        return;
+      }
+
+      if (orders.length === 0) {
+        contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:#999"><span class="material-icons" style="font-size:48px">restaurant</span><br>No KOT orders in this period</div>';
+        return;
+      }
+
+      // Calculate stats
+      var totalOrders = orders.length;
+      var totalRevenue = 0;
+      var walkinOrders = 0, walkinRevenue = 0;
+      var inhouseOrders = 0, inhouseRevenue = 0;
+      var paidOrders = 0, unpaidOrders = 0, unpaidRevenue = 0;
+      var byPayMode = {};
+      var byDate = {};
+      var topItems = {};
+
+      orders.forEach(function(o) {
+        var amt = Number(o.totalAmount) || Number(o.amount) || 0;
+        totalRevenue += amt;
+
+        var isInHouse = o.bookingId && o.bookingId.length > 0;
+        if (isInHouse) {
+          inhouseOrders++;
+          inhouseRevenue += amt;
+        } else {
+          walkinOrders++;
+          walkinRevenue += amt;
+        }
+
+        if (o.status === 'PAID') {
+          paidOrders++;
+          var mode = o.paymentMode || 'Cash';
+          byPayMode[mode] = (byPayMode[mode] || 0) + amt;
+        } else {
+          unpaidOrders++;
+          unpaidRevenue += amt;
+        }
+
+        // By date
+        if (!byDate[o.orderDate]) byDate[o.orderDate] = { orders: 0, revenue: 0, walkin: 0, inhouse: 0 };
+        byDate[o.orderDate].orders++;
+        byDate[o.orderDate].revenue += amt;
+        if (isInHouse) byDate[o.orderDate].inhouse += amt;
+        else byDate[o.orderDate].walkin += amt;
+
+        // Top items
+        if (o.items && o.items.length > 0) {
+          o.items.forEach(function(item) {
+            var name = item.itemName;
+            if (!topItems[name]) topItems[name] = { qty: 0, revenue: 0 };
+            topItems[name].qty += Number(item.quantity) || 0;
+            topItems[name].revenue += Number(item.total) || 0;
+          });
+        }
+      });
+
+      var walkinPct = totalOrders > 0 ? Math.round(walkinOrders / totalOrders * 100) : 0;
+      var inhousePct = totalOrders > 0 ? Math.round(inhouseOrders / totalOrders * 100) : 0;
+
+      // Build report HTML
+      var html = '';
+
+      // Summary Cards
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">';
+      html += '<div style="background:#fef3c7;padding:14px;border-radius:12px;border:1px solid #f59e0b33;text-align:center;">';
+      html += '<div style="font-size:11px;color:#92400e;font-weight:600;text-transform:uppercase;">Total Orders</div>';
+      html += '<div style="font-size:22px;font-weight:700;color:#78350f;">' + totalOrders + '</div></div>';
+
+      html += '<div style="background:#d1fae5;padding:14px;border-radius:12px;border:1px solid #10b98133;text-align:center;">';
+      html += '<div style="font-size:11px;color:#065f46;font-weight:600;text-transform:uppercase;">Total Revenue</div>';
+      html += '<div style="font-size:22px;font-weight:700;color:#064e3b;">' + formatCurrency(totalRevenue) + '</div></div>';
+
+      html += '<div style="background:#ede9fe;padding:14px;border-radius:12px;border:1px solid #8b5cf633;text-align:center;">';
+      html += '<div style="font-size:11px;color:#5b21b6;font-weight:600;text-transform:uppercase;">Walk-in (' + walkinPct + '%)</div>';
+      html += '<div style="font-size:22px;font-weight:700;color:#4c1d95;">' + formatCurrency(walkinRevenue) + '</div>';
+      html += '<div style="font-size:11px;color:#7c3aed;">' + walkinOrders + ' orders</div></div>';
+
+      html += '<div style="background:#dbeafe;padding:14px;border-radius:12px;border:1px solid #3b82f633;text-align:center;">';
+      html += '<div style="font-size:11px;color:#1e40af;font-weight:600;text-transform:uppercase;">In-House (' + inhousePct + '%)</div>';
+      html += '<div style="font-size:22px;font-weight:700;color:#1e3a8a;">' + formatCurrency(inhouseRevenue) + '</div>';
+      html += '<div style="font-size:11px;color:#2563eb;">' + inhouseOrders + ' orders</div></div>';
+
+      if (unpaidOrders > 0) {
+        html += '<div style="background:#fff7ed;padding:14px;border-radius:12px;border:1px solid #ea580c33;text-align:center;">';
+        html += '<div style="font-size:11px;color:#9a3412;font-weight:600;text-transform:uppercase;">Unpaid</div>';
+        html += '<div style="font-size:22px;font-weight:700;color:#7c2d12;">' + formatCurrency(unpaidRevenue) + '</div>';
+        html += '<div style="font-size:11px;color:#ea580c;">' + unpaidOrders + ' orders</div></div>';
+      }
+      html += '</div>';
+
+      // Payment Mode Breakdown
+      var payModes = Object.keys(byPayMode);
+      if (payModes.length > 0) {
+        html += '<div style="margin-bottom:24px;">';
+        html += '<h3 style="font-size:15px;margin-bottom:12px;color:#c99b1a"><span class="material-icons" style="font-size:18px;vertical-align:middle">payments</span> Payment Mode Breakdown</h3>';
+        html += '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+        payModes.forEach(function(mode) {
+          var color = mode === 'Cash' ? '#16a34a' : mode === 'Card' ? '#2563eb' : mode === 'AKS Office' ? '#7c3aed' : '#0891b2';
+          html += '<div style="background:rgba(255,255,255,0.05);padding:10px 16px;border-radius:10px;border-left:4px solid ' + color + ';">';
+          html += '<div style="font-size:12px;color:#9ca3af;">' + escapeHtml(mode) + '</div>';
+          html += '<div style="font-size:16px;font-weight:700;">' + formatCurrency(byPayMode[mode]) + '</div></div>';
+        });
+        html += '</div></div>';
+      }
+
+      // Top Items
+      var itemNames = Object.keys(topItems);
+      if (itemNames.length > 0) {
+        itemNames.sort(function(a, b) { return topItems[b].revenue - topItems[a].revenue; });
+        html += '<div style="margin-bottom:24px;">';
+        html += '<h3 style="font-size:15px;margin-bottom:12px;color:#c99b1a"><span class="material-icons" style="font-size:18px;vertical-align:middle">star</span> Top Items</h3>';
+        html += '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr>';
+        html += '<th>#</th><th>Item</th><th style="text-align:right">Qty Sold</th><th style="text-align:right">Revenue</th>';
+        html += '</tr></thead><tbody>';
+        itemNames.slice(0, 15).forEach(function(name, i) {
+          html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(name) + '</td>';
+          html += '<td style="text-align:right">' + topItems[name].qty + '</td>';
+          html += '<td style="text-align:right"><strong>' + formatCurrency(topItems[name].revenue) + '</strong></td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+      }
+
+      // Day-wise Breakdown
+      var sortedDates = Object.keys(byDate).sort();
+      if (sortedDates.length > 0) {
+        html += '<div style="margin-bottom:24px;">';
+        html += '<h3 style="font-size:15px;margin-bottom:12px;color:#c99b1a"><span class="material-icons" style="font-size:18px;vertical-align:middle">calendar_month</span> Day-wise Breakdown</h3>';
+        html += '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr>';
+        html += '<th>Date</th><th style="text-align:right">Orders</th><th style="text-align:right">Walk-in</th><th style="text-align:right">In-House</th><th style="text-align:right">Total</th>';
+        html += '</tr></thead><tbody>';
+        sortedDates.forEach(function(date) {
+          var d = byDate[date];
+          html += '<tr><td>' + formatDate(date) + '</td>';
+          html += '<td style="text-align:right">' + d.orders + '</td>';
+          html += '<td style="text-align:right;color:#7c3aed;">' + formatCurrency(d.walkin) + '</td>';
+          html += '<td style="text-align:right;color:#2563eb;">' + formatCurrency(d.inhouse) + '</td>';
+          html += '<td style="text-align:right"><strong>' + formatCurrency(d.revenue) + '</strong></td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+      }
+
+      // Detailed Orders Table
+      html += '<div>';
+      html += '<h3 style="font-size:15px;margin-bottom:12px;color:#c99b1a"><span class="material-icons" style="font-size:18px;vertical-align:middle">receipt_long</span> All Orders (' + totalOrders + ')</h3>';
+      html += '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr>';
+      html += '<th>Date</th><th>KOT ID</th><th>Type</th><th>Room / Customer</th><th>Items</th><th style="text-align:right">Total</th><th>Status</th><th>Payment</th>';
+      html += '</tr></thead><tbody>';
+      orders.forEach(function(o) {
+        var amt = Number(o.totalAmount) || Number(o.amount) || 0;
+        var isInHouse = o.bookingId && o.bookingId.length > 0;
+        var typeBadge = isInHouse
+          ? '<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">IN-HOUSE</span>'
+          : '<span style="background:#ede9fe;color:#5b21b6;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">WALK-IN</span>';
+        var guestLabel = o.roomNo ? 'Room ' + escapeHtml(o.roomNo) + ' - ' + escapeHtml(o.customerName || 'Guest') : escapeHtml(o.customerName || 'Walk-in');
+        var statusBadge = o.status === 'PAID'
+          ? '<span style="background:#dcfce7;color:#166534;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">PAID</span>'
+          : '<span style="background:#fff7ed;color:#9a3412;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">UNPAID</span>';
+
+        html += '<tr>';
+        html += '<td style="font-size:12px">' + escapeHtml(o.orderDate) + '</td>';
+        html += '<td><strong style="font-size:12px">' + escapeHtml(o.kotId) + '</strong></td>';
+        html += '<td>' + typeBadge + '</td>';
+        html += '<td style="font-size:12px">' + guestLabel + '</td>';
+        html += '<td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(getKotItemsSummary(o)) + '</td>';
+        html += '<td style="text-align:right;font-weight:600">' + formatCurrency(amt) + '</td>';
+        html += '<td>' + statusBadge + '</td>';
+        html += '<td style="font-size:12px">' + escapeHtml(o.paymentMode || '-') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div></div>';
+
+      contentEl.innerHTML = html;
     }
 
     // ========== AKS OFFICE TAB ==========

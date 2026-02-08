@@ -6,6 +6,7 @@ import { BookingAddon } from './booking-addon.entity';
 import { AksOfficePayment } from './aks-office-payment.entity';
 import { AgentSettlement } from './agent-settlement.entity';
 import { DaybookEntry } from '../daybook/daybook-entry.entity';
+import { KotService } from '../kot/kot.service';
 import { CreateBookingDto, CollectPaymentDto, CheckinDto, CheckoutDto, RescheduleDto, AgentSettlementDto, RefundDto } from './dto/create-booking.dto';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class BookingsService {
     private settlementRepo: Repository<AgentSettlement>,
     @InjectRepository(DaybookEntry)
     private daybookRepo: Repository<DaybookEntry>,
+    private kotService: KotService,
   ) {}
 
   private normalizePaymentMode(mode: string): string {
@@ -451,14 +453,18 @@ export class BookingsService {
       }
     }
 
-    // KOT entry (always created, even for AKS Office — real income)
-    if (kotAmt > 0) {
+    // Mark unpaid KOT orders as paid (creates daybook entries via KotService)
+    const unpaidKotTotal = await this.kotService.markPaidByBooking(booking.bookingId, kotMode, userName || 'System');
+
+    // If there's a manual kotAmount beyond the unpaid KOT orders, create a daybook entry for it
+    const remainingKot = kotAmt - unpaidKotTotal;
+    if (remainingKot > 0) {
       await this.createDaybookEntry({
         date: today,
         category: 'KOT',
         incomeSource: 'KOT',
         description: `KOT - ${booking.guestName}`,
-        amount: kotAmt,
+        amount: remainingKot,
         paymentMode: kotMode,
         refBookingId: booking.bookingId,
         guestName: booking.guestName,
