@@ -7,6 +7,7 @@ import Ledger from './pages/Ledger';
 import Reports from './pages/Reports';
 import DayBook from './pages/DayBook';
 import Salary from './pages/Salary';
+import MonthEnd from './pages/MonthEnd';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/daybook" element={<DayBook />} />
           <Route path="/salary" element={<Salary />} />
+          <Route path="/month-end" element={<MonthEnd />} />
         </Route>
       </Routes>
     </BrowserRouter>
