@@ -7,7 +7,6 @@ const tabs = [
   { path: '/reports', label: 'Reports', icon: 'assessment' },
   { path: '/daybook', label: 'Day Book', icon: 'menu_book' },
   { path: '/salary', label: 'Salary', icon: 'badge' },
-  { path: '/month-end', label: 'Month-End', icon: 'event_note' },
 ];
 
 export default function Layout() {
