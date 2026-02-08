@@ -1,4 +1,4 @@
-var CACHE_NAME = 'neelkanth-v63';
+var CACHE_NAME = 'neelkanth-v64';
 var PRECACHE = ['/', '/index.html', '/book.html'];
 
 self.addEventListener('install', function(e) {

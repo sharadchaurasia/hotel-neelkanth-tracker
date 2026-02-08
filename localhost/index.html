@@ -7668,11 +7668,14 @@
             if (o.createdAt) {
               try { timeStr = new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); } catch(e) {}
             }
-            listHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:13px;">';
+            listHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:13px;">';
             listHtml += '<div><span style="color:#c99b1a;font-weight:600;">' + formatDate(date) + '</span>';
             if (timeStr) listHtml += ' <span style="color:#999;font-size:11px;">' + timeStr + '</span>';
             listHtml += '<br><span style="color:#d1d5db;">' + escapeHtml(itemsSummary) + '</span></div>';
-            listHtml += '<div style="font-weight:600;white-space:nowrap;padding-left:12px;">' + formatCurrency(amt) + '</div>';
+            listHtml += '<div style="display:flex;align-items:center;gap:8px;">';
+            listHtml += '<span style="font-weight:600;white-space:nowrap;">' + formatCurrency(amt) + '</span>';
+            listHtml += '<button onclick="viewKotBill(' + o.id + ')" style="background:#1e3a5f;color:#fff;border:none;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:11px;" title="View Bill"><span class="material-icons" style="font-size:14px">receipt</span></button>';
+            listHtml += '</div>';
             listHtml += '</div>';
           });
         });
