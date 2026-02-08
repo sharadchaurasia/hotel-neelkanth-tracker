@@ -3129,6 +3129,7 @@
               <option value="Happy">Happy</option>
               <option value="Fyra">Fyra</option>
               <option value="Vishal">Vishal</option>
+              <option value="Other">Other</option>
             </select>
           </div>
           <button class="btn btn-primary btn-small" onclick="loadAksOfficePayments()" style="height:38px">
@@ -9562,6 +9563,54 @@
         '<td></td><td></td></tr>';
 
       html += '</tbody></table>';
+
+      // For AKS Office: also show non-booking debits (KOT, expenses linked to AKS)
+      if (agent === 'AKS Office') {
+        try {
+          var aksParams = [];
+          if (from) aksParams.push('from=' + from);
+          if (to) aksParams.push('to=' + to);
+          var aksQs = aksParams.length ? '?' + aksParams.join('&') : '';
+          var aksPayments = await apiFetch('/bookings/aks-office-payments' + aksQs);
+          // Filter out booking-related entries (context=collect) — show only KOT, expense, etc.
+          var nonBookingEntries = aksPayments.filter(function(p) { return p.context !== 'collect'; });
+          if (nonBookingEntries.length > 0) {
+            var otherTotal = 0;
+            html += '<h4 style="margin-top:24px;color:#996b2f;font-size:15px;">Other AKS Office Debits (KOT / Expenses)</h4>';
+            html += '<table class="report-table"><thead><tr>' +
+              '<th>Date</th><th>Ref</th><th>Description</th><th>Amount</th><th>Sub-Category</th><th>Type</th><th>By</th>' +
+              '</tr></thead><tbody>';
+            nonBookingEntries.forEach(function(p) {
+              var amt = parseFloat(p.amount) || 0;
+              otherTotal += amt;
+              html += '<tr>' +
+                '<td>' + formatDate(p.date) + '</td>' +
+                '<td>' + escapeHtml(p.refBookingId || '-') + '</td>' +
+                '<td>' + escapeHtml(p.guestName || '-') + '</td>' +
+                '<td class="amount" style="color:#ea580c;font-weight:600">' + formatCurrency(amt) + '</td>' +
+                '<td>' + escapeHtml(p.subCategory || '-') + '</td>' +
+                '<td><span style="font-size:11px;background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;">' + escapeHtml(p.context || 'other') + '</span></td>' +
+                '<td>' + escapeHtml(p.createdBy || '-') + '</td>' +
+                '</tr>';
+            });
+            html += '<tr class="total-row"><td colspan="3">Other Debits Total</td>' +
+              '<td class="amount" style="color:#ea580c;font-weight:700">' + formatCurrency(otherTotal) + '</td>' +
+              '<td colspan="3"></td></tr>';
+            html += '</tbody></table>';
+
+            // Update summary cards with other debits
+            var updatedPending = grandTotal.pending + otherTotal;
+            var existingCards = document.getElementById('ledgerSummaryCards').innerHTML;
+            existingCards = existingCards.replace(
+              />Net Pending<\/div>[^<]*<div class="mc-value red">[^<]*<\/div>/,
+              '>Net Pending</div><div class="mc-value red">' + formatCurrency(updatedPending) + '</div>'
+            );
+            document.getElementById('ledgerSummaryCards').innerHTML = existingCards +
+              '<div class="monthly-card"><div class="mc-label">Other Debits (KOT/Exp)</div><div class="mc-value" style="color:#ea580c">' + formatCurrency(otherTotal) + '</div></div>';
+          }
+        } catch(e) { /* ignore */ }
+      }
+
       container.innerHTML = html;
 
       // Render settlement history
