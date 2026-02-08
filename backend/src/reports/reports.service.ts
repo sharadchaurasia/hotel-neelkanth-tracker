@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from '../bookings/booking.entity';
@@ -6,6 +6,7 @@ import { Staff } from '../staff/staff.entity';
 import { Attendance } from '../staff/attendance.entity';
 import { SalaryAdvance } from '../staff/salary-advance.entity';
 import { DaybookEntry } from '../daybook/daybook-entry.entity';
+import { MonthEndService } from '../bookings/month-end.service';
 
 @Injectable()
 export class ReportsService {
@@ -15,6 +16,8 @@ export class ReportsService {
     @InjectRepository(Attendance) private attendanceRepo: Repository<Attendance>,
     @InjectRepository(SalaryAdvance) private advanceRepo: Repository<SalaryAdvance>,
     @InjectRepository(DaybookEntry) private daybookRepo: Repository<DaybookEntry>,
+    @Inject(forwardRef(() => MonthEndService))
+    private monthEndService: MonthEndService,
   ) {}
 
   async getSourceReport(from: string, to: string) {
@@ -108,7 +111,19 @@ export class ReportsService {
     if (from) qb.andWhere('b.check_in >= :from', { from });
     if (to) qb.andWhere('b.check_out <= :to', { to });
 
-    return qb.getMany();
+    const bookings = await qb.getMany();
+
+    // Get opening balance for the month (extract month from 'from' date)
+    let openingBalance = 0;
+    if (agent && from) {
+      const month = from.substring(0, 7); // Extract 'YYYY-MM' from 'YYYY-MM-DD'
+      openingBalance = await this.monthEndService.getOpeningBalance(agent, month);
+    }
+
+    return {
+      bookings,
+      openingBalance,
+    };
   }
 
   async getOccupancyReport(type: string, month: string, year: string) {
