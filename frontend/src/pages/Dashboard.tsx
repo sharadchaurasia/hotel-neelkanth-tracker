@@ -118,14 +118,6 @@ export default function Dashboard() {
   }, { count: 0, roomCharge: 0, kot: 0, addOn: 0, collection: 0, collected: 0, pending: 0 });
 
   // Booking CRUD
-  const openNewBooking = () => {
-    setEditId(null);
-    setForm({ ...emptyBooking, checkIn: getToday() });
-    setBookingAddOns([]);
-    setPaymentSubCategory('');
-    setBookingModal(true);
-  };
-
   const openEditBooking = (b: Booking) => {
     setEditId(b.id);
     setForm({
@@ -580,7 +572,7 @@ export default function Dashboard() {
     <div>
       {/* Header Actions */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <button className="btn btn-primary" onClick={openNewBooking}>
+        <button className="btn btn-primary" onClick={() => navigate('/bookings/new')}>
           <span className="material-icons">add</span> New Booking
         </button>
         <button
