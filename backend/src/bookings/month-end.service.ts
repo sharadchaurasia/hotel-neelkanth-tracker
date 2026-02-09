@@ -9,7 +9,7 @@ import { DaybookBalance } from '../daybook/daybook-balance.entity';
 import { DaybookEntry } from '../daybook/daybook-entry.entity';
 import { ErrorLogger } from '../common/logger/error-logger';
 
-interface ClosingBalances {
+export interface ClosingBalances {
   cash: number;
   bank: number;
   ledgers: {
@@ -18,7 +18,7 @@ interface ClosingBalances {
   }[];
 }
 
-interface MonthEndSummary {
+export interface MonthEndSummary {
   month: string;
   nextMonth: string;
   closingBalances: ClosingBalances;

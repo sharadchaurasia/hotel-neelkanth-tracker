@@ -264,8 +264,9 @@ export class BookingsService {
   }
 
   async collectPayment(id: number, dto: CollectPaymentDto, userName?: string): Promise<Booking> {
+    let booking;
     try {
-      const booking = await this.findOne(id);
+      booking = await this.findOne(id);
       if (booking.status === 'COLLECTED') {
         throw new NotFoundException('Payment already collected for this booking');
       }
@@ -354,8 +355,9 @@ export class BookingsService {
   }
 
   async checkout(id: number, dto: CheckoutDto, userName?: string): Promise<Booking> {
+    let booking;
     try {
-      const booking = await this.findOne(id);
+      booking = await this.findOne(id);
       if (booking.checkedOut) {
         throw new NotFoundException('Booking already checked out');
       }
@@ -531,8 +533,9 @@ export class BookingsService {
   }
 
   async refund(id: number, dto: RefundDto, userName?: string): Promise<Booking> {
+    let booking;
     try {
-      const booking = await this.findOne(id);
+      booking = await this.findOne(id);
       if (booking.status !== 'CANCELLED') {
         throw new NotFoundException('Booking must be cancelled before processing refund');
       }

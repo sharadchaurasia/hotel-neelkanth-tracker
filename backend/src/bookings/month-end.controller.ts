@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/core';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { MonthEndService } from './month-end.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/auth.guard';
 
 @Controller('month-end')
 @UseGuards(JwtAuthGuard)
