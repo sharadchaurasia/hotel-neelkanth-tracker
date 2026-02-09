@@ -13,7 +13,7 @@ const emptyBooking = {
   roomCategory: '', checkIn: getToday(), checkOut: '', mealPlan: '', source: 'Walk-in',
   sourceName: '', complimentary: '', actualRoomRent: 0, totalAmount: 0, hotelShare: 0,
   paymentType: 'Postpaid', advanceReceived: 0, paymentMode: '', remarks: '',
-  collectionAmount: 0, agentId: undefined,
+  collectionAmount: 0, agentId: undefined as number | undefined,
 };
 
 export default function Dashboard() {
