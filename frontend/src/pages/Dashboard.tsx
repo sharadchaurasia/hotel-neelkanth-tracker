@@ -728,107 +728,195 @@ export default function Dashboard() {
 
       {/* Booking Modal */}
       <Modal open={bookingModal} onClose={() => setBookingModal(false)} title={editId ? 'Edit Booking' : 'New Booking'}
-        footer={<><button className="btn btn-secondary" onClick={() => setBookingModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveBooking}><span className="material-icons">save</span> Save</button></>}>
-        <div className="form-row">
-          <div className="form-group"><label>Guest Name *</label><input value={form.guestName} onChange={(e) => setForm({ ...form, guestName: e.target.value })} /></div>
-          <div className="form-group"><label>Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label>Pax</label><input type="number" min="1" value={form.pax} onChange={(e) => setForm({ ...form, pax: Number(e.target.value) })} /></div>
-          <div className="form-group"><label>KOT</label><select value={form.kot} onChange={(e) => setForm({ ...form, kot: e.target.value })}><option value="">No</option><option value="Yes">Yes</option></select></div>
-          <div className="form-group"><label>No. of Rooms</label><input type="number" min="1" value={form.noOfRooms} onChange={(e) => setForm({ ...form, noOfRooms: Number(e.target.value) })} /></div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label>Room No</label><input value={form.roomNo} onChange={(e) => setForm({ ...form, roomNo: e.target.value })} placeholder="e.g. 201,202" /></div>
-          <div className="form-group"><label>Room Category</label>
-            <select value={form.roomCategory} onChange={(e) => setForm({ ...form, roomCategory: e.target.value })}>
-              <option value="">Select</option><option value="Non-Balcony">Non-Balcony</option><option value="Balcony">Balcony</option>
-              <option value="Mini Family">Mini Family</option><option value="Royal Suite Duplex">Royal Suite Duplex</option>
-            </select>
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label>Check-in *</label><input type="date" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} /></div>
-          <div className="form-group"><label>Check-out *</label><input type="date" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} /></div>
-          {form.checkIn && form.checkOut && <div className="form-group"><label>Nights</label><input readOnly value={calculateNights(form.checkIn, form.checkOut)} /></div>}
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label>Meal Plan</label>
-            <select value={form.mealPlan} onChange={(e) => setForm({ ...form, mealPlan: e.target.value })}>
-              <option value="">Select</option><option value="EP">EP</option><option value="CP">CP</option><option value="MAP">MAP</option><option value="AP">AP</option>
-            </select>
-          </div>
-          <div className="form-group"><label>Source</label>
-            <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
-              <option value="Walk-in">Walk-in</option><option value="OTA">OTA</option><option value="Agent">Agent</option>
-            </select>
-          </div>
-          {(form.source === 'OTA' || form.source === 'Agent') && (
-            <div className="form-group"><label>Source Name</label><input value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} /></div>
-          )}
-        </div>
-        <div className="form-group"><label>Actual Room Rent</label><input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal }); }} /></div>
+        footer={<><button className="btn btn-secondary" onClick={() => setBookingModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveBooking}><span className="material-icons">save</span> Save Booking</button></>}>
 
-        {/* Add-ons Section */}
-        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(201,163,95,0.05)', borderRadius: '8px' }}>
-          <label style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Add-ons (Honeymoon, Heater, etc.)</label>
-          {bookingAddOns.map((ao, i) => (
-            <div key={i} style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
-              <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ flex: 1, padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }}>
-                <option value="">Select Add-on</option>
-                <option value="Honeymoon">Honeymoon</option>
-                <option value="Candle Night Dinner">Candle Night Dinner</option>
-                <option value="Heater">Heater</option>
+        {/* Guest Information */}
+        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.08), rgba(0, 102, 204, 0.04))', borderRadius: '12px', border: '1px solid rgba(0, 102, 204, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#0066cc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-icons" style={{ fontSize: '20px' }}>person</span>
+            Guest Information
+          </h3>
+          <div className="form-row">
+            <div className="form-group"><label>Guest Name *</label><input value={form.guestName} onChange={(e) => setForm({ ...form, guestName: e.target.value })} placeholder="Enter guest full name" /></div>
+            <div className="form-group"><label>Phone Number</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="10-digit mobile" /></div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label>Number of Adults (Pax)</label><input type="number" min="1" value={form.pax} onChange={(e) => setForm({ ...form, pax: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>KOT Required?</label><select value={form.kot} onChange={(e) => setForm({ ...form, kot: e.target.value })}><option value="">No</option><option value="Yes">Yes</option></select></div>
+          </div>
+        </div>
+
+        {/* Room Details */}
+        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(201, 163, 95, 0.08), rgba(201, 163, 95, 0.04))', borderRadius: '12px', border: '1px solid rgba(201, 163, 95, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#c9a35f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-icons" style={{ fontSize: '20px' }}>meeting_room</span>
+            Room Details
+          </h3>
+          <div className="form-row">
+            <div className="form-group"><label>Number of Rooms</label><input type="number" min="1" value={form.noOfRooms} onChange={(e) => setForm({ ...form, noOfRooms: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Room Number(s)</label><input value={form.roomNo} onChange={(e) => setForm({ ...form, roomNo: e.target.value })} placeholder="e.g. 201, 202" /></div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label>Room Category</label>
+              <select value={form.roomCategory} onChange={(e) => setForm({ ...form, roomCategory: e.target.value })}>
+                <option value="">Select Category</option>
+                <option value="Non-Balcony">Non-Balcony</option>
+                <option value="Balcony">Balcony</option>
+                <option value="Mini Family">Mini Family</option>
+                <option value="Royal Suite Duplex">Royal Suite Duplex</option>
+              </select>
+            </div>
+            <div className="form-group"><label>Meal Plan</label>
+              <select value={form.mealPlan} onChange={(e) => setForm({ ...form, mealPlan: e.target.value })}>
+                <option value="">Select Plan</option>
+                <option value="EP">EP (Room Only)</option>
+                <option value="CP">CP (Breakfast)</option>
+                <option value="MAP">MAP (Breakfast + Dinner)</option>
+                <option value="AP">AP (All Meals)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Booking Dates */}
+        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-icons" style={{ fontSize: '20px' }}>calendar_today</span>
+            Booking Dates
+          </h3>
+          <div className="form-row">
+            <div className="form-group"><label>Check-in Date *</label><input type="date" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} /></div>
+            <div className="form-group"><label>Check-out Date *</label><input type="date" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} /></div>
+            {form.checkIn && form.checkOut && (
+              <div className="form-group">
+                <label>Total Nights</label>
+                <input readOnly value={calculateNights(form.checkIn, form.checkOut)} style={{ background: 'rgba(34, 197, 94, 0.1)', fontWeight: '600', color: '#22c55e' }} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Booking Source */}
+        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(168, 85, 247, 0.04))', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-icons" style={{ fontSize: '20px' }}>source</span>
+            Booking Source
+          </h3>
+          <div className="form-row">
+            <div className="form-group"><label>Source Type</label>
+              <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
+                <option value="Walk-in">Walk-in</option>
+                <option value="OTA">OTA (MakeMyTrip, Goibibo, etc.)</option>
+                <option value="Agent">Agent</option>
+              </select>
+            </div>
+            {(form.source === 'OTA' || form.source === 'Agent') && (
+              <div className="form-group"><label>{form.source} Name</label><input value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder={form.source === 'Agent' ? 'Agent name' : 'OTA platform name'} /></div>
+            )}
+          </div>
+        </div>
+
+        {/* Pricing */}
+        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(249, 115, 22, 0.04))', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#f97316', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-icons" style={{ fontSize: '20px' }}>payments</span>
+            Pricing & Add-ons
+          </h3>
+          <div className="form-group"><label>Base Room Rent</label><input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal }); }} placeholder="Enter room rent" /></div>
+
+          {/* Add-ons Section */}
+          <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(249, 115, 22, 0.08)', borderRadius: '8px', border: '1px dashed rgba(249, 115, 22, 0.25)' }}>
+            <label style={{ fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#f97316' }}>
+              <span className="material-icons" style={{ fontSize: '18px' }}>add_circle</span>
+              Add-ons (Honeymoon, Heater, etc.)
+            </label>
+            {bookingAddOns.map((ao, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ flex: 1, padding: '10px', border: '1px solid var(--input-border)', borderRadius: '8px', fontSize: '14px' }}>
+                  <option value="">Select Add-on</option>
+                  <option value="Honeymoon">🌹 Honeymoon Package</option>
+                  <option value="Candle Night Dinner">🕯️ Candle Night Dinner</option>
+                  <option value="Heater">🔥 Heater</option>
+                  <option value="Other">Other</option>
+                </select>
+                <input type="number" placeholder="₹ Amount" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ width: '140px', padding: '10px', border: '1px solid var(--input-border)', borderRadius: '8px', fontSize: '14px' }} />
+                <button onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span className="material-icons" style={{ fontSize: '18px', color: 'var(--accent-red)' }}>close</span>
+                </button>
+              </div>
+            ))}
+            <button className="btn btn-secondary btn-small" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])}>
+              <span className="material-icons" style={{ fontSize: '16px' }}>add</span>
+              Add Item
+            </button>
+          </div>
+
+          <div className="form-row" style={{ marginTop: '16px' }}>
+            <div className="form-group">
+              <label style={{ fontWeight: '600', color: '#f97316' }}>Total Amount (Room + Add-ons)</label>
+              <input type="number" value={form.totalAmount || ''} readOnly style={{ background: 'rgba(249, 115, 22, 0.15)', fontWeight: '700', fontSize: '16px', color: '#f97316', border: '2px solid rgba(249, 115, 22, 0.3)' }} />
+            </div>
+            <div className="form-group">
+              <label>Hotel Share</label>
+              <input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="Hotel's portion" />
+              <small style={{ display: 'block', marginTop: '4px', color: '#f97316', fontSize: '12px' }}>
+                Agent Commission: {formatCurrency((form.totalAmount || 0) - (form.hotelShare || 0))}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Details */}
+        <div style={{ marginBottom: '16px', padding: '16px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.04))', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-icons" style={{ fontSize: '20px' }}>account_balance_wallet</span>
+            Payment Details
+          </h3>
+          <div className="form-row">
+            <div className="form-group"><label>Payment Type</label>
+              <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })}>
+                <option value="Postpaid">Postpaid (Pay at checkout)</option>
+                <option value="Prepaid">Prepaid (Paid in advance)</option>
+                <option value="Ledger">Ledger (Agent account)</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label>Advance Received</label><input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} placeholder="0" /></div>
+            <div className="form-group"><label>Payment Mode</label>
+              <select value={form.paymentMode} onChange={(e) => { setForm({ ...form, paymentMode: e.target.value }); if (e.target.value !== 'AKS Office') setPaymentSubCategory(''); }}>
+                <option value="">Select Mode</option>
+                <option value="Cash">💵 Cash</option>
+                <option value="Card">💳 Card</option>
+                <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                <option value="AKS Office">🏢 AKS Office</option>
+              </select>
+            </div>
+          </div>
+          {form.paymentMode === 'AKS Office' && (
+            <div className="form-group" style={{ marginTop: '12px' }}>
+              <label>AKS Office Sub-Category</label>
+              <select value={paymentSubCategory} onChange={(e) => setPaymentSubCategory(e.target.value)}>
+                <option value="">Select Sub-Category</option>
+                <option value="Rajat">Rajat</option>
+                <option value="Happy">Happy</option>
+                <option value="Vishal">Vishal</option>
+                <option value="Gateway">Gateway</option>
+                <option value="Fyra">Fyra</option>
                 <option value="Other">Other</option>
               </select>
-              <input type="number" placeholder="Amount" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ width: '120px', padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }} />
-              <button onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer' }}>
-                <span className="material-icons" style={{ fontSize: '16px', color: 'var(--accent-red)' }}>close</span>
-              </button>
             </div>
-          ))}
-          <button className="btn btn-secondary btn-small" style={{ marginTop: '8px' }} onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])}>+ Add Item</button>
+          )}
         </div>
 
-        <div className="form-row" style={{ marginTop: '12px' }}>
-          <div className="form-group"><label>Total Amount (Room + Add-ons)</label><input type="number" value={form.totalAmount || ''} readOnly style={{ background: 'rgba(201,163,95,0.1)', fontWeight: '600' }} /></div>
-          <div className="form-group"><label>Hotel Share</label><input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="Hotel's portion" /></div>
+        {/* Additional Notes */}
+        <div className="form-group">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-icons" style={{ fontSize: '18px' }}>note</span>
+            Remarks / Special Instructions
+          </label>
+          <input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Any special requests or notes..." />
         </div>
-        <div className="form-row">
-          <div className="form-group"><label>Payment Type</label>
-            <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })}>
-              <option value="Postpaid">Postpaid</option><option value="Prepaid">Prepaid</option><option value="Ledger">Ledger</option>
-            </select>
-          </div>
-          <div className="form-group"><label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Agent Commission: {formatCurrency((form.totalAmount || 0) - (form.hotelShare || 0))}</label></div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label>Advance Received</label><input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} /></div>
-          <div className="form-group"><label>Payment Mode</label>
-            <select value={form.paymentMode} onChange={(e) => { setForm({ ...form, paymentMode: e.target.value }); if (e.target.value !== 'AKS Office') setPaymentSubCategory(''); }}>
-              <option value="">Select</option>
-              <option value="Cash">Cash</option>
-              <option value="Card">Card</option>
-              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
-              <option value="AKS Office">AKS Office</option>
-            </select>
-          </div>
-        </div>
-        {form.paymentMode === 'AKS Office' && (
-          <div className="form-group">
-            <label>AKS Office Sub-Category</label>
-            <select value={paymentSubCategory} onChange={(e) => setPaymentSubCategory(e.target.value)}>
-              <option value="">Select</option>
-              <option value="Rajat">Rajat</option>
-              <option value="Happy">Happy</option>
-              <option value="Vishal">Vishal</option>
-              <option value="Gateway">Gateway</option>
-              <option value="Fyra">Fyra</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-        )}
-        <div className="form-group"><label>Remarks</label><input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} /></div>
       </Modal>
 
       {/* Collect Modal */}
