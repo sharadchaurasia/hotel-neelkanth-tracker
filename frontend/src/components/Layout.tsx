@@ -38,8 +38,8 @@ export default function Layout() {
       <div className="header">
         <div className="header-brand">
           <div>
-            <h1>AKS Hospitality</h1>
-            <p>Travel & Tourism</p>
+            <h1>The Neelkanth Grand</h1>
+            <p>By AKS Hospitality - CRM</p>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
