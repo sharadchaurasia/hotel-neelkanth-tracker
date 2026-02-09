@@ -233,10 +233,18 @@ export class AuthService implements OnModuleInit {
     return { success: true };
   }
 
-  async resetUserPassword(id: number) {
+  async resetUserPassword(id: number, newPassword?: string) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
-    const tempPassword = '1234';
+
+    // Use provided password or default to 1234
+    const tempPassword = newPassword || '1234';
+
+    // Validate password is 4 digits
+    if (!/^\d{4}$/.test(tempPassword)) {
+      throw new BadRequestException('Password must be exactly 4 digits');
+    }
+
     user.passwordHash = await bcrypt.hash(tempPassword, 12);
     user.mustChangePassword = true;
     await this.userRepo.save(user);

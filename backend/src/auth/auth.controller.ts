@@ -124,8 +124,9 @@ export class AuthController {
   resetPassword(
     @CurrentUser() user: User,
     @Param('id', ParseIntPipe) id: number,
+    @Body() body?: { newPassword?: string },
   ) {
     this.assertAdmin(user);
-    return this.authService.resetUserPassword(id);
+    return this.authService.resetUserPassword(id, body?.newPassword);
   }
 }

@@ -85,10 +85,22 @@ export default function Users() {
   };
 
   const handleResetPassword = async (id: number) => {
-    if (!confirm('Reset this user\'s password?')) return;
+    const newPassword = prompt('Enter new 4-digit PIN (leave empty for default 1234):');
+
+    // User cancelled
+    if (newPassword === null) return;
+
+    // Validate if password was provided
+    if (newPassword && !/^\d{4}$/.test(newPassword)) {
+      toast.error('PIN must be exactly 4 digits');
+      return;
+    }
+
     try {
-      const { data } = await api.post(`/users/${id}/reset-password`);
-      toast.success(`Password reset. Temp password: ${data.tempPassword}`);
+      const { data } = await api.post(`/users/${id}/reset-password`, {
+        newPassword: newPassword || undefined
+      });
+      toast.success(`Password reset. New PIN: ${data.tempPassword}`, { duration: 5000 });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to reset password');
     }
