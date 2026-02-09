@@ -48,17 +48,35 @@ export default function Layout() {
     <div className="app-container">
       <div className="header">
         <div className="header-brand">
-          <span className="icon">🏨</span>
           <div>
-            <h1>The Neelkanth Grand</h1>
-            <p>by Aks Hospitality &mdash; CRM</p>
+            <h1>AKS Hospitality</h1>
+            <p>Travel & Tourism</p>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '14px' }}>
-            👤 {userName}
+          <span style={{ color: '#7a8699', fontSize: '14px', fontWeight: '500' }}>
+            {userName}
           </span>
-          <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px' }}>
+          <button onClick={handleLogout} style={{
+            padding: '8px 20px',
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+          }}>
             <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
             Logout
           </button>
