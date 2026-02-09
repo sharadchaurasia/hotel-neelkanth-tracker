@@ -15,11 +15,14 @@ export class CreateBookingDto {
   addOnAmount?: number;
   actualRoomRent?: number;
   totalAmount: number;
+  hotelShare?: number;
   paymentType?: string;
   advanceReceived?: number;
   advanceDate?: string;
   paymentMode?: string;
+  paymentSubCategory?: string;
   remarks?: string;
+  addOns?: { type: string; amount: number }[];
 }
 
 export class CollectPaymentDto {

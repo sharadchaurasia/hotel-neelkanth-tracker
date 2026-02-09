@@ -47,14 +47,9 @@ rsync -avz --delete \
 
 # ---- 2. Sync frontend ----
 echo "[2/5] Syncing frontend..."
-rsync -avz \
+rsync -avz --delete \
     -e "${RSYNC_SSH}" \
-    "${PROJECT_ROOT}/localhost/index.html" \
-    "${PROJECT_ROOT}/localhost/book.html" \
-    "${PROJECT_ROOT}/localhost/sw.js" \
-    "${PROJECT_ROOT}/localhost/manifest.json" \
-    "${PROJECT_ROOT}/localhost/icon-192.png" \
-    "${PROJECT_ROOT}/localhost/icon-512.png" \
+    "${PROJECT_ROOT}/localhost/" \
     "${EC2_HOST}:${REMOTE_DIR}/frontend/"
 
 # ---- 3. Nginx config (skip by default — Certbot manages SSL on server) ----

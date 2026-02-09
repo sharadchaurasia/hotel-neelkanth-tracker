@@ -6,32 +6,58 @@ interface KOTOrder {
   id: number;
   kotId: string;
   customerName: string;
-  bookingId?: number;
+  bookingId?: string;
   roomNo?: string;
-  items: Array<{ name: string; quantity: number; rate: number; amount: number }>;
+  items: Array<{ itemName: string; quantity: number; rate: number; total: number }>;
+  description: string;
   subtotal: number;
   gstAmount: number;
   totalAmount: number;
+  amount: number;
   orderDate: string;
+  status: string;
+  paymentMode: string;
   createdBy: string;
   createdAt: string;
 }
 
+interface Booking {
+  id: number;
+  bookingId: string;
+  guestName: string;
+  phone: string;
+  roomNo: string;
+  checkIn: string;
+  checkOut: string;
+  checkedIn: boolean;
+  kotAmount: number;
+}
+
+interface KOTItem {
+  itemName: string;
+  quantity: number;
+  rate: number;
+}
+
 export default function KOT() {
+  const [activeTab, setActiveTab] = useState<'inhouse' | 'orders' | 'walkin'>('inhouse');
   const [orders, setOrders] = useState<KOTOrder[]>([]);
+  const [checkedInBookings, setCheckedInBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [showItemsModal, setShowItemsModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [items, setItems] = useState<KOTItem[]>([{ itemName: '', quantity: 1, rate: 0 }]);
+  const [walkinForm, setWalkinForm] = useState({
     customerName: '',
     description: '',
     amount: '',
-    paymentMode: 'cash',
-    subCategory: '',
+    paymentMode: 'Cash',
   });
 
   useEffect(() => {
     fetchOrders();
+    fetchCheckedInBookings();
   }, [selectedDate]);
 
   const fetchOrders = async () => {
@@ -45,17 +71,85 @@ export default function KOT() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const fetchCheckedInBookings = async () => {
+    try {
+      const { data } = await api.get('/bookings', {
+        params: {
+          page: 1,
+          limit: 100,
+          checkedIn: true
+        }
+      });
+      setCheckedInBookings(data.filter((b: Booking) => b.checkedIn));
+    } catch (error: any) {
+      toast.error('Failed to load in-house guests');
+    }
+  };
+
+  const handleCreateKOTForRoom = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setItems([{ itemName: '', quantity: 1, rate: 0 }]);
+    setShowItemsModal(true);
+  };
+
+  const addItem = () => {
+    setItems([...items, { itemName: '', quantity: 1, rate: 0 }]);
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, field: keyof KOTItem, value: string | number) => {
+    const updated = [...items];
+    updated[index] = { ...updated[index], [field]: value };
+    setItems(updated);
+  };
+
+  const calculateSubtotal = () => {
+    return items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+  };
+
+  const handleSubmitRoomKOT = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBooking) return;
+
+    const validItems = items.filter(i => i.itemName && i.quantity > 0 && i.rate > 0);
+    if (validItems.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
+    try {
+      await api.post('/kot', {
+        bookingId: selectedBooking.bookingId,
+        roomNo: selectedBooking.roomNo,
+        customerName: `${selectedBooking.guestName} - Room ${selectedBooking.roomNo}`,
+        items: validItems,
+        orderDate: selectedDate,
+        status: 'UNPAID',
+      });
+      toast.success('KOT order created - Will be collected at checkout');
+      setShowItemsModal(false);
+      setSelectedBooking(null);
+      fetchOrders();
+      fetchCheckedInBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create KOT order');
+    }
+  };
+
+  const handleWalkinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await api.post('/kot', {
-        ...formData,
-        amount: parseFloat(formData.amount),
+        ...walkinForm,
+        amount: parseFloat(walkinForm.amount),
         orderDate: selectedDate,
+        status: 'PAID',
       });
-      toast.success('KOT order created successfully');
-      setShowModal(false);
-      setFormData({ customerName: '', description: '', amount: '', paymentMode: 'cash', subCategory: '' });
+      toast.success('Walk-in KOT order created');
+      setWalkinForm({ customerName: '', description: '', amount: '', paymentMode: 'Cash' });
       fetchOrders();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create order');
@@ -73,7 +167,9 @@ export default function KOT() {
     }
   };
 
-  const totalAmount = orders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
+  const totalAmount = orders.reduce((sum, order) => sum + Number(order.totalAmount || order.amount), 0);
+  const paidAmount = orders.filter(o => o.status === 'PAID').reduce((sum, order) => sum + Number(order.totalAmount || order.amount), 0);
+  const unpaidAmount = orders.filter(o => o.status === 'UNPAID').reduce((sum, order) => sum + Number(order.totalAmount || order.amount), 0);
 
   if (loading) return <div className="page-container">Loading...</div>;
 
@@ -89,158 +185,566 @@ export default function KOT() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="date-input"
+            style={{
+              padding: '8px 12px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+            }}
           />
-          <button onClick={() => setShowModal(true)} className="btn-primary">
-            <span className="material-icons">add</span>
-            New Order
-          </button>
         </div>
       </div>
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '24px' }}>
-        <div className="stat-card">
-          <span className="material-icons">receipt</span>
-          <div>
-            <div className="stat-value">{orders.length}</div>
-            <div className="stat-label">Total Orders</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <span className="material-icons">currency_rupee</span>
-          <div>
-            <div className="stat-value">₹{totalAmount.toLocaleString('en-IN')}</div>
-            <div className="stat-label">Total Amount</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <span className="material-icons">trending_up</span>
-          <div>
-            <div className="stat-value">₹{orders.length > 0 ? (totalAmount / orders.length).toFixed(0) : 0}</div>
-            <div className="stat-label">Avg Order Value</div>
-          </div>
-        </div>
+      {/* Tabs */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        borderBottom: '2px solid #e5e7eb',
+        marginBottom: '24px',
+      }}>
+        <button
+          onClick={() => setActiveTab('inhouse')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'inhouse' ? '3px solid #6b7b93' : 'none',
+            color: activeTab === 'inhouse' ? '#1a2332' : '#6b7280',
+            fontWeight: activeTab === 'inhouse' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '15px',
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '6px' }}>
+            hotel
+          </span>
+          In-House Guests ({checkedInBookings.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'orders' ? '3px solid #6b7b93' : 'none',
+            color: activeTab === 'orders' ? '#1a2332' : '#6b7280',
+            fontWeight: activeTab === 'orders' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '15px',
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '6px' }}>
+            receipt_long
+          </span>
+          All Orders ({orders.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('walkin')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'walkin' ? '3px solid #6b7b93' : 'none',
+            color: activeTab === 'walkin' ? '#1a2332' : '#6b7280',
+            fontWeight: activeTab === 'walkin' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '15px',
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '6px' }}>
+            person_add
+          </span>
+          Walk-in Order
+        </button>
       </div>
 
-      <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>KOT ID</th>
-              <th>Customer</th>
-              <th>Room No</th>
-              <th>Description</th>
-              <th>Subtotal</th>
-              <th>GST</th>
-              <th>Total</th>
-              <th>Time</th>
-              <th>By</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.length === 0 ? (
-              <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>
-                  No orders for this date
-                </td>
-              </tr>
+      {/* Summary Cards */}
+      {activeTab === 'orders' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          <div className="card" style={{ padding: '20px' }}>
+            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: '8px' }}>Total Orders</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: '#1a2332' }}>{orders.length}</div>
+          </div>
+          <div className="card" style={{ padding: '20px' }}>
+            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: '8px' }}>Total Amount</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: '#1a2332' }}>₹{totalAmount.toFixed(2)}</div>
+          </div>
+          <div className="card" style={{ padding: '20px' }}>
+            <div style={{ color: '#10b981', fontSize: '14px', marginBottom: '8px' }}>Paid</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: '#10b981' }}>₹{paidAmount.toFixed(2)}</div>
+          </div>
+          <div className="card" style={{ padding: '20px' }}>
+            <div style={{ color: '#f59e0b', fontSize: '14px', marginBottom: '8px' }}>Unpaid</div>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: '#f59e0b' }}>₹{unpaidAmount.toFixed(2)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* In-House Guests Tab */}
+      {activeTab === 'inhouse' && (
+        <div>
+          <div className="card" style={{ padding: '24px' }}>
+            <h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '600' }}>
+              Checked-In Guests
+            </h3>
+            {checkedInBookings.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <span className="material-icons" style={{ fontSize: '48px', opacity: 0.3 }}>hotel</span>
+                <p style={{ marginTop: '16px' }}>No guests checked in today</p>
+              </div>
             ) : (
-              orders.map((order) => (
-                <tr key={order.id}>
-                  <td><strong>{order.kotId}</strong></td>
-                  <td>{order.customerName || 'Walk-in'}</td>
-                  <td>{order.roomNo || '-'}</td>
-                  <td>
-                    {order.items?.map((item, i) => (
-                      <div key={i} style={{ fontSize: '0.875rem' }}>
-                        {item.name} x{item.quantity}
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {checkedInBookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px' }}>
+                        {booking.guestName}
                       </div>
-                    ))}
-                  </td>
-                  <td>₹{Number(order.subtotal).toLocaleString('en-IN')}</td>
-                  <td>₹{Number(order.gstAmount).toLocaleString('en-IN')}</td>
-                  <td><strong>₹{Number(order.totalAmount).toLocaleString('en-IN')}</strong></td>
-                  <td>{new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</td>
-                  <td>{order.createdBy}</td>
-                  <td>
-                    <button onClick={() => handleDelete(order.id)} className="btn-icon btn-danger" title="Delete">
-                      <span className="material-icons">delete</span>
+                      <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                        Room {booking.roomNo} • {booking.bookingId}
+                        {booking.kotAmount > 0 && (
+                          <span style={{ marginLeft: '12px', color: '#f59e0b', fontWeight: '500' }}>
+                            • KOT: ₹{Number(booking.kotAmount).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleCreateKOTForRoom(booking)}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#6b7b93',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span className="material-icons" style={{ fontSize: '18px' }}>add</span>
+                      Add KOT
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* All Orders Tab */}
+      {activeTab === 'orders' && (
+        <div className="card">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>KOT ID</th>
+                <th>Customer</th>
+                <th>Room</th>
+                <th>Items</th>
+                <th>Subtotal</th>
+                <th>GST (5%)</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    No orders found for this date
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                orders.map((order) => (
+                  <tr key={order.id}>
+                    <td style={{ fontWeight: '600' }}>{order.kotId}</td>
+                    <td>{order.customerName}</td>
+                    <td>
+                      {order.roomNo ? (
+                        <span style={{
+                          padding: '4px 8px',
+                          background: '#e0f2fe',
+                          color: '#0369a1',
+                          borderRadius: '4px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                        }}>
+                          {order.roomNo}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#9ca3af' }}>Walk-in</span>
+                      )}
+                    </td>
+                    <td>
+                      {order.items && order.items.length > 0 ? (
+                        <div style={{ fontSize: '13px' }}>
+                          {order.items.map((item, idx) => (
+                            <div key={idx}>
+                              {item.quantity}x {item.itemName} @ ₹{item.rate}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                          {order.description || '-'}
+                        </span>
+                      )}
+                    </td>
+                    <td>₹{Number(order.subtotal || 0).toFixed(2)}</td>
+                    <td>₹{Number(order.gstAmount || 0).toFixed(2)}</td>
+                    <td style={{ fontWeight: '600' }}>
+                      ₹{Number(order.totalAmount || order.amount).toFixed(2)}
+                    </td>
+                    <td>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        background: order.status === 'PAID' ? '#dcfce7' : '#fef3c7',
+                        color: order.status === 'PAID' ? '#16a34a' : '#d97706',
+                      }}>
+                        {order.status || 'PAID'}
+                      </span>
+                    </td>
+                    <td>{order.paymentMode || '-'}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDelete(order.id)}
+                        style={{
+                          padding: '6px 12px',
+                          background: '#fee',
+                          color: '#dc2626',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>New KOT Order</h3>
-              <button onClick={() => setShowModal(false)} className="btn-icon">
-                <span className="material-icons">close</span>
-              </button>
+      {/* Walk-in Order Tab */}
+      {activeTab === 'walkin' && (
+        <div className="card" style={{ padding: '32px', maxWidth: '600px' }}>
+          <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '600' }}>
+            Create Walk-in Order
+          </h3>
+          <form onSubmit={handleWalkinSubmit}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                Customer Name
+              </label>
+              <input
+                type="text"
+                value={walkinForm.customerName}
+                onChange={(e) => setWalkinForm({ ...walkinForm, customerName: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                }}
+              />
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Customer Name</label>
-                <input
-                  type="text"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  placeholder="Walk-in customer"
-                />
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                Description / Items
+              </label>
+              <textarea
+                value={walkinForm.description}
+                onChange={(e) => setWalkinForm({ ...walkinForm, description: e.target.value })}
+                required
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                Amount (₹)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={walkinForm.amount}
+                onChange={(e) => setWalkinForm({ ...walkinForm, amount: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                Payment Mode
+              </label>
+              <select
+                value={walkinForm.paymentMode}
+                onChange={(e) => setWalkinForm({ ...walkinForm, paymentMode: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                }}
+              >
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="Card">Card</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#6b7b93',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              Create Walk-in Order
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Create KOT for Room Modal */}
+      {showItemsModal && selectedBooking && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '32px',
+            maxWidth: '700px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+          }}>
+            <h3 style={{ marginBottom: '8px', fontSize: '20px', fontWeight: '600' }}>
+              Create KOT Order
+            </h3>
+            <p style={{ color: '#6b7280', marginBottom: '24px', fontSize: '14px' }}>
+              {selectedBooking.guestName} • Room {selectedBooking.roomNo} • {selectedBooking.bookingId}
+            </p>
+
+            <form onSubmit={handleSubmitRoomKOT}>
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <label style={{ fontWeight: '600', fontSize: '15px' }}>Items</label>
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#6b7b93',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + Add Item
+                  </button>
+                </div>
+
+                {items.map((item, index) => (
+                  <div key={index} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+                    gap: '8px',
+                    marginBottom: '12px',
+                    alignItems: 'center',
+                  }}>
+                    <input
+                      type="text"
+                      placeholder="Item name"
+                      value={item.itemName}
+                      onChange={(e) => updateItem(index, 'itemName', e.target.value)}
+                      required
+                      style={{
+                        padding: '10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                      }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Qty"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                      required
+                      style={{
+                        padding: '10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                      }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Rate"
+                      min="0"
+                      step="0.01"
+                      value={item.rate}
+                      onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                      required
+                      style={{
+                        padding: '10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                      }}
+                    />
+                    <div style={{ fontWeight: '600', fontSize: '14px' }}>
+                      ₹{(item.quantity * item.rate).toFixed(2)}
+                    </div>
+                    {items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        style={{
+                          padding: '8px',
+                          background: '#fee',
+                          color: '#dc2626',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span className="material-icons" style={{ fontSize: '18px' }}>delete</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="form-group">
-                <label>Description *</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  required
-                  rows={3}
-                  placeholder="Enter order items..."
-                />
+
+              <div style={{
+                borderTop: '1px solid #e5e7eb',
+                paddingTop: '16px',
+                marginBottom: '24px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: '#6b7280' }}>Subtotal:</span>
+                  <span style={{ fontWeight: '600' }}>₹{calculateSubtotal().toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: '#6b7280' }}>GST (5%):</span>
+                  <span style={{ fontWeight: '600' }}>₹{(calculateSubtotal() * 0.05).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '700' }}>
+                  <span>Total:</span>
+                  <span>₹{(calculateSubtotal() * 1.05).toFixed(2)}</span>
+                </div>
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  background: '#fef3c7',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  color: '#92400e',
+                }}>
+                  <strong>Note:</strong> This will be marked as UNPAID and collected at checkout
+                </div>
               </div>
-              <div className="form-group">
-                <label>Amount *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Payment Mode *</label>
-                <select
-                  value={formData.paymentMode}
-                  onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
-                  required
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowItemsModal(false);
+                    setSelectedBooking(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
                 >
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="upi">UPI</option>
-                  <option value="online">Online</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Sub Category</label>
-                <input
-                  type="text"
-                  value={formData.subCategory}
-                  onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
-                  placeholder="e.g., Food, Beverages"
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: '#6b7b93',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
                   Create Order
                 </button>
               </div>

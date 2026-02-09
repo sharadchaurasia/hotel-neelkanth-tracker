@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import type { Booking, DashboardStats } from '../types';
 import { ALL_ROOMS, ROOM_TYPE } from '../types';
@@ -10,11 +11,12 @@ import toast from 'react-hot-toast';
 const emptyBooking = {
   guestName: '', phone: '', pax: 1, kot: '', roomNo: '', noOfRooms: 1,
   roomCategory: '', checkIn: getToday(), checkOut: '', mealPlan: '', source: 'Walk-in',
-  sourceName: '', complimentary: '', actualRoomRent: 0, totalAmount: 0,
+  sourceName: '', complimentary: '', actualRoomRent: 0, totalAmount: 0, hotelShare: 0,
   paymentType: 'Postpaid', advanceReceived: 0, paymentMode: '', remarks: '',
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filterDate, setFilterDate] = useState(getToday());
@@ -31,6 +33,8 @@ export default function Dashboard() {
   const [bookingModal, setBookingModal] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyBooking);
+  const [bookingAddOns, setBookingAddOns] = useState<{type: string; amount: number}[]>([]);
+  const [paymentSubCategory, setPaymentSubCategory] = useState('');
   const [collectModal, setCollectModal] = useState(false);
   const [collectBooking, setCollectBooking] = useState<Booking | null>(null);
   const [collectAmount, setCollectAmount] = useState(0);
@@ -45,8 +49,21 @@ export default function Dashboard() {
   const [checkoutModal, setCheckoutModal] = useState(false);
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   const [kotAmount, setKotAmount] = useState(0);
+  const [unpaidKotOrders, setUnpaidKotOrders] = useState<any[]>([]);
   const [addOns, setAddOns] = useState<{type: string; amount: number}[]>([]);
   const [checkoutPayMode, setCheckoutPayMode] = useState('');
+  const [transferToAgent, setTransferToAgent] = useState(false);
+  const [collectFromGuest, setCollectFromGuest] = useState(0);
+
+  // KOT Modal
+  const [kotModal, setKotModal] = useState(false);
+  const [kotCustomerType, setKotCustomerType] = useState<'inhouse' | 'walkin'>('walkin');
+  const [kotSelectedBooking, setKotSelectedBooking] = useState<Booking | null>(null);
+  const [kotCustomerName, setKotCustomerName] = useState('');
+  const [kotItems, setKotItems] = useState<Array<{itemName: string; quantity: number; rate: number}>>([
+    { itemName: '', quantity: 1, rate: 0 }
+  ]);
+  const [kotPaymentMode, setKotPaymentMode] = useState('Cash');
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -95,6 +112,8 @@ export default function Dashboard() {
   const openNewBooking = () => {
     setEditId(null);
     setForm({ ...emptyBooking, checkIn: getToday() });
+    setBookingAddOns([]);
+    setPaymentSubCategory('');
     setBookingModal(true);
   };
 
@@ -106,10 +125,13 @@ export default function Dashboard() {
       checkIn: b.checkIn, checkOut: b.checkOut, mealPlan: b.mealPlan || '',
       source: b.source || 'Walk-in', sourceName: b.sourceName || '',
       complimentary: b.complimentary || '', actualRoomRent: Number(b.actualRoomRent) || 0,
-      totalAmount: Number(b.totalAmount), paymentType: b.paymentType || 'Postpaid',
+      totalAmount: Number(b.totalAmount), hotelShare: Number(b.hotelShare) || 0,
+      paymentType: b.paymentType || 'Postpaid',
       advanceReceived: Number(b.advanceReceived) || 0, paymentMode: b.paymentMode || '',
       remarks: b.remarks || '',
     });
+    setBookingAddOns(b.addOns || []);
+    setPaymentSubCategory('');
     setBookingModal(true);
   };
 
@@ -119,11 +141,16 @@ export default function Dashboard() {
       return;
     }
     try {
+      const payload = {
+        ...form,
+        addOns: bookingAddOns.filter(a => a.type && a.amount > 0),
+        paymentSubCategory: form.paymentMode === 'AKS Office' ? paymentSubCategory : undefined,
+      };
       if (editId) {
-        await api.put(`/bookings/${editId}`, form);
+        await api.put(`/bookings/${editId}`, payload);
         toast.success('Booking updated!');
       } else {
-        await api.post('/bookings', form);
+        await api.post('/bookings', payload);
         toast.success('Booking added!');
       }
       setBookingModal(false);
@@ -204,12 +231,234 @@ export default function Dashboard() {
     } catch { toast.error('Error'); }
   };
 
+  // KOT Functions
+  const openKotModal = () => {
+    setKotCustomerType('walkin');
+    setKotSelectedBooking(null);
+    setKotCustomerName('');
+    setKotItems([{ itemName: '', quantity: 1, rate: 0 }]);
+    setKotPaymentMode('Cash');
+    setKotModal(true);
+  };
+
+  const addKotItem = () => {
+    setKotItems([...kotItems, { itemName: '', quantity: 1, rate: 0 }]);
+  };
+
+  const removeKotItem = (index: number) => {
+    if (kotItems.length > 1) {
+      setKotItems(kotItems.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateKotItem = (index: number, field: 'itemName' | 'quantity' | 'rate', value: string | number) => {
+    const updated = [...kotItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setKotItems(updated);
+  };
+
+  const calculateKotSubtotal = () => {
+    return kotItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+  };
+
+  const calculateKotGST = () => {
+    return calculateKotSubtotal() * 0.05;
+  };
+
+  const calculateKotTotal = () => {
+    return calculateKotSubtotal() + calculateKotGST();
+  };
+
+  const generateKotBill = (kotId: string, customerName: string) => {
+    const subtotal = calculateKotSubtotal();
+    const gst = calculateKotGST();
+    const total = calculateKotTotal();
+    const validItems = kotItems.filter(i => i.itemName && i.quantity > 0 && i.rate > 0);
+
+    const billHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>KOT Bill - ${kotId}</title>
+        <style>
+          @media print {
+            @page { size: A5; margin: 10mm; }
+            body { margin: 0; }
+          }
+          body {
+            font-family: 'Courier New', monospace;
+            max-width: 80mm;
+            margin: 0 auto;
+            padding: 10px;
+            font-size: 12px;
+          }
+          .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .header h2 { margin: 5px 0; font-size: 18px; }
+          .header p { margin: 2px 0; font-size: 11px; }
+          .info { margin: 10px 0; font-size: 11px; }
+          .info div { margin: 3px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          th { text-align: left; border-bottom: 1px solid #000; padding: 5px 0; font-size: 11px; }
+          td { padding: 5px 0; font-size: 11px; }
+          .right { text-align: right; }
+          .totals { border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; }
+          .totals div { display: flex; justify-content: space-between; margin: 3px 0; }
+          .grand-total { font-weight: bold; font-size: 14px; border-top: 2px solid #000; padding-top: 5px; margin-top: 5px; }
+          .footer { text-align: center; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #000; font-size: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>AKS HOSPITALITY</h2>
+          <p>THE NEELKANTH GRAND</p>
+          <p>Travel & Tourism</p>
+          <p>Manali, Himachal Pradesh</p>
+        </div>
+
+        <div class="info">
+          <div><strong>KOT No:</strong> ${kotId}</div>
+          <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')} ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+          <div><strong>Customer:</strong> ${customerName}</div>
+          ${kotCustomerType === 'inhouse' && kotSelectedBooking ? `<div><strong>Room:</strong> ${kotSelectedBooking.roomNo}</div>` : ''}
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="right">Qty</th>
+              <th class="right">Rate</th>
+              <th class="right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${validItems.map(item => `
+              <tr>
+                <td>${item.itemName}</td>
+                <td class="right">${item.quantity}</td>
+                <td class="right">₹${item.rate.toFixed(2)}</td>
+                <td class="right">₹${(item.quantity * item.rate).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <div><span>Subtotal:</span><span>₹${subtotal.toFixed(2)}</span></div>
+          <div><span>GST (5%):</span><span>₹${gst.toFixed(2)}</span></div>
+          <div class="grand-total">
+            <span>GRAND TOTAL:</span><span>₹${total.toFixed(2)}</span>
+          </div>
+          <div style="margin-top: 8px;"><span>Payment:</span><span><strong>${kotPaymentMode === 'Pay at Checkout' ? 'UNPAID (At Checkout)' : kotPaymentMode}</strong></span></div>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for your order!</p>
+          <p>GST Bill | Tax Invoice</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      printWindow.document.write(billHtml);
+      printWindow.document.close();
+    }
+  };
+
+  const submitKotOrder = async () => {
+    const validItems = kotItems.filter(i => i.itemName && i.quantity > 0 && i.rate > 0);
+    if (validItems.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
+    if (kotCustomerType === 'inhouse' && !kotSelectedBooking) {
+      toast.error('Please select a guest/room');
+      return;
+    }
+
+    if (kotCustomerType === 'walkin' && !kotCustomerName.trim()) {
+      toast.error('Please enter customer name');
+      return;
+    }
+
+    try {
+      const payload: any = {
+        items: validItems,
+        orderDate: getToday(),
+        status: kotPaymentMode === 'Pay at Checkout' ? 'UNPAID' : 'PAID',
+        paymentMode: kotPaymentMode === 'Pay at Checkout' ? '' : kotPaymentMode,
+      };
+
+      if (kotCustomerType === 'inhouse' && kotSelectedBooking) {
+        payload.bookingId = kotSelectedBooking.bookingId;
+        payload.roomNo = kotSelectedBooking.roomNo;
+        payload.customerName = `${kotSelectedBooking.guestName} - Room ${kotSelectedBooking.roomNo}`;
+      } else {
+        payload.customerName = kotCustomerName;
+      }
+
+      const response = await api.post('/kot', payload);
+      const createdOrder = response.data;
+
+      if (kotPaymentMode === 'Pay at Checkout') {
+        toast.success('KOT order created - Will be collected at checkout');
+      } else {
+        toast.success('KOT order created and paid');
+      }
+
+      // Generate and print bill
+      const customerName = kotCustomerType === 'inhouse' && kotSelectedBooking
+        ? `${kotSelectedBooking.guestName} - Room ${kotSelectedBooking.roomNo}`
+        : kotCustomerName;
+
+      generateKotBill(createdOrder.kotId || 'KOT-NEW', customerName);
+
+      setKotModal(false);
+      refreshAll();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create KOT order');
+    }
+  };
+
   // Checkout
-  const openCheckout = (b: Booking) => {
+  const openCheckout = async (b: Booking) => {
     setCheckoutBooking(b);
-    setKotAmount(Number(b.kotAmount) || 0);
     setAddOns(b.addOns?.map(a => ({ type: a.type, amount: Number(a.amount) })) || []);
     setCheckoutPayMode('');
+
+    // Fetch unpaid KOT orders for this booking
+    try {
+      const { data } = await api.get(`/kot`, {
+        params: {
+          bookingId: b.bookingId,
+          status: 'UNPAID'
+        }
+      });
+      const unpaidOrders = data.filter((order: any) =>
+        order.bookingId === b.bookingId && order.status === 'UNPAID'
+      );
+      setUnpaidKotOrders(unpaidOrders);
+
+      // Auto-calculate KOT amount from unpaid orders
+      const totalKot = unpaidOrders.reduce((sum: number, order: any) =>
+        sum + (Number(order.totalAmount) || Number(order.amount) || 0), 0
+      );
+      setKotAmount(totalKot || Number(b.kotAmount) || 0);
+    } catch (error) {
+      // Fallback to booking's kotAmount if API fails
+      setUnpaidKotOrders([]);
+      setKotAmount(Number(b.kotAmount) || 0);
+    }
+
     setCheckoutModal(true);
   };
 
@@ -217,10 +466,16 @@ export default function Dashboard() {
     if (!checkoutBooking) return;
     try {
       await api.post(`/bookings/${checkoutBooking.id}/checkout`, {
-        kotAmount, addOns, paymentMode: checkoutPayMode || undefined,
+        kotAmount,
+        addOns,
+        paymentMode: checkoutPayMode || undefined,
+        transferToAgentLedger: transferToAgent,
+        collectAmount: transferToAgent ? collectFromGuest : undefined,
       });
       toast.success('Guest checked out!');
       setCheckoutModal(false);
+      setTransferToAgent(false);
+      setCollectFromGuest(0);
       refreshAll();
     } catch { toast.error('Error'); }
   };
@@ -251,7 +506,7 @@ export default function Dashboard() {
                 {type !== 'inhouse' && <th>Collection</th>}
                 {type === 'inhouse' && <><th>Check-in</th><th>Checkout</th><th>Collection</th><th>Received</th></>}
                 <th>Pending</th><th>Status</th>
-                {type !== 'inhouse' && <th>Actions</th>}
+                <th>Actions</th>
               </tr></thead>
               <tbody>
                 {guests.map((b) => {
@@ -276,6 +531,17 @@ export default function Dashboard() {
                             </button>
                             {pend > 0 && <button className="btn btn-secondary btn-small" onClick={() => openCollect(b)}>Collect</button>}
                           </div>
+                        </td>
+                      )}
+                      {type === 'inhouse' && (
+                        <td>
+                          <button
+                            className="btn btn-primary btn-small"
+                            onClick={() => navigate('/kot')}
+                            style={{ background: '#6b7b93' }}
+                          >
+                            <span className="material-icons" style={{ fontSize: '14px' }}>restaurant</span> Add KOT
+                          </button>
                         </td>
                       )}
                       {type === 'checkout' && (
@@ -305,6 +571,13 @@ export default function Dashboard() {
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <button className="btn btn-primary" onClick={openNewBooking}>
           <span className="material-icons">add</span> New Booking
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={openKotModal}
+          style={{ background: '#6b7b93' }}
+        >
+          <span className="material-icons">restaurant</span> New KOT Order
         </button>
       </div>
 
@@ -494,26 +767,67 @@ export default function Dashboard() {
             <div className="form-group"><label>Source Name</label><input value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} /></div>
           )}
         </div>
-        <div className="form-row">
-          <div className="form-group"><label>Complimentary</label><input value={form.complimentary} onChange={(e) => setForm({ ...form, complimentary: e.target.value })} /></div>
-          <div className="form-group"><label>Actual Room Rent</label><input type="number" value={form.actualRoomRent || ''} onChange={(e) => setForm({ ...form, actualRoomRent: Number(e.target.value) })} /></div>
+        <div className="form-group"><label>Actual Room Rent</label><input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal }); }} /></div>
+
+        {/* Add-ons Section */}
+        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(201,163,95,0.05)', borderRadius: '8px' }}>
+          <label style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Add-ons (Honeymoon, Heater, etc.)</label>
+          {bookingAddOns.map((ao, i) => (
+            <div key={i} style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+              <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ flex: 1, padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }}>
+                <option value="">Select Add-on</option>
+                <option value="Honeymoon">Honeymoon</option>
+                <option value="Candle Night Dinner">Candle Night Dinner</option>
+                <option value="Heater">Heater</option>
+                <option value="Other">Other</option>
+              </select>
+              <input type="number" placeholder="Amount" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ width: '120px', padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }} />
+              <button onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer' }}>
+                <span className="material-icons" style={{ fontSize: '16px', color: 'var(--accent-red)' }}>close</span>
+              </button>
+            </div>
+          ))}
+          <button className="btn btn-secondary btn-small" style={{ marginTop: '8px' }} onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])}>+ Add Item</button>
+        </div>
+
+        <div className="form-row" style={{ marginTop: '12px' }}>
+          <div className="form-group"><label>Total Amount (Room + Add-ons)</label><input type="number" value={form.totalAmount || ''} readOnly style={{ background: 'rgba(201,163,95,0.1)', fontWeight: '600' }} /></div>
+          <div className="form-group"><label>Hotel Share</label><input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="Hotel's portion" /></div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label>Total Amount *</label><input type="number" value={form.totalAmount || ''} onChange={(e) => setForm({ ...form, totalAmount: Number(e.target.value) })} /></div>
           <div className="form-group"><label>Payment Type</label>
             <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })}>
               <option value="Postpaid">Postpaid</option><option value="Prepaid">Prepaid</option><option value="Ledger">Ledger</option>
             </select>
           </div>
+          <div className="form-group"><label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Agent Commission: {formatCurrency((form.totalAmount || 0) - (form.hotelShare || 0))}</label></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label>Advance Received</label><input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} /></div>
           <div className="form-group"><label>Payment Mode</label>
-            <select value={form.paymentMode} onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}>
-              <option value="">Select</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+            <select value={form.paymentMode} onChange={(e) => { setForm({ ...form, paymentMode: e.target.value }); if (e.target.value !== 'AKS Office') setPaymentSubCategory(''); }}>
+              <option value="">Select</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+              <option value="AKS Office">AKS Office</option>
             </select>
           </div>
         </div>
+        {form.paymentMode === 'AKS Office' && (
+          <div className="form-group">
+            <label>AKS Office Sub-Category</label>
+            <select value={paymentSubCategory} onChange={(e) => setPaymentSubCategory(e.target.value)}>
+              <option value="">Select</option>
+              <option value="Rajat">Rajat</option>
+              <option value="Happy">Happy</option>
+              <option value="Vishal">Vishal</option>
+              <option value="Gateway">Gateway</option>
+              <option value="Fyra">Fyra</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        )}
         <div className="form-group"><label>Remarks</label><input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} /></div>
       </Modal>
 
@@ -592,7 +906,51 @@ export default function Dashboard() {
                 <div><small style={{ color: 'var(--text-muted)' }}>Check-in</small><br />{formatDate(checkoutBooking.checkIn)}</div>
                 <div><small style={{ color: 'var(--text-muted)' }}>Check-out</small><br />{formatDate(checkoutBooking.checkOut)}</div>
               </div>
-              <div className="form-group"><label>KOT Amount</label><input type="number" value={kotAmount || ''} onChange={(e) => setKotAmount(Number(e.target.value))} /></div>
+
+              {/* Unpaid KOT Orders */}
+              {unpaidKotOrders.length > 0 && (
+                <div style={{
+                  marginBottom: '16px',
+                  padding: '12px',
+                  background: '#fef3c7',
+                  borderRadius: '8px',
+                  border: '1px solid #fcd34d'
+                }}>
+                  <div style={{ fontWeight: '600', marginBottom: '8px', color: '#92400e' }}>
+                    🍽️ Unpaid KOT Orders:
+                  </div>
+                  {unpaidKotOrders.map((order: any) => (
+                    <div key={order.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '6px 0',
+                      fontSize: '13px',
+                      borderBottom: '1px solid #fde68a'
+                    }}>
+                      <span>{order.kotId}: {order.description || 'Items'}</span>
+                      <span style={{ fontWeight: '600' }}>
+                        ₹{Number(order.totalAmount || order.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    paddingTop: '8px',
+                    marginTop: '4px',
+                    fontWeight: '700',
+                    color: '#92400e'
+                  }}>
+                    <span>Total KOT:</span>
+                    <span>₹{kotAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>KOT Amount {unpaidKotOrders.length > 0 && <span style={{ fontSize: '12px', color: '#6b7280' }}>(Auto-calculated from unpaid orders)</span>}</label>
+                <input type="number" value={kotAmount || ''} onChange={(e) => setKotAmount(Number(e.target.value))} />
+              </div>
               <div style={{ marginTop: '16px' }}>
                 <label style={{ fontWeight: 600 }}>Add-On Charges</label>
                 {addOns.map((ao, i) => (
@@ -622,9 +980,272 @@ export default function Dashboard() {
                   <option value="">Don't collect now</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
                 </select>
               </div>
+
+              {/* Transfer to Agent Ledger Option */}
+              {checkoutBooking && (checkoutBooking.paymentType === 'Ledger' || checkoutBooking.source === 'Agent') && t.balance > 0 && (
+                <div style={{ marginTop: '16px', padding: '12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fcd34d' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '12px' }}>
+                    <input type="checkbox" checked={transferToAgent} onChange={(e) => setTransferToAgent(e.target.checked)} />
+                    <span style={{ fontWeight: '600' }}>Transfer pending balance to Agent Ledger</span>
+                  </label>
+                  {transferToAgent && (
+                    <div className="form-group" style={{ marginTop: '8px' }}>
+                      <label>Amount to Collect from Guest (rest will be added to agent ledger)</label>
+                      <input
+                        type="number"
+                        value={collectFromGuest || ''}
+                        onChange={(e) => setCollectFromGuest(Math.min(Number(e.target.value), t.balance))}
+                        placeholder="0"
+                        max={t.balance}
+                      />
+                      <small style={{ color: '#92400e', marginTop: '4px', display: 'block' }}>
+                        Agent ledger will be: {formatCurrency(t.balance - (collectFromGuest || 0))}
+                      </small>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           );
         })()}
+      </Modal>
+
+      {/* KOT Order Modal */}
+      <Modal open={kotModal} onClose={() => setKotModal(false)} title="Create KOT Order" wide
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setKotModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={submitKotOrder} style={{ background: '#6b7b93' }}>
+              <span className="material-icons">restaurant</span> Create Order
+            </button>
+          </>
+        }>
+        {/* Customer Type Selection */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Customer Type</label>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => setKotCustomerType('walkin')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: kotCustomerType === 'walkin' ? '#6b7b93' : '#f3f4f6',
+                color: kotCustomerType === 'walkin' ? 'white' : '#374151',
+                border: kotCustomerType === 'walkin' ? '2px solid #6b7b93' : '2px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+              }}
+            >
+              <span className="material-icons" style={{ fontSize: '20px', verticalAlign: 'middle' }}>person</span>
+              <br />Walk-in Customer
+            </button>
+            <button
+              onClick={() => setKotCustomerType('inhouse')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: kotCustomerType === 'inhouse' ? '#6b7b93' : '#f3f4f6',
+                color: kotCustomerType === 'inhouse' ? 'white' : '#374151',
+                border: kotCustomerType === 'inhouse' ? '2px solid #6b7b93' : '2px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+              }}
+            >
+              <span className="material-icons" style={{ fontSize: '20px', verticalAlign: 'middle' }}>hotel</span>
+              <br />In-House Guest
+            </button>
+          </div>
+        </div>
+
+        {/* Customer Selection */}
+        {kotCustomerType === 'walkin' ? (
+          <div className="form-group">
+            <label>Customer Name *</label>
+            <input
+              value={kotCustomerName}
+              onChange={(e) => setKotCustomerName(e.target.value)}
+              placeholder="Enter customer name"
+            />
+          </div>
+        ) : (
+          <div className="form-group">
+            <label>Select Guest/Room *</label>
+            <select
+              value={kotSelectedBooking?.id || ''}
+              onChange={(e) => {
+                const booking = stats?.inhouseGuests.find(b => b.id === Number(e.target.value));
+                setKotSelectedBooking(booking || null);
+              }}
+            >
+              <option value="">Select a guest</option>
+              {stats?.inhouseGuests.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.guestName} - Room {b.roomNo} ({b.bookingId})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Items Table */}
+        <div style={{ marginTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <label style={{ fontWeight: '600', fontSize: '15px' }}>Order Items *</label>
+            <button
+              type="button"
+              onClick={addKotItem}
+              className="btn btn-secondary btn-small"
+            >
+              + Add Item
+            </button>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table" style={{ minWidth: '600px' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '40%' }}>Item Name</th>
+                  <th style={{ width: '15%' }}>Quantity</th>
+                  <th style={{ width: '20%' }}>Rate (₹)</th>
+                  <th style={{ width: '20%' }}>Total (₹)</th>
+                  <th style={{ width: '5%' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {kotItems.map((item, index) => (
+                  <tr key={index}>
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="Item name"
+                        value={item.itemName}
+                        onChange={(e) => updateKotItem(index, 'itemName', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateKotItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.rate}
+                        onChange={(e) => updateKotItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </td>
+                    <td style={{ fontWeight: '600', textAlign: 'right' }}>
+                      ₹{(item.quantity * item.rate).toFixed(2)}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {kotItems.length > 1 && (
+                        <button
+                          onClick={() => removeKotItem(index)}
+                          style={{
+                            background: '#fee',
+                            color: '#dc2626',
+                            border: 'none',
+                            borderRadius: '6px',
+                            width: '32px',
+                            height: '32px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <span className="material-icons" style={{ fontSize: '18px' }}>delete</span>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Total Calculation */}
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: '#f9fafb',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+            <span>Subtotal:</span>
+            <span style={{ fontWeight: '600' }}>₹{calculateKotSubtotal().toFixed(2)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
+            <span>GST (5%):</span>
+            <span style={{ fontWeight: '600' }}>₹{calculateKotGST().toFixed(2)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '700', color: '#1a2332' }}>
+            <span>Grand Total:</span>
+            <span>₹{calculateKotTotal().toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Payment Mode */}
+        <div className="form-group" style={{ marginTop: '20px' }}>
+          <label>Payment Mode *</label>
+          <select value={kotPaymentMode} onChange={(e) => setKotPaymentMode(e.target.value)}>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="UPI">Online / UPI</option>
+            {kotCustomerType === 'inhouse' && (
+              <option value="Pay at Checkout">Pay at Checkout (Unpaid)</option>
+            )}
+          </select>
+        </div>
+
+        {/* Payment Status Info */}
+        {kotPaymentMode === 'Pay at Checkout' ? (
+          <div style={{
+            marginTop: '12px',
+            padding: '12px',
+            background: '#fef3c7',
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: '#92400e',
+          }}>
+            <strong>Note:</strong> This order will be marked as UNPAID and will be collected at checkout
+          </div>
+        ) : (
+          <div style={{
+            marginTop: '12px',
+            padding: '12px',
+            background: '#dcfce7',
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: '#166534',
+          }}>
+            <strong>✓ Payment collected:</strong> ₹{calculateKotTotal().toFixed(2)} via {kotPaymentMode}
+          </div>
+        )}
       </Modal>
     </div>
   );

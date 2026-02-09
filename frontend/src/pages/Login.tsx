@@ -52,7 +52,7 @@ export default function Login() {
         password,
       });
 
-      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success('Login successful!');

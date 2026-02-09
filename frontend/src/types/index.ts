@@ -22,6 +22,7 @@ export interface Booking {
   complimentary: string;
   actualRoomRent: number;
   totalAmount: number;
+  hotelShare: number;
   paymentType: string;
   advanceReceived: number;
   advanceDate: string;

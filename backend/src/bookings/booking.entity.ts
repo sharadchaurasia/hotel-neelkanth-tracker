@@ -54,6 +54,9 @@ export class Booking {
   @Column({ name: 'total_amount', type: 'decimal', precision: 12, scale: 2 })
   totalAmount: number;
 
+  @Column({ name: 'hotel_share', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  hotelShare: number;
+
   @Column({ name: 'payment_type', nullable: true })
   paymentType: string;
 
@@ -77,6 +80,9 @@ export class Booking {
 
   @Column({ default: 'PENDING' })
   status: string;
+
+  @Column({ name: 'agent_pending_transferred', default: false })
+  agentPendingTransferred: boolean;
 
   @Column({ type: 'text', nullable: true })
   remarks: string;

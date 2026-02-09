@@ -11,8 +11,10 @@ export default function Ledger() {
   const [agents, setAgents] = useState<string[]>([]);
 
   useEffect(() => {
-    api.get('/bookings', { params: { source: 'Agent' } }).then(res => {
-      const names = [...new Set((res.data as Booking[]).map(b => b.sourceName).filter(Boolean))] as string[];
+    // Fetch agents from agents master table
+    api.get('/agents').then(res => {
+      const agentsList = res.data.filter((a: any) => a.status === 'ACTIVE');
+      const names = agentsList.map((a: any) => a.name);
       setAgents(names.sort());
     }).catch(() => {});
   }, []);
@@ -22,7 +24,10 @@ export default function Ledger() {
     if (agent) params.set('agent', agent);
     if (from) params.set('from', from);
     if (to) params.set('to', to);
-    api.get('/reports/ledger?' + params).then(res => setBookings(res.data)).catch(() => {});
+    api.get('/reports/ledger?' + params).then(res => {
+      const data = res.data;
+      setBookings(data.bookings || data);
+    }).catch(() => {});
   }, [agent, from, to]);
 
   const agentSums: Record<string, { total: number; received: number; pending: number; count: number }> = {};
@@ -32,13 +37,15 @@ export default function Ledger() {
     const name = b.sourceName || 'Unknown';
     if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, count: 0 };
     const total = Number(b.totalAmount) || 0;
+    const hotelShare = Number(b.hotelShare) || 0;
+    const agentCommission = total - hotelShare;
     const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-    const pend = Math.max(total - recv, 0);
-    agentSums[name].total += total;
+    const pend = Math.max(agentCommission - recv, 0);
+    agentSums[name].total += agentCommission;
     agentSums[name].received += recv;
     agentSums[name].pending += pend;
     agentSums[name].count++;
-    grandTotal.total += total;
+    grandTotal.total += agentCommission;
     grandTotal.received += recv;
     grandTotal.pending += pend;
     grandTotal.count++;
@@ -83,11 +90,14 @@ export default function Ledger() {
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px' }}>No bookings found for selected filters</p>
       ) : (
         <table className="report-table">
-          <thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Total</th><th>Received</th><th>Pending</th><th>Status</th></tr></thead>
+          <thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Room Rent</th><th>Hotel Share</th><th>Agent Commission</th><th>Collected</th><th>Pending</th><th>Status</th></tr></thead>
           <tbody>
             {bookings.map(b => {
+              const total = Number(b.totalAmount) || 0;
+              const hotelShare = Number(b.hotelShare) || 0;
+              const agentCommission = total - hotelShare;
               const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-              const pend = Math.max(Number(b.totalAmount) - recv, 0);
+              const pend = Math.max(agentCommission - recv, 0);
               const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
               return (
                 <tr key={b.id}>
@@ -97,7 +107,9 @@ export default function Ledger() {
                   <td>{b.roomNo || '-'}</td>
                   <td>{formatDate(b.checkIn)}</td>
                   <td>{formatDate(b.checkOut)}</td>
-                  <td className="amount">{formatCurrency(b.totalAmount)}</td>
+                  <td className="amount">{formatCurrency(total)}</td>
+                  <td className="amount" style={{ color: 'var(--accent-cyan)' }}>{formatCurrency(hotelShare)}</td>
+                  <td className="amount" style={{ fontWeight: '600' }}>{formatCurrency(agentCommission)}</td>
                   <td className="amount amount-received">{formatCurrency(recv)}</td>
                   <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                   <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
@@ -106,6 +118,8 @@ export default function Ledger() {
             })}
             <tr className="total-row">
               <td colSpan={6}>TOTAL ({grandTotal.count} bookings)</td>
+              <td className="amount">-</td>
+              <td className="amount">-</td>
               <td className="amount">{formatCurrency(grandTotal.total)}</td>
               <td className="amount amount-received">{formatCurrency(grandTotal.received)}</td>
               <td className={`amount ${grandTotal.pending > 0 ? 'amount-pending' : ''}`}>{formatCurrency(grandTotal.pending)}</td>

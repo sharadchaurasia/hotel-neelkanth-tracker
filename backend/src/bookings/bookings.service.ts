@@ -130,7 +130,7 @@ export class BookingsService {
       if (pending <= 0) status = 'COLLECTED';
       else if (advanceReceived > 0) status = 'PARTIAL';
 
-      const addOnAmount = dto.addOnAmount || 0;
+      const addOnAmount = dto.addOns?.reduce((sum, a) => sum + (a.amount || 0), 0) || dto.addOnAmount || 0;
 
       const booking = this.bookingRepo.create({
         bookingId,
@@ -150,6 +150,7 @@ export class BookingsService {
         addOnAmount,
         actualRoomRent: dto.actualRoomRent || 0,
         totalAmount: dto.totalAmount,
+        hotelShare: dto.hotelShare || 0,
         paymentType: dto.paymentType || 'Postpaid',
         advanceReceived,
         advanceDate: dto.advanceDate || (advanceReceived > 0 ? new Date().toISOString().split('T')[0] : undefined),
@@ -164,8 +165,19 @@ export class BookingsService {
 
       const saved = await this.bookingRepo.save(booking) as Booking;
 
-      // Create BookingAddon record if addOnAmount > 0 and complimentary is set
-      if (addOnAmount > 0 && dto.complimentary) {
+      // Create BookingAddon records from addOns array
+      if (dto.addOns && dto.addOns.length > 0) {
+        for (const addonDto of dto.addOns) {
+          if (addonDto.type && addonDto.amount > 0) {
+            const addon = new BookingAddon();
+            addon.booking = saved;
+            addon.type = addonDto.type;
+            addon.amount = addonDto.amount;
+            await this.addonRepo.save(addon);
+          }
+        }
+      } else if (addOnAmount > 0 && dto.complimentary) {
+        // Fallback for old complimentary field
         const addon = new BookingAddon();
         addon.booking = saved;
         addon.type = dto.complimentary;
@@ -173,13 +185,13 @@ export class BookingsService {
         await this.addonRepo.save(addon);
       }
 
-      // Auto-create daybook entry for advance payment
-      if (advanceReceived > 0 && dto.paymentMode) {
+      // Auto-create daybook entry for advance payment (skip for AKS Office)
+      if (advanceReceived > 0 && dto.paymentMode && dto.paymentMode !== 'AKS Office') {
         await this.createDaybookEntry({
           date: new Date().toISOString().split('T')[0],
           category: 'Room Rent',
           incomeSource: 'Room Rent (Advance)',
-          description: `Advance - ${dto.guestName}`,
+          description: `Advance - ${dto.guestName}${dto.paymentSubCategory ? ' (' + dto.paymentSubCategory + ')' : ''}`,
           amount: advanceReceived,
           paymentMode: dto.paymentMode,
           refBookingId: saved.bookingId,
@@ -730,10 +742,15 @@ export class BookingsService {
         todayCollectedAmt += totalReceived;
         if (pending > 0) todayPendingAmt += pending;
       }
-      if (pending > 0 && b.paymentType === 'Ledger') {
-        ledgerDueAmt += pending;
-        const agent = b.sourceName || 'Unknown Agent';
-        ledgerByAgent[agent] = (ledgerByAgent[agent] || 0) + pending;
+      if (b.paymentType === 'Ledger') {
+        // Agent ledger: pending = (totalAmount - hotelShare) - received
+        const agentCommission = Number(b.totalAmount || 0) - Number(b.hotelShare || 0);
+        const agentPending = Math.max(0, agentCommission - totalReceived);
+        if (agentPending > 0) {
+          ledgerDueAmt += agentPending;
+          const agent = b.sourceName || 'Unknown Agent';
+          ledgerByAgent[agent] = (ledgerByAgent[agent] || 0) + agentPending;
+        }
       }
     }
 

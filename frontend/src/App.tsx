@@ -9,6 +9,7 @@ import DayBook from './pages/DayBook';
 import Salary from './pages/Salary';
 import KOT from './pages/KOT';
 import AksOffice from './pages/AksOffice';
+import Agents from './pages/Agents';
 import Users from './pages/Users';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/salary" element={<Salary />} />
           <Route path="/kot" element={<KOT />} />
           <Route path="/aks-office" element={<AksOffice />} />
+          <Route path="/agents" element={<Agents />} />
           <Route path="/users" element={<Users />} />
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/settings" element={<Settings />} />
