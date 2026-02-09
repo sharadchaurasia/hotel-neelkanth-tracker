@@ -38,12 +38,17 @@ export default function Settings() {
     e.preventDefault();
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match');
+      toast.error('New PIN do not match');
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (!/^\d{4}$/.test(passwordForm.newPassword)) {
+      toast.error('PIN must be exactly 4 digits');
+      return;
+    }
+
+    if (passwordForm.oldPassword === passwordForm.newPassword) {
+      toast.error('New PIN must be different from old PIN');
       return;
     }
 
@@ -52,10 +57,10 @@ export default function Settings() {
         oldPassword: passwordForm.oldPassword,
         newPassword: passwordForm.newPassword,
       });
-      toast.success('Password changed successfully');
+      toast.success('PIN changed successfully');
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to change password');
+      toast.error(error.response?.data?.message || 'Failed to change PIN');
     }
   };
 
@@ -105,47 +110,67 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Change Password */}
+        {/* Change PIN */}
         <div className="card">
           <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="material-icons">lock</span>
-            Change Password
+            Change PIN
           </h3>
 
           <form onSubmit={handleChangePassword} style={{ display: 'grid', gap: '16px' }}>
             <div className="form-group">
-              <label>Current Password *</label>
+              <label>Current PIN (4 digits) *</label>
               <input
                 type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
                 value={passwordForm.oldPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value.replace(/\D/g, '') })}
+                placeholder="Enter current 4-digit PIN"
                 required
               />
             </div>
             <div className="form-group">
-              <label>New Password *</label>
+              <label>New PIN (4 digits) *</label>
               <input
                 type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
                 value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value.replace(/\D/g, '') })}
+                placeholder="Enter new 4-digit PIN"
                 required
-                minLength={6}
               />
             </div>
             <div className="form-group">
-              <label>Confirm New Password *</label>
+              <label>Confirm New PIN *</label>
               <input
                 type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
                 value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value.replace(/\D/g, '') })}
+                placeholder="Re-enter new 4-digit PIN"
                 required
-                minLength={6}
               />
+            </div>
+            <div style={{
+              padding: '12px',
+              background: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              color: '#856404'
+            }}>
+              ℹ️ Your PIN must be exactly 4 digits (numbers only)
             </div>
             <div>
               <button type="submit" className="btn-primary">
                 <span className="material-icons">lock_reset</span>
-                Change Password
+                Change PIN
               </button>
             </div>
           </form>

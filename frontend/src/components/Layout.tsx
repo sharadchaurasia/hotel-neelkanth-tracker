@@ -11,6 +11,7 @@ const tabs = [
   { path: '/salary', label: 'Salary', icon: 'badge' },
   { path: '/agents', label: 'Agents', icon: 'group' },
   { path: '/users', label: 'Users', icon: 'people' },
+  { path: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 export default function Layout() {
