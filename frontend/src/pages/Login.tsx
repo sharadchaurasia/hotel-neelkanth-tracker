@@ -6,6 +6,7 @@ import api from '../api/client';
 export default function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [pin, setPin] = useState(['', '', '', '']);
   const inputRefs = [
@@ -16,13 +17,12 @@ export default function Login() {
   ];
 
   const handlePinChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return; // Only digits
+    if (!/^\d*$/.test(value)) return;
 
     const newPin = [...pin];
-    newPin[index] = value.slice(-1); // Only last digit
+    newPin[index] = value.slice(-1);
     setPin(newPin);
 
-    // Auto-focus next input
     if (value && index < 3) {
       inputRefs[index + 1].current?.focus();
     }
@@ -39,11 +39,12 @@ export default function Login() {
     const password = pin.join('');
 
     if (password.length !== 4) {
-      toast.error('Please enter 4-digit PIN');
+      setError('Please enter 4-digit PIN');
       return;
     }
 
     setLoading(true);
+    setError('');
 
     try {
       const { data } = await api.post('/auth/login', {
@@ -51,13 +52,11 @@ export default function Login() {
         password,
       });
 
-      // Store token and user info
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success('Login successful!');
 
-      // Check if user must change password
       if (data.user.mustChangePassword) {
         navigate('/settings');
         toast('Please change your password', { icon: '⚠️' });
@@ -65,7 +64,7 @@ export default function Login() {
         navigate('/');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      setError(error.response?.data?.message || 'Invalid credentials');
       setPin(['', '', '', '']);
       inputRefs[0].current?.focus();
     } finally {
@@ -77,49 +76,68 @@ export default function Login() {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0f172a 100%)',
+      background: '#1a2332',
       padding: '20px',
     }}>
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h1 style={{
+          fontSize: '42px',
+          fontWeight: '700',
+          color: '#c9a35f',
+          marginBottom: '8px',
+          letterSpacing: '1px',
+        }}>
+          AKS Hospitality
+        </h1>
+        <p style={{
+          fontSize: '13px',
+          color: '#7a8699',
+          letterSpacing: '3px',
+          textTransform: 'uppercase',
+        }}>
+          Travel & Tourism
+        </p>
+      </div>
+
+      {/* Card */}
       <div style={{
         width: '100%',
-        maxWidth: '420px',
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '16px',
-        padding: '40px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        maxWidth: '440px',
+        background: '#f5f3ef',
+        borderRadius: '20px',
+        padding: '48px 40px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
       }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏨</div>
-          <h1 style={{
+          <h2 style={{
             fontSize: '28px',
             fontWeight: '700',
-            background: 'linear-gradient(135deg, #06b6d4, #a855f7)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: '#1a2332',
             marginBottom: '8px',
           }}>
-            The Neelkanth Grand
-          </h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>
-            by Aks Hospitality — CRM
+            Welcome Back
+          </h2>
+          <p style={{ color: '#6b7280', fontSize: '15px' }}>
+            Sign in to your account
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group" style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <label style={{
               display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#94a3b8',
-              marginBottom: '8px',
+              fontSize: '11px',
+              fontWeight: '700',
+              color: '#a67c52',
+              marginBottom: '10px',
               textTransform: 'uppercase',
+              letterSpacing: '1px',
             }}>
-              Email or Phone
+              Email or Phone Number
             </label>
             <input
               type="text"
@@ -127,35 +145,46 @@ export default function Login() {
               onChange={(e) => setEmailOrPhone(e.target.value)}
               required
               autoFocus
-              placeholder="Enter email or phone"
+              placeholder="Enter your email or phone"
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                color: '#e2e8f0',
+                padding: '14px 16px',
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '10px',
+                fontSize: '15px',
+                color: '#1a2332',
+                outline: 'none',
                 transition: 'all 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#c9a35f';
+                e.target.style.boxShadow = '0 0 0 3px rgba(201,163,95,0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e5e7eb';
+                e.target.style.boxShadow = 'none';
               }}
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '28px' }}>
+          <div style={{ marginBottom: error ? '16px' : '28px' }}>
             <label style={{
               display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#94a3b8',
+              fontSize: '11px',
+              fontWeight: '700',
+              color: '#a67c52',
               marginBottom: '12px',
               textTransform: 'uppercase',
+              letterSpacing: '1px',
             }}>
-              4-Digit PIN
+              Enter PIN
             </label>
             <div style={{
               display: 'flex',
               gap: '12px',
               justifyContent: 'center',
+              marginBottom: '12px',
             }}>
               {pin.map((digit, index) => (
                 <input
@@ -169,60 +198,103 @@ export default function Login() {
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   required
                   style={{
-                    width: '60px',
-                    height: '60px',
+                    width: '70px',
+                    height: '70px',
                     textAlign: 'center',
                     fontSize: '24px',
                     fontWeight: '700',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '2px solid rgba(255,255,255,0.10)',
+                    background: 'white',
+                    border: '2px solid #e5e7eb',
                     borderRadius: '12px',
-                    color: '#e2e8f0',
+                    color: '#1a2332',
                     transition: 'all 0.2s',
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#06b6d4';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(6,182,212,0.2)';
+                    e.target.style.borderColor = '#c9a35f';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(201,163,95,0.1)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(255,255,255,0.10)';
+                    e.target.style.borderColor = '#e5e7eb';
                     e.target.style.boxShadow = 'none';
                   }}
                 />
               ))}
             </div>
+            <div style={{ textAlign: 'right' }}>
+              <Link to="/forgot-password" style={{
+                color: '#a67c52',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+              }}>
+                Forgot PIN?
+              </Link>
+            </div>
           </div>
+
+          {error && (
+            <div style={{
+              padding: '12px 16px',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#ef4444',
+                display: 'inline-block',
+              }} />
+              <span style={{ color: '#dc2626', fontSize: '14px' }}>{error}</span>
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary"
             style={{
               width: '100%',
-              padding: '14px',
-              fontSize: '15px',
+              padding: '16px',
+              background: '#6b7b93',
+              border: 'none',
+              borderRadius: '10px',
+              color: 'white',
+              fontSize: '16px',
               fontWeight: '600',
-              opacity: loading ? 0.6 : 1,
               cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) e.currentTarget.style.background = '#5a6a80';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#6b7b93';
             }}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            <span style={{ fontSize: '18px' }}>→</span>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+      </div>
 
-        <div style={{
-          marginTop: '24px',
-          textAlign: 'center',
-          fontSize: '13px',
-        }}>
-          <Link to="/forgot-password" style={{
-            color: '#06b6d4',
-            textDecoration: 'none',
-            fontWeight: '500',
-          }}>
-            Forgot PIN? Reset here
-          </Link>
-        </div>
+      {/* Footer */}
+      <div style={{
+        marginTop: '32px',
+        textAlign: 'center',
+        color: '#7a8699',
+        fontSize: '13px',
+      }}>
+        The Neelkanth CRM
       </div>
     </div>
   );
