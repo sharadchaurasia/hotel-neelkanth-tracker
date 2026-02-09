@@ -236,21 +236,23 @@ export class AuthService implements OnModuleInit {
   async resetUserPassword(id: number) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
-    user.passwordHash = await bcrypt.hash('1234', 12);
+    const tempPassword = '1234';
+    user.passwordHash = await bcrypt.hash(tempPassword, 12);
     user.mustChangePassword = true;
     await this.userRepo.save(user);
-    return { success: true };
+    return { success: true, tempPassword };
   }
 
   async resetAllPasswords() {
     const users = await this.userRepo.find();
-    const hash = await bcrypt.hash('1234', 12);
+    const tempPassword = '1234';
+    const hash = await bcrypt.hash(tempPassword, 12);
     for (const user of users) {
       user.passwordHash = hash;
       user.mustChangePassword = true;
     }
     await this.userRepo.save(users);
-    return { success: true, count: users.length };
+    return { success: true, count: users.length, tempPassword };
   }
 
   // Only super_admin keeps delete permissions
