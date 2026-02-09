@@ -674,4 +674,63 @@ export class ReportsService {
 
     return { rooms: ALL_ROOMS, roomTypes: ROOM_TYPE, dates, grid };
   }
+
+  async getAgentLedgerReport(agentId?: number, startDate?: string, endDate?: string) {
+    const qb = this.bookingRepo.createQueryBuilder('b')
+      .leftJoin('users', 'u', 'u.id = b.agent_id')
+      .select([
+        'b.agent_id as "agentId"',
+        'u.name as "agentName"',
+        'COUNT(b.id) as "bookingCount"',
+        'SUM(b.total_amount) as "totalBookingAmount"',
+        'SUM(b.advance_received + b.balance_received) as "totalCollection"',
+        'SUM(b.total_amount - (b.advance_received + b.balance_received)) as "pendingAmount"',
+      ])
+      .where('b.agent_id IS NOT NULL')
+      .andWhere("b.status != 'CANCELLED'");
+
+    if (agentId) {
+      qb.andWhere('b.agent_id = :agentId', { agentId });
+    }
+
+    if (startDate) {
+      qb.andWhere('b.check_in >= :startDate', { startDate });
+    }
+
+    if (endDate) {
+      qb.andWhere('b.check_out <= :endDate', { endDate });
+    }
+
+    qb.groupBy('b.agent_id, u.name').orderBy('u.name', 'ASC');
+
+    const results = await qb.getRawMany();
+
+    return results.map(r => ({
+      agentId: r.agentId,
+      agentName: r.agentName || 'Unknown Agent',
+      bookingCount: parseInt(r.bookingCount) || 0,
+      totalBookingAmount: parseFloat(r.totalBookingAmount) || 0,
+      totalCollection: parseFloat(r.totalCollection) || 0,
+      pendingAmount: parseFloat(r.pendingAmount) || 0,
+    }));
+  }
+
+  async getAgentLedgerDetails(agentId: number, startDate?: string, endDate?: string) {
+    const qb = this.bookingRepo.createQueryBuilder('b')
+      .leftJoinAndSelect('b.addOns', 'addons')
+      .where('b.agent_id = :agentId', { agentId })
+      .andWhere("b.status != 'CANCELLED'");
+
+    if (startDate) {
+      qb.andWhere('b.check_in >= :startDate', { startDate });
+    }
+
+    if (endDate) {
+      qb.andWhere('b.check_out <= :endDate', { endDate });
+    }
+
+    qb.orderBy('b.check_in', 'DESC');
+
+    return qb.getMany();
+  }
 }

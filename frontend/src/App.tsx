@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Ledger from './pages/Ledger';
+import AgentLedger from './pages/AgentLedger';
 import Reports from './pages/Reports';
 import DayBook from './pages/DayBook';
 import Salary from './pages/Salary';
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/ledger" element={<Ledger />} />
+          <Route path="/agent-ledger" element={<AgentLedger />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/daybook" element={<DayBook />} />
           <Route path="/salary" element={<Salary />} />

@@ -161,6 +161,8 @@ export class BookingsService {
         kotAmount: 0,
         checkedIn: false,
         checkedOut: false,
+        collectionAmount: dto.collectionAmount,
+        agentId: dto.agentId,
       } as Partial<Booking>);
 
       const saved = await this.bookingRepo.save(booking) as Booking;
@@ -238,6 +240,8 @@ export class BookingsService {
       advanceDate: dto.advanceDate ?? booking.advanceDate,
       paymentMode: dto.paymentMode ?? booking.paymentMode,
       remarks: dto.remarks ?? booking.remarks,
+      collectionAmount: dto.collectionAmount ?? booking.collectionAmount,
+      agentId: dto.agentId ?? booking.agentId,
       lastModifiedBy: userName || booking.lastModifiedBy,
     });
 

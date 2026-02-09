@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { BookingAddon } from './booking-addon.entity';
+import { User } from '../auth/entities/user.entity';
 
 @Entity('bookings')
 export class Booking {
@@ -122,6 +123,16 @@ export class Booking {
 
   @Column({ name: 'payment_proof_path', type: 'varchar', nullable: true })
   paymentProofPath: string | null;
+
+  @Column({ name: 'collection_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  collectionAmount: number;
+
+  @Column({ name: 'agent_id', nullable: true })
+  agentId: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'agent_id' })
+  agent: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import type { Booking } from '../types';
 import { formatCurrency, formatDate } from '../hooks/useApi';
 
 export default function Ledger() {
+  const navigate = useNavigate();
   const [agent, setAgent] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -55,13 +57,23 @@ export default function Ledger() {
     <div>
       <div className="section-header">
         <h3><span className="material-icons">account_balance</span> Agent Ledger</h3>
-        <div className="report-filters">
-          <select value={agent} onChange={(e) => setAgent(e.target.value)}>
-            <option value="">All Agents</option>
-            {agents.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="From" />
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} placeholder="To" />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button
+            onClick={() => navigate('/agent-ledger')}
+            className="btn-primary"
+            style={{ padding: '8px 16px', fontSize: '14px' }}
+          >
+            <span className="material-icons" style={{ fontSize: '18px' }}>assessment</span>
+            Agent Ledger Report
+          </button>
+          <div className="report-filters">
+            <select value={agent} onChange={(e) => setAgent(e.target.value)}>
+              <option value="">All Agents</option>
+              {agents.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="From" />
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} placeholder="To" />
+          </div>
         </div>
       </div>
 

@@ -73,4 +73,24 @@ export class ReportsController {
   getInventoryData(@Query('month') month: string) {
     return this.reportsService.getInventoryData(month);
   }
+
+  @Get('agent-ledger')
+  @RequirePermissions('ledger', 'view')
+  getAgentLedgerReport(
+    @Query('agentId') agentId?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.reportsService.getAgentLedgerReport(agentId, startDate, endDate);
+  }
+
+  @Get('agent-ledger/:agentId/details')
+  @RequirePermissions('ledger', 'view')
+  getAgentLedgerDetails(
+    @Query('agentId') agentId: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.reportsService.getAgentLedgerDetails(agentId, startDate, endDate);
+  }
 }

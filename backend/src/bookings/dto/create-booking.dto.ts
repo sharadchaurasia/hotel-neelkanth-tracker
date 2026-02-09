@@ -23,6 +23,8 @@ export class CreateBookingDto {
   paymentSubCategory?: string;
   remarks?: string;
   addOns?: { type: string; amount: number }[];
+  collectionAmount?: number;
+  agentId?: number;
 }
 
 export class CollectPaymentDto {

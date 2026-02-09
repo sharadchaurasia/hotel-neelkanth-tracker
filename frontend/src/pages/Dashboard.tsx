@@ -13,12 +13,14 @@ const emptyBooking = {
   roomCategory: '', checkIn: getToday(), checkOut: '', mealPlan: '', source: 'Walk-in',
   sourceName: '', complimentary: '', actualRoomRent: 0, totalAmount: 0, hotelShare: 0,
   paymentType: 'Postpaid', advanceReceived: 0, paymentMode: '', remarks: '',
+  collectionAmount: 0, agentId: undefined,
 };
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [filterDate, setFilterDate] = useState(getToday());
   const [filterViewBy, setFilterViewBy] = useState('checkout');
   const [filterStatus, setFilterStatus] = useState('');
@@ -85,7 +87,14 @@ export default function Dashboard() {
     } catch { /* ignore */ }
   }, [filterDate, filterViewBy, filterStatus, filterSource, filterAgent]);
 
-  useEffect(() => { fetchDashboard(); fetchBookings(); }, [fetchDashboard, fetchBookings]);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await api.get('/users');
+      setUsers(res.data);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchDashboard(); fetchBookings(); fetchUsers(); }, [fetchDashboard, fetchBookings, fetchUsers]);
 
   const refreshAll = () => { fetchDashboard(); fetchBookings(); };
 
@@ -129,6 +138,8 @@ export default function Dashboard() {
       paymentType: b.paymentType || 'Postpaid',
       advanceReceived: Number(b.advanceReceived) || 0, paymentMode: b.paymentMode || '',
       remarks: b.remarks || '',
+      collectionAmount: Number((b as any).collectionAmount) || 0,
+      agentId: (b as any).agentId || undefined,
     });
     setBookingAddOns(b.addOns || []);
     setPaymentSubCategory('');
@@ -890,6 +901,17 @@ export default function Dashboard() {
                 <option value="Card">💳 Card</option>
                 <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
                 <option value="AKS Office">🏢 AKS Office</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label>Collection Amount</label><input type="number" value={form.collectionAmount || ''} onChange={(e) => setForm({ ...form, collectionAmount: Number(e.target.value) })} placeholder="Amount collected" /></div>
+            <div className="form-group"><label>Assign to Agent</label>
+              <select value={form.agentId || ''} onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })}>
+                <option value="">No Agent</option>
+                {users.filter(u => u.role === 'admin' || u.role === 'staff').map(user => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
               </select>
             </div>
           </div>
