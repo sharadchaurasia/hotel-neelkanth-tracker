@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const tabs = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
@@ -20,11 +21,27 @@ const moreMenuItems = [
 
 export default function Layout() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [userName, setUserName] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setUserName(user.name);
+    }
+  }, []);
 
   const handleMoreItemClick = (path: string) => {
     navigate(path);
     setShowMoreMenu(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    toast.success('Logged out successfully');
+    navigate('/login');
   };
 
   return (
@@ -36,6 +53,15 @@ export default function Layout() {
             <h1>The Neelkanth Grand</h1>
             <p>by Aks Hospitality &mdash; CRM</p>
           </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ color: '#94a3b8', fontSize: '14px' }}>
+            👤 {userName}
+          </span>
+          <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px' }}>
+            <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
+            Logout
+          </button>
         </div>
       </div>
 

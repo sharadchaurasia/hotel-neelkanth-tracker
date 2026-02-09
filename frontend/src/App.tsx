@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -12,6 +12,12 @@ import AksOffice from './pages/AksOffice';
 import Users from './pages/Users';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('token');
+  return token ? <>{children}</> : <Navigate to="/login" replace />;
+}
 
 export default function App() {
   return (
@@ -29,7 +35,8 @@ export default function App() {
         error: { style: { borderColor: 'rgba(244,63,94,0.3)' } },
       }} />
       <Routes>
-        <Route element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/ledger" element={<Ledger />} />
