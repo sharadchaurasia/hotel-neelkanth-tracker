@@ -13,6 +13,7 @@ import Users from './pages/Users';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -36,6 +37,7 @@ export default function App() {
       }} />
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/inventory" element={<Inventory />} />
