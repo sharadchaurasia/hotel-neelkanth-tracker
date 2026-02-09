@@ -920,63 +920,123 @@ export default function Dashboard() {
       </Modal>
 
       {/* Collect Modal */}
-      <Modal open={collectModal} onClose={() => setCollectModal(false)} title="Collect Payment"
-        footer={<><button className="btn btn-secondary" onClick={() => setCollectModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCollect}>Collect</button></>}>
+      <Modal open={collectModal} onClose={() => setCollectModal(false)} title="💰 Collect Payment"
+        footer={<><button className="btn btn-secondary" onClick={() => setCollectModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCollect}><span className="material-icons">check_circle</span> Collect Payment</button></>}>
         {collectBooking && (
           <>
-            <p style={{ marginBottom: '16px' }}>Pending: <strong style={{ color: 'var(--accent-red)' }}>{formatCurrency(Number(collectBooking.totalAmount) - (Number(collectBooking.advanceReceived) || 0) - (Number(collectBooking.balanceReceived) || 0))}</strong></p>
-            <div className="form-group"><label>Amount</label><input type="number" value={collectAmount} onChange={(e) => setCollectAmount(Number(e.target.value))} /></div>
-            <div className="form-group" style={{ marginTop: '12px' }}><label>Payment Mode</label>
-              <select value={collectMode} onChange={(e) => setCollectMode(e.target.value)}>
-                <option value="">Select</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
-              </select>
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <small style={{ color: '#7a8699', display: 'block', marginBottom: '4px' }}>Pending Amount</small>
+                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#ef4444' }}>
+                    {formatCurrency(Number(collectBooking.totalAmount) - (Number(collectBooking.advanceReceived) || 0) - (Number(collectBooking.balanceReceived) || 0))}
+                  </h2>
+                </div>
+                <span className="material-icons" style={{ fontSize: '48px', color: 'rgba(239, 68, 68, 0.3)' }}>pending_actions</span>
+              </div>
+            </div>
+
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.15)', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons" style={{ fontSize: '20px' }}>payments</span>
+                Payment Details
+              </h3>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Amount to Collect</label>
+                <input type="number" value={collectAmount} onChange={(e) => setCollectAmount(Number(e.target.value))} placeholder="Enter amount" style={{ fontSize: '16px', fontWeight: '600' }} />
+              </div>
+              <div className="form-group">
+                <label>Payment Mode</label>
+                <select value={collectMode} onChange={(e) => setCollectMode(e.target.value)}>
+                  <option value="">Select Mode</option>
+                  <option value="Cash">💵 Cash</option>
+                  <option value="Card">💳 Card</option>
+                  <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                </select>
+              </div>
             </div>
           </>
         )}
       </Modal>
 
       {/* Cancel/Reschedule Modal */}
-      <Modal open={cancelModal} onClose={() => setCancelModal(false)} title="Cancel / Reschedule"
+      <Modal open={cancelModal} onClose={() => setCancelModal(false)} title={cancelAction === 'cancel' ? '🚫 Cancel Booking' : '📅 Reschedule Booking'}
         footer={<><button className="btn btn-secondary" onClick={() => setCancelModal(false)}>Close</button>
           <button className={cancelAction === 'cancel' ? 'btn btn-danger' : 'btn btn-warning'} onClick={doCancel}>
+            <span className="material-icons">{cancelAction === 'cancel' ? 'cancel' : 'event'}</span>
             {cancelAction === 'cancel' ? 'Cancel Booking' : 'Reschedule'}
           </button></>}>
         {cancelBooking && (
           <>
-            <p><strong>{cancelBooking.guestName}</strong> ({cancelBooking.bookingId}) — Checkout: {formatDate(cancelBooking.checkOut)}</p>
-            <div className="form-group" style={{ marginTop: '16px' }}><label>Action</label>
-              <select value={cancelAction} onChange={(e) => setCancelAction(e.target.value)}>
-                <option value="cancel">Cancel</option><option value="reschedule">Reschedule</option>
-              </select>
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(168, 85, 247, 0.04))', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.15)', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '600', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons" style={{ fontSize: '20px' }}>info</span>
+                Booking Details
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
+                <div><small style={{ color: '#7a8699' }}>Guest Name</small><br /><strong>{cancelBooking.guestName}</strong></div>
+                <div><small style={{ color: '#7a8699' }}>Booking ID</small><br /><strong>{cancelBooking.bookingId}</strong></div>
+                <div><small style={{ color: '#7a8699' }}>Check-in</small><br />{formatDate(cancelBooking.checkIn)}</div>
+                <div><small style={{ color: '#7a8699' }}>Check-out</small><br />{formatDate(cancelBooking.checkOut)}</div>
+              </div>
             </div>
-            {cancelAction === 'reschedule' && (
-              <div className="form-group" style={{ marginTop: '12px' }}><label>New Checkout Date</label><input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} /></div>
-            )}
+
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(249, 115, 22, 0.04))', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.15)' }}>
+              <div className="form-group" style={{ marginBottom: cancelAction === 'reschedule' ? '16px' : '0' }}>
+                <label style={{ fontWeight: '600' }}>Select Action</label>
+                <select value={cancelAction} onChange={(e) => setCancelAction(e.target.value)} style={{ fontSize: '15px' }}>
+                  <option value="cancel">🚫 Cancel Booking</option>
+                  <option value="reschedule">📅 Reschedule to New Date</option>
+                </select>
+              </div>
+              {cancelAction === 'reschedule' && (
+                <div className="form-group">
+                  <label style={{ fontWeight: '600' }}>New Checkout Date</label>
+                  <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} style={{ fontSize: '15px' }} />
+                </div>
+              )}
+            </div>
           </>
         )}
       </Modal>
 
       {/* Check-in Modal */}
-      <Modal open={checkinModal} onClose={() => setCheckinModal(false)} title="Check-in & Room Allotment"
-        footer={<><button className="btn btn-secondary" onClick={() => setCheckinModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCheckin}>Confirm Check-in</button></>}>
+      <Modal open={checkinModal} onClose={() => setCheckinModal(false)} title="🏨 Check-in & Room Allotment"
+        footer={<><button className="btn btn-secondary" onClick={() => setCheckinModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCheckin}><span className="material-icons">login</span> Confirm Check-in</button></>}>
         {checkinBooking && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-              <div><small style={{ color: 'var(--text-muted)' }}>Guest</small><br /><strong>{checkinBooking.guestName}</strong></div>
-              <div><small style={{ color: 'var(--text-muted)' }}>Pax</small><br /><strong>{checkinBooking.pax || 1}</strong></div>
-              <div><small style={{ color: 'var(--text-muted)' }}>Check-in</small><br />{formatDate(checkinBooking.checkIn)}</div>
-              <div><small style={{ color: 'var(--text-muted)' }}>Check-out</small><br />{formatDate(checkinBooking.checkOut)}</div>
-            </div>
-            {checkinRooms.map((rm, i) => (
-              <div className="form-group" key={i} style={{ marginBottom: '8px' }}>
-                <label>Room {i + 1}</label>
-                <select value={rm} onChange={(e) => { const nr = [...checkinRooms]; nr[i] = e.target.value; setCheckinRooms(nr); }}>
-                  <option value="">Select Room</option>
-                  {ALL_ROOMS.map(r => <option key={r} value={r}>{r} - {ROOM_TYPE[r] || ''}</option>)}
-                </select>
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.08), rgba(0, 102, 204, 0.04))', borderRadius: '12px', border: '1px solid rgba(0, 102, 204, 0.15)', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '600', color: '#0066cc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons" style={{ fontSize: '20px' }}>person</span>
+                Guest Information
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
+                <div><small style={{ color: '#7a8699' }}>Guest Name</small><br /><strong>{checkinBooking.guestName}</strong></div>
+                <div><small style={{ color: '#7a8699' }}>Number of Guests</small><br /><strong>{checkinBooking.pax || 1} adults</strong></div>
+                <div><small style={{ color: '#7a8699' }}>Check-in Date</small><br />{formatDate(checkinBooking.checkIn)}</div>
+                <div><small style={{ color: '#7a8699' }}>Check-out Date</small><br />{formatDate(checkinBooking.checkOut)}</div>
               </div>
-            ))}
-            <button className="btn btn-secondary btn-small" onClick={() => setCheckinRooms([...checkinRooms, ''])} style={{ marginTop: '8px' }}>+ Add Room</button>
+            </div>
+
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(201, 163, 95, 0.08), rgba(201, 163, 95, 0.04))', borderRadius: '12px', border: '1px solid rgba(201, 163, 95, 0.15)' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#c9a35f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons" style={{ fontSize: '20px' }}>meeting_room</span>
+                Assign Rooms
+              </h3>
+              {checkinRooms.map((rm, i) => (
+                <div className="form-group" key={i} style={{ marginBottom: '12px' }}>
+                  <label style={{ fontWeight: '600' }}>Room {i + 1}</label>
+                  <select value={rm} onChange={(e) => { const nr = [...checkinRooms]; nr[i] = e.target.value; setCheckinRooms(nr); }} style={{ fontSize: '15px' }}>
+                    <option value="">Select Room Number</option>
+                    {ALL_ROOMS.map(r => <option key={r} value={r}>{r} - {ROOM_TYPE[r] || ''}</option>)}
+                  </select>
+                </div>
+              ))}
+              <button className="btn btn-secondary btn-small" onClick={() => setCheckinRooms([...checkinRooms, ''])} style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="material-icons" style={{ fontSize: '16px' }}>add</span>
+                Add Another Room
+              </button>
+            </div>
           </>
         )}
       </Modal>
