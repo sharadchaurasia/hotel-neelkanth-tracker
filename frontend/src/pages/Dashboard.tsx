@@ -1069,41 +1069,93 @@ export default function Dashboard() {
                 <div><small style={{ color: 'var(--text-muted)' }}>Check-out</small><br />{formatDate(checkoutBooking.checkOut)}</div>
               </div>
 
-              {/* Unpaid KOT Orders */}
+              {/* Unpaid KOT Orders - Date-wise Bill */}
               {unpaidKotOrders.length > 0 && (
                 <div style={{
                   marginBottom: '16px',
-                  padding: '12px',
+                  padding: '16px',
                   background: '#fef3c7',
                   borderRadius: '8px',
                   border: '1px solid #fcd34d'
                 }}>
-                  <div style={{ fontWeight: '600', marginBottom: '8px', color: '#92400e' }}>
-                    🍽️ Unpaid KOT Orders:
+                  <div style={{ fontWeight: '700', marginBottom: '12px', color: '#92400e', fontSize: '15px', borderBottom: '2px solid #fcd34d', paddingBottom: '8px' }}>
+                    🍽️ KOT Bill - Consolidated
                   </div>
-                  {unpaidKotOrders.map((order: any) => (
-                    <div key={order.id} style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '6px 0',
-                      fontSize: '13px',
-                      borderBottom: '1px solid #fde68a'
-                    }}>
-                      <span>{order.kotId}: {order.description || 'Items'}</span>
-                      <span style={{ fontWeight: '600' }}>
-                        ₹{Number(order.totalAmount || order.amount).toFixed(2)}
-                      </span>
+
+                  {/* Group orders by date */}
+                  {Object.entries(
+                    unpaidKotOrders.reduce((acc: any, order: any) => {
+                      const date = new Date(order.orderDate || order.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      });
+                      if (!acc[date]) acc[date] = [];
+                      acc[date].push(order);
+                      return acc;
+                    }, {})
+                  ).map(([date, dateOrders]: [string, any]) => (
+                    <div key={date} style={{ marginBottom: '12px' }}>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#92400e',
+                        marginBottom: '6px',
+                        background: '#fde68a',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                      }}>
+                        📅 {date}
+                      </div>
+                      {dateOrders.map((order: any) => (
+                        <div key={order.id} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '6px 8px',
+                          fontSize: '13px',
+                          background: 'white',
+                          borderRadius: '4px',
+                          marginBottom: '4px',
+                        }}>
+                          <span style={{ flex: 1 }}>
+                            <span style={{ fontWeight: '600', color: '#374151' }}>{order.kotId}</span>
+                            {' • '}
+                            <span style={{ color: '#6b7280' }}>{order.description || 'Items'}</span>
+                          </span>
+                          <span style={{ fontWeight: '600', color: '#1a2332', minWidth: '80px', textAlign: 'right' }}>
+                            ₹{Number(order.totalAmount || order.amount).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '4px 8px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#92400e',
+                        borderTop: '1px solid #fcd34d',
+                        marginTop: '4px',
+                      }}>
+                        <span>Date Total:</span>
+                        <span>₹{dateOrders.reduce((sum: number, o: any) =>
+                          sum + Number(o.totalAmount || o.amount), 0
+                        ).toFixed(2)}</span>
+                      </div>
                     </div>
                   ))}
+
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    paddingTop: '8px',
-                    marginTop: '4px',
+                    paddingTop: '12px',
+                    marginTop: '8px',
                     fontWeight: '700',
-                    color: '#92400e'
+                    color: '#92400e',
+                    fontSize: '15px',
+                    borderTop: '2px solid #fcd34d',
                   }}>
-                    <span>Total KOT:</span>
+                    <span>Grand Total KOT:</span>
                     <span>₹{kotAmount.toFixed(2)}</span>
                   </div>
                 </div>

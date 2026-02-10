@@ -54,6 +54,9 @@ export default function KOT() {
     amount: '',
     paymentMode: 'Cash',
   });
+  const [showGuestOrdersModal, setShowGuestOrdersModal] = useState(false);
+  const [guestOrdersBooking, setGuestOrdersBooking] = useState<Booking | null>(null);
+  const [guestOrders, setGuestOrders] = useState<KOTOrder[]>([]);
 
   useEffect(() => {
     fetchOrders();
@@ -90,6 +93,22 @@ export default function KOT() {
     setSelectedBooking(booking);
     setItems([{ itemName: '', quantity: 1, rate: 0 }]);
     setShowItemsModal(true);
+  };
+
+  const handleViewGuestOrders = async (booking: Booking) => {
+    try {
+      // Fetch all orders and filter for this guest
+      const { data } = await api.get('/kot');
+      const filtered = data.filter((order: KOTOrder) =>
+        order.bookingId === booking.bookingId ||
+        (order.roomNo && order.roomNo === booking.roomNo)
+      );
+      setGuestOrders(filtered);
+      setGuestOrdersBooking(booking);
+      setShowGuestOrdersModal(true);
+    } catch (error: any) {
+      toast.error('Failed to load guest orders');
+    }
   };
 
   const addItem = () => {
@@ -320,25 +339,46 @@ export default function KOT() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleCreateKOTForRoom(booking)}
-                      style={{
-                        padding: '8px 16px',
-                        background: '#6b7b93',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}
-                    >
-                      <span className="material-icons" style={{ fontSize: '18px' }}>add</span>
-                      Add KOT
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleViewGuestOrders(booking)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#f3f4f6',
+                          color: '#374151',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span className="material-icons" style={{ fontSize: '18px' }}>visibility</span>
+                        View Orders
+                      </button>
+                      <button
+                        onClick={() => handleCreateKOTForRoom(booking)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#6b7b93',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span className="material-icons" style={{ fontSize: '18px' }}>add</span>
+                        Add KOT
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -749,6 +789,175 @@ export default function KOT() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Guest Orders Modal */}
+      {showGuestOrdersModal && guestOrdersBooking && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            padding: '24px',
+          }}>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '4px' }}>
+                  KOT Orders - {guestOrdersBooking.guestName}
+                </h2>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                  Room {guestOrdersBooking.roomNo} • {guestOrdersBooking.bookingId}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowGuestOrdersModal(false);
+                  setGuestOrdersBooking(null);
+                  setGuestOrders([]);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '0',
+                  width: '32px',
+                  height: '32px',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {guestOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <span className="material-icons" style={{ fontSize: '48px', opacity: 0.3 }}>receipt_long</span>
+                <p style={{ marginTop: '16px' }}>No KOT orders found for this guest</p>
+              </div>
+            ) : (
+              <div>
+                {/* Group orders by date */}
+                {Object.entries(
+                  guestOrders.reduce((acc: any, order) => {
+                    const date = new Date(order.orderDate || order.createdAt).toLocaleDateString('en-IN');
+                    if (!acc[date]) acc[date] = [];
+                    acc[date].push(order);
+                    return acc;
+                  }, {})
+                ).map(([date, dateOrders]: [string, any]) => (
+                  <div key={date} style={{ marginBottom: '24px' }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px',
+                      paddingBottom: '8px',
+                      borderBottom: '2px solid #e5e7eb',
+                    }}>
+                      📅 {date}
+                    </div>
+                    {dateOrders.map((order: KOTOrder) => (
+                      <div key={order.id} style={{
+                        padding: '16px',
+                        background: '#f9fafb',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        marginBottom: '12px',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontWeight: '600', fontSize: '15px' }}>{order.kotId}</span>
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            background: order.status === 'PAID' ? '#d1fae5' : '#fef3c7',
+                            color: order.status === 'PAID' ? '#065f46' : '#92400e',
+                          }}>
+                            {order.status}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                          {order.description || order.items?.map(i => i.itemName).join(', ')}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                            {order.paymentMode || 'Pay at Checkout'}
+                          </span>
+                          <span style={{ fontSize: '16px', fontWeight: '700', color: '#1a2332' }}>
+                            ₹{Number(order.totalAmount || order.amount).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{
+                      textAlign: 'right',
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      color: '#374151',
+                      paddingTop: '8px',
+                    }}>
+                      Date Total: ₹{dateOrders.reduce((sum: number, o: KOTOrder) =>
+                        sum + Number(o.totalAmount || o.amount), 0
+                      ).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Grand Total */}
+                <div style={{
+                  marginTop: '24px',
+                  padding: '16px',
+                  background: '#f3f4f6',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: '18px', fontWeight: '700' }}>Grand Total:</span>
+                  <span style={{ fontSize: '24px', fontWeight: '700', color: '#6b7b93' }}>
+                    ₹{guestOrders.reduce((sum, o) => sum + Number(o.totalAmount || o.amount), 0).toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Unpaid Orders */}
+                {guestOrders.some(o => o.status === 'UNPAID') && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    background: '#fef3c7',
+                    borderRadius: '8px',
+                    border: '1px solid #fcd34d',
+                  }}>
+                    <div style={{ fontWeight: '600', color: '#92400e', marginBottom: '4px' }}>
+                      ⚠️ Unpaid Amount:
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#92400e' }}>
+                      ₹{guestOrders.filter(o => o.status === 'UNPAID')
+                        .reduce((sum, o) => sum + Number(o.totalAmount || o.amount), 0).toFixed(2)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
