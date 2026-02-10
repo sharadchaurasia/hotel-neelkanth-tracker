@@ -111,16 +111,14 @@ export default function Ledger() {
   bookings.forEach(b => {
     const name = b.sourceName || 'Unknown';
     if (!agentSums[name]) agentSums[name] = { total: 0, received: 0, pending: 0, count: 0 };
-    const total = Number(b.totalAmount) || 0;
     const hotelShare = Number(b.hotelShare) || 0;
-    const agentCommission = total - hotelShare;
     const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-    const pend = Math.max(agentCommission - recv, 0);
-    agentSums[name].total += agentCommission;
+    const pend = hotelShare - recv; // Can be negative (extra) or positive (pending)
+    agentSums[name].total += hotelShare;
     agentSums[name].received += recv;
     agentSums[name].pending += pend;
     agentSums[name].count++;
-    grandTotal.total += agentCommission;
+    grandTotal.total += hotelShare;
     grandTotal.received += recv;
     grandTotal.pending += pend;
     grandTotal.count++;
@@ -185,16 +183,16 @@ export default function Ledger() {
         {agent ? (
           <>
             <div className="monthly-card"><div className="mc-label">{agent} — Bookings</div><div className="mc-value blue">{grandTotal.count}</div></div>
-            <div className="monthly-card"><div className="mc-label">Total Amount</div><div className="mc-value blue">{formatCurrency(grandTotal.total)}</div></div>
-            <div className="monthly-card"><div className="mc-label">Received</div><div className="mc-value green">{formatCurrency(grandTotal.received)}</div></div>
-            <div className="monthly-card"><div className="mc-label">Pending Due</div><div className="mc-value red">{formatCurrency(grandTotal.pending)}</div></div>
+            <div className="monthly-card"><div className="mc-label">Hotel Share</div><div className="mc-value blue">{formatCurrency(grandTotal.total)}</div></div>
+            <div className="monthly-card"><div className="mc-label">Total Collection</div><div className="mc-value green">{formatCurrency(grandTotal.received)}</div></div>
+            <div className="monthly-card"><div className="mc-label">Total Pending</div><div className={`mc-value ${grandTotal.pending > 0 ? 'red' : grandTotal.pending < 0 ? 'green' : 'blue'}`}>{formatCurrency(Math.abs(grandTotal.pending))}{grandTotal.pending < 0 ? ' (extra)' : ''}</div></div>
           </>
         ) : (
           Object.entries(agentSums).sort(([, a], [, b]) => b.pending - a.pending).map(([name, s]) => (
             <div className="monthly-card" key={name}>
               <div className="mc-label">{name} ({s.count})</div>
-              <div className={`mc-value ${s.pending > 0 ? 'red' : 'green'}`}>{formatCurrency(s.pending)}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total: {formatCurrency(s.total)} | Rcvd: {formatCurrency(s.received)}</div>
+              <div className={`mc-value ${s.pending > 0 ? 'red' : s.pending < 0 ? 'green' : 'blue'}`}>{formatCurrency(Math.abs(s.pending))}{s.pending < 0 ? ' (extra)' : ''}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Hotel Share: {formatCurrency(s.total)} | Collected: {formatCurrency(s.received)}</div>
             </div>
           ))
         )}
@@ -210,14 +208,12 @@ export default function Ledger() {
             Booking Details
           </div>
           <table className="report-table">
-            <thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Room Rent</th><th>Hotel Share</th><th>Agent Commission</th><th>Collected</th><th>Pending</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Hotel Share</th><th>Total Collection</th><th>Total Pending</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               {bookings.map(b => {
-                const total = Number(b.totalAmount) || 0;
                 const hotelShare = editingBooking === b.id ? editHotelShare : (Number(b.hotelShare) || 0);
-                const agentCommission = total - hotelShare;
-                const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-                const pend = Math.max(agentCommission - recv, 0);
+                const totalCollection = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
+                const totalPending = hotelShare - totalCollection; // Can be negative (extra collected) or positive (pending)
                 const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
                 return (
                   <tr key={b.id}>
@@ -227,8 +223,7 @@ export default function Ledger() {
                     <td>{b.roomNo || '-'}</td>
                     <td>{formatDate(b.checkIn)}</td>
                     <td>{formatDate(b.checkOut)}</td>
-                    <td className="amount">{formatCurrency(total)}</td>
-                    <td className="amount" style={{ color: 'var(--accent-cyan)' }}>
+                    <td className="amount" style={{ fontWeight: '600', color: 'var(--accent-cyan)' }}>
                       {editingBooking === b.id ? (
                         <input
                           type="number"
@@ -240,9 +235,11 @@ export default function Ledger() {
                         formatCurrency(hotelShare)
                       )}
                     </td>
-                    <td className="amount" style={{ fontWeight: '600' }}>{formatCurrency(agentCommission)}</td>
-                    <td className="amount amount-received">{formatCurrency(recv)}</td>
-                    <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
+                    <td className="amount amount-received">{formatCurrency(totalCollection)}</td>
+                    <td className={`amount ${totalPending > 0 ? 'amount-pending' : totalPending < 0 ? 'amount-received' : ''}`}>
+                      {formatCurrency(Math.abs(totalPending))}
+                      {totalPending < 0 && <span style={{ fontSize: '11px', marginLeft: '4px' }}>(extra)</span>}
+                    </td>
                     <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                     <td>
                       {editingBooking === b.id ? (
@@ -277,11 +274,11 @@ export default function Ledger() {
               })}
               <tr className="total-row">
                 <td colSpan={6}>TOTAL ({grandTotal.count} bookings)</td>
-                <td className="amount">-</td>
-                <td className="amount">-</td>
                 <td className="amount">{formatCurrency(grandTotal.total)}</td>
                 <td className="amount amount-received">{formatCurrency(grandTotal.received)}</td>
-                <td className={`amount ${grandTotal.pending > 0 ? 'amount-pending' : ''}`}>{formatCurrency(grandTotal.pending)}</td>
+                <td className={`amount ${grandTotal.pending > 0 ? 'amount-pending' : grandTotal.pending < 0 ? 'amount-received' : ''}`}>
+                  {formatCurrency(Math.abs(grandTotal.pending))}
+                </td>
                 <td></td>
                 <td></td>
               </tr>
