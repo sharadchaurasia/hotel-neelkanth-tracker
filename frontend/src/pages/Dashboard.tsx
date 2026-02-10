@@ -714,15 +714,21 @@ export default function Dashboard() {
                       <td>
                         <div style={{
                           display: 'flex',
+                          flexDirection: 'row',
                           gap: '6px',
                           alignItems: 'center',
                           flexWrap: 'wrap',
+                          justifyContent: 'flex-start',
                         }}>
                           {!isCR && pend > 0 && (
                             <button
                               className="btn btn-primary btn-small"
                               onClick={() => openCollect(b)}
-                              style={{ minWidth: '70px' }}
+                              style={{
+                                minWidth: '70px',
+                                display: 'inline-flex',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
                               Collect
                             </button>
@@ -732,10 +738,11 @@ export default function Dashboard() {
                               className="btn btn-warning btn-small"
                               onClick={() => openCheckout(b)}
                               style={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '4px',
                                 minWidth: '90px',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               <span className="material-icons" style={{ fontSize: '16px' }}>logout</span>
@@ -746,7 +753,11 @@ export default function Dashboard() {
                             <button
                               className="btn btn-secondary btn-small"
                               onClick={() => openEditBooking(b)}
-                              style={{ minWidth: '60px' }}
+                              style={{
+                                minWidth: '60px',
+                                display: 'inline-flex',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
                               Edit
                             </button>
@@ -755,7 +766,11 @@ export default function Dashboard() {
                             <button
                               className="btn btn-danger btn-small"
                               onClick={() => openCancel(b)}
-                              style={{ minWidth: '70px' }}
+                              style={{
+                                minWidth: '70px',
+                                display: 'inline-flex',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
                               Cancel
                             </button>
@@ -767,6 +782,8 @@ export default function Dashboard() {
                             style={{
                               minWidth: '40px',
                               padding: '6px 8px',
+                              display: 'inline-flex',
+                              justifyContent: 'center',
                             }}
                           >
                             <span className="material-icons" style={{ fontSize: '16px' }}>delete</span>
