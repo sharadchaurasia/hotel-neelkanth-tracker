@@ -35,6 +35,43 @@ export default function Layout() {
 
   return (
     <div className="app-container">
+      <div className="header">
+        <div className="header-brand">
+          <div>
+            <h1>The Neelkanth Grand</h1>
+            <p>By AKS Hospitality - CRM</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ color: '#7a8699', fontSize: '14px', fontWeight: '500' }}>
+            {userName}
+          </span>
+          <button onClick={handleLogout} style={{
+            padding: '8px 20px',
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+          }}>
+            <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
+            Logout
+          </button>
+        </div>
+      </div>
+
       {/* Sticky Quick Access Bar - KOT & New Booking */}
       <div style={{
         position: 'sticky',
@@ -109,43 +146,6 @@ export default function Layout() {
           <span className="material-icons" style={{ fontSize: '20px' }}>restaurant</span>
           KOT Orders
         </NavLink>
-      </div>
-
-      <div className="header">
-        <div className="header-brand">
-          <div>
-            <h1>The Neelkanth Grand</h1>
-            <p>By AKS Hospitality - CRM</p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#7a8699', fontSize: '14px', fontWeight: '500' }}>
-            {userName}
-          </span>
-          <button onClick={handleLogout} style={{
-            padding: '8px 20px',
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          }}>
-            <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
-            Logout
-          </button>
-        </div>
       </div>
 
       <div className="nav-tabs">
