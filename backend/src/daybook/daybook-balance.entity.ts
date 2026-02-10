@@ -13,4 +13,19 @@ export class DaybookBalance {
 
   @Column({ name: 'bank_sbi_opening', type: 'decimal', precision: 12, scale: 2, default: 0 })
   bankSbiOpening: number;
+
+  @Column({ name: 'cash_closing', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  cashClosing: number;
+
+  @Column({ name: 'bank_sbi_closing', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  bankSbiClosing: number;
+
+  @Column({ name: 'is_calculated', default: false })
+  isCalculated: boolean;
+
+  @Column({ name: 'calculated_at', type: 'timestamp', nullable: true })
+  calculatedAt: Date;
+
+  @Column({ default: false })
+  locked: boolean;
 }

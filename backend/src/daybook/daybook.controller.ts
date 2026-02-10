@@ -1,12 +1,16 @@
 import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, ForbiddenException } from '@nestjs/common';
 import { DaybookService } from './daybook.service';
+import { DaybookSchedulerService } from './daybook-scheduler.service';
 import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
 import { RequirePermissions, CurrentUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
 
 @Controller('api/daybook')
 export class DaybookController {
-  constructor(private readonly daybookService: DaybookService) {}
+  constructor(
+    private readonly daybookService: DaybookService,
+    private readonly schedulerService: DaybookSchedulerService,
+  ) {}
 
   @Get('entries')
   @RequirePermissions('daybook', 'view')
@@ -108,5 +112,45 @@ export class DaybookController {
     @CurrentUser() user: User,
   ) {
     return this.daybookService.respondToRequest(+id, body.status, user.id, user.name, body.adminNote);
+  }
+
+  // Module 9: Balance Carry Forward Endpoints
+
+  @Post('recalculate/:date')
+  @RequirePermissions('daybook', 'edit')
+  async recalculateBalance(@Param('date') date: string, @CurrentUser() user: User) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can recalculate balances');
+    }
+    return this.schedulerService.recalculateFrom(date);
+  }
+
+  @Post('carry-forward/:date')
+  @RequirePermissions('daybook', 'edit')
+  async carryForward(@Param('date') date: string, @CurrentUser() user: User) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can manually carry forward balances');
+    }
+    return this.schedulerService.manualCarryForward(date);
+  }
+
+  @Post('lock/:date')
+  @RequirePermissions('daybook', 'edit')
+  async lockBalance(@Param('date') date: string, @CurrentUser() user: User) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can lock balances');
+    }
+    await this.daybookService.lockBalance(date);
+    return { success: true, message: `Balance for ${date} locked successfully` };
+  }
+
+  @Post('unlock/:date')
+  @RequirePermissions('daybook', 'edit')
+  async unlockBalance(@Param('date') date: string, @CurrentUser() user: User) {
+    if (user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admin can unlock balances');
+    }
+    await this.daybookService.unlockBalance(date);
+    return { success: true, message: `Balance for ${date} unlocked successfully` };
   }
 }

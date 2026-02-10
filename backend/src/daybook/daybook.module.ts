@@ -6,6 +6,7 @@ import { DaybookAccessRequest } from './daybook-access-request.entity';
 import { Booking } from '../bookings/booking.entity';
 import { AksOfficePayment } from '../bookings/aks-office-payment.entity';
 import { DaybookService } from './daybook.service';
+import { DaybookSchedulerService } from './daybook-scheduler.service';
 import { DaybookController } from './daybook.controller';
 import { AuditModule } from '../audit/audit.module';
 
@@ -15,7 +16,7 @@ import { AuditModule } from '../audit/audit.module';
     AuditModule,
   ],
   controllers: [DaybookController],
-  providers: [DaybookService],
+  providers: [DaybookService, DaybookSchedulerService],
   exports: [DaybookService],
 })
 export class DaybookModule {}

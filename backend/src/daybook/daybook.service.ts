@@ -388,4 +388,171 @@ export class DaybookService {
       throw new InternalServerErrorException('Failed to auto-collect daybook entries. Please try again.');
     }
   }
+
+  // Module 9: Balance Carry Forward Methods
+
+  private getPreviousDate(date: string): string {
+    const d = new Date(date + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  private getNextDate(date: string): string {
+    const d = new Date(date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  async calculateDayBalance(date: string): Promise<{
+    cashOpening: number;
+    cashClosing: number;
+    bankSbiOpening: number;
+    bankSbiClosing: number;
+  }> {
+    // 1. Get previous day's closing
+    const prevDate = this.getPreviousDate(date);
+    const prevBalance = await this.balanceRepo.findOne({ where: { date: prevDate } });
+
+    const cashOpening = Number(prevBalance?.cashClosing) || 0;
+    const bankSbiOpening = Number(prevBalance?.bankSbiClosing) || 0;
+
+    // 2. Get today's entries
+    const entries = await this.entryRepo.find({ where: { date } });
+
+    // 3. Calculate income by source
+    const cashIncome = entries
+      .filter(e => e.type === 'income' && (e.receivedIn === 'Cash' || e.paymentSource === 'Cash'))
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const bankIncome = entries
+      .filter(e => e.type === 'income' && e.receivedIn !== 'Cash' && e.paymentSource !== 'Cash')
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    // 4. Calculate expense by source
+    const cashExpense = entries
+      .filter(e => e.type === 'expense' && e.paymentSource === 'Cash')
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const bankExpense = entries
+      .filter(e => e.type === 'expense' && e.paymentSource !== 'Cash')
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    // 5. Calculate closing
+    const cashClosing = cashOpening + cashIncome - cashExpense;
+    const bankSbiClosing = bankSbiOpening + bankIncome - bankExpense;
+
+    return {
+      cashOpening,
+      cashClosing,
+      bankSbiOpening,
+      bankSbiClosing,
+    };
+  }
+
+  async saveCalculatedBalance(date: string, balance: {
+    cashOpening: number;
+    cashClosing: number;
+    bankSbiOpening: number;
+    bankSbiClosing: number;
+  }): Promise<DaybookBalance> {
+    let existing = await this.balanceRepo.findOne({ where: { date } });
+
+    if (existing) {
+      // Update existing
+      existing.cashOpening = balance.cashOpening;
+      existing.cashClosing = balance.cashClosing;
+      existing.bankSbiOpening = balance.bankSbiOpening;
+      existing.bankSbiClosing = balance.bankSbiClosing;
+      existing.isCalculated = true;
+      existing.calculatedAt = new Date();
+    } else {
+      // Create new
+      existing = this.balanceRepo.create({
+        date,
+        cashOpening: balance.cashOpening,
+        cashClosing: balance.cashClosing,
+        bankSbiOpening: balance.bankSbiOpening,
+        bankSbiClosing: balance.bankSbiClosing,
+        isCalculated: true,
+        calculatedAt: new Date(),
+        locked: false,
+      });
+    }
+
+    return this.balanceRepo.save(existing);
+  }
+
+  async carryForwardBalance(fromDate: string): Promise<void> {
+    const balance = await this.calculateDayBalance(fromDate);
+    await this.saveCalculatedBalance(fromDate, balance);
+
+    const nextDate = this.getNextDate(fromDate);
+
+    // Check if next date exists
+    let nextBalance = await this.balanceRepo.findOne({ where: { date: nextDate } });
+
+    if (!nextBalance) {
+      // Create new balance entry for next day
+      nextBalance = this.balanceRepo.create({
+        date: nextDate,
+        cashOpening: balance.cashClosing,
+        bankSbiOpening: balance.bankSbiClosing,
+        cashClosing: balance.cashClosing, // Will be recalculated when day ends
+        bankSbiClosing: balance.bankSbiClosing,
+        isCalculated: true,
+        calculatedAt: new Date(),
+        locked: false,
+      });
+    } else if (!nextBalance.locked) {
+      // Update opening balance (only if not locked)
+      nextBalance.cashOpening = balance.cashClosing;
+      nextBalance.bankSbiOpening = balance.bankSbiClosing;
+      nextBalance.isCalculated = true;
+      nextBalance.calculatedAt = new Date();
+    }
+
+    await this.balanceRepo.save(nextBalance);
+  }
+
+  async recalculateSubsequentDays(fromDate: string): Promise<void> {
+    const today = this.getTodayStr();
+    let currentDate = fromDate;
+    let daysRecalculated = 0;
+
+    while (currentDate <= today) {
+      const balance = await this.calculateDayBalance(currentDate);
+      await this.saveCalculatedBalance(currentDate, balance);
+
+      // Carry forward to next day
+      if (currentDate < today) {
+        await this.carryForwardBalance(currentDate);
+      }
+
+      currentDate = this.getNextDate(currentDate);
+      daysRecalculated++;
+
+      // Safety limit to prevent infinite loops
+      if (daysRecalculated > 365) {
+        throw new Error('Recalculation exceeded 365 days - stopping for safety');
+      }
+    }
+
+    console.log(`[DaybookService] Recalculated balances from ${fromDate} to ${today} (${daysRecalculated} days)`);
+  }
+
+  async lockBalance(date: string): Promise<void> {
+    const balance = await this.balanceRepo.findOne({ where: { date } });
+    if (balance && !balance.locked) {
+      balance.locked = true;
+      await this.balanceRepo.save(balance);
+    }
+  }
+
+  async unlockBalance(date: string): Promise<void> {
+    const balance = await this.balanceRepo.findOne({ where: { date } });
+    if (balance && balance.locked) {
+      balance.locked = false;
+      await this.balanceRepo.save(balance);
+    }
+  }
 }

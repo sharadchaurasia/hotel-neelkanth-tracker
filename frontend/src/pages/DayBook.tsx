@@ -9,7 +9,14 @@ import toast from 'react-hot-toast';
 export default function DayBook() {
   const [date, setDate] = useState(getToday());
   const [entries, setEntries] = useState<DaybookEntry[]>([]);
-  const [balance, setBalance] = useState<{ cashOpening: number; bankSbiOpening: number } | null>(null);
+  const [balance, setBalance] = useState<{
+    cashOpening: number;
+    bankSbiOpening: number;
+    cashClosing?: number;
+    bankSbiClosing?: number;
+    isCalculated?: boolean;
+    locked?: boolean;
+  } | null>(null);
   const [closing, setClosing] = useState<any>(null);
   const [staff, setStaff] = useState<Staff[]>([]);
 
@@ -156,8 +163,24 @@ export default function DayBook() {
 
       {/* Balance Cards */}
       <div className="monthly-grid" style={{ marginBottom: '24px' }}>
-        <div className="monthly-card" style={{ cursor: 'pointer' }} onClick={openBalanceModal}><div className="mc-label">Cash Opening</div><div className="mc-value blue">{formatCurrency(balance?.cashOpening || 0)}</div></div>
-        <div className="monthly-card" style={{ cursor: 'pointer' }} onClick={openBalanceModal}><div className="mc-label">Bank (SBI Neelkanth) Opening</div><div className="mc-value blue">{formatCurrency(balance?.bankSbiOpening || 0)}</div></div>
+        <div className="monthly-card" style={{ cursor: balance?.isCalculated && !balance?.locked ? 'default' : 'pointer' }} onClick={balance?.isCalculated && !balance?.locked ? undefined : openBalanceModal}>
+          <div className="mc-label">Cash Opening</div>
+          <div className="mc-value blue">{formatCurrency(balance?.cashOpening || 0)}</div>
+          {balance?.isCalculated && (
+            <div style={{ fontSize: '10px', color: '#22c55e', marginTop: '4px' }}>
+              ✓ Auto-calculated
+            </div>
+          )}
+        </div>
+        <div className="monthly-card" style={{ cursor: balance?.isCalculated && !balance?.locked ? 'default' : 'pointer' }} onClick={balance?.isCalculated && !balance?.locked ? undefined : openBalanceModal}>
+          <div className="mc-label">Bank (SBI Neelkanth) Opening</div>
+          <div className="mc-value blue">{formatCurrency(balance?.bankSbiOpening || 0)}</div>
+          {balance?.locked && (
+            <div style={{ fontSize: '10px', color: '#f59e0b', marginTop: '4px' }}>
+              🔒 Locked
+            </div>
+          )}
+        </div>
         <div className="monthly-card"><div className="mc-label">Cash Closing</div><div className="mc-value green">{formatCurrency(closing?.cashClosing || 0)}</div></div>
         <div className="monthly-card"><div className="mc-label">Bank Closing</div><div className="mc-value green">{formatCurrency(closing?.bankClosing || 0)}</div></div>
       </div>
