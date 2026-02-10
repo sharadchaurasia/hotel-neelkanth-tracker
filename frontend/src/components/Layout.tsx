@@ -6,6 +6,7 @@ const tabs = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
   { path: '/inventory', label: 'Inventory', icon: 'meeting_room' },
   { path: '/ledger', label: 'Ledger', icon: 'account_balance' },
+  { path: '/aks-office', label: 'AKS Office', icon: 'business_center' },
   { path: '/reports', label: 'Reports', icon: 'assessment' },
   { path: '/daybook', label: 'Day Book', icon: 'menu_book' },
   { path: '/salary', label: 'Salary', icon: 'badge' },

@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [collectBooking, setCollectBooking] = useState<Booking | null>(null);
   const [collectAmount, setCollectAmount] = useState(0);
   const [collectMode, setCollectMode] = useState('');
+  const [collectSubCategory, setCollectSubCategory] = useState('');
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelAction, setCancelAction] = useState('cancel');
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const [unpaidKotOrders, setUnpaidKotOrders] = useState<any[]>([]);
   const [addOns, setAddOns] = useState<{type: string; amount: number}[]>([]);
   const [checkoutPayMode, setCheckoutPayMode] = useState('');
+  const [checkoutSubCategory, setCheckoutSubCategory] = useState('');
   const [transferToAgent, setTransferToAgent] = useState(false);
   const [collectFromGuest, setCollectFromGuest] = useState(0);
 
@@ -182,10 +184,23 @@ export default function Dashboard() {
 
   const doCollect = async () => {
     if (!collectBooking || collectAmount <= 0) return;
+    if (!collectMode) {
+      toast.error('Please select payment mode');
+      return;
+    }
+    if (collectMode === 'AKS Office' && !collectSubCategory) {
+      toast.error('Please select AKS Office sub-category');
+      return;
+    }
     try {
-      await api.post(`/bookings/${collectBooking.id}/collect`, { amount: collectAmount, paymentMode: collectMode });
+      await api.post(`/bookings/${collectBooking.id}/collect`, {
+        amount: collectAmount,
+        paymentMode: collectMode,
+        subCategory: collectMode === 'AKS Office' ? collectSubCategory : undefined
+      });
       toast.success('Payment collected!');
       setCollectModal(false);
+      setCollectSubCategory('');
       refreshAll();
     } catch { toast.error('Error collecting payment'); }
   };
@@ -467,16 +482,26 @@ export default function Dashboard() {
 
   const doCheckout = async () => {
     if (!checkoutBooking) return;
+
+    // Validate AKS Office sub-category if selected
+    if (checkoutPayMode === 'AKS Office' && !checkoutSubCategory) {
+      toast.error('Please select AKS Office sub-category');
+      return;
+    }
+
     try {
       await api.post(`/bookings/${checkoutBooking.id}/checkout`, {
         kotAmount,
         addOns,
         paymentMode: checkoutPayMode || undefined,
+        subCategory: checkoutPayMode === 'AKS Office' ? checkoutSubCategory : undefined,
         transferToAgentLedger: transferToAgent,
         collectAmount: transferToAgent ? collectFromGuest : undefined,
       });
       toast.success('Guest checked out!');
       setCheckoutModal(false);
+      setCheckoutPayMode('');
+      setCheckoutSubCategory('');
       setTransferToAgent(false);
       setCollectFromGuest(0);
       refreshAll();
@@ -711,10 +736,10 @@ export default function Dashboard() {
                       <td className="amount amount-received">{formatCurrency(recv)}</td>
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
-                      <td>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'row',
+                      <td style={{ minWidth: '350px' }}>
+                        <div className="action-buttons-row" style={{
+                          display: 'flex !important' as any,
+                          flexDirection: 'row !important' as any,
                           gap: '6px',
                           alignItems: 'center',
                           flexWrap: 'wrap',
@@ -726,7 +751,6 @@ export default function Dashboard() {
                               onClick={() => openCollect(b)}
                               style={{
                                 minWidth: '70px',
-                                display: 'inline-flex',
                                 whiteSpace: 'nowrap',
                               }}
                             >
@@ -738,7 +762,6 @@ export default function Dashboard() {
                               className="btn btn-warning btn-small"
                               onClick={() => openCheckout(b)}
                               style={{
-                                display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '4px',
                                 minWidth: '90px',
@@ -755,7 +778,6 @@ export default function Dashboard() {
                               onClick={() => openEditBooking(b)}
                               style={{
                                 minWidth: '60px',
-                                display: 'inline-flex',
                                 whiteSpace: 'nowrap',
                               }}
                             >
@@ -768,7 +790,6 @@ export default function Dashboard() {
                               onClick={() => openCancel(b)}
                               style={{
                                 minWidth: '70px',
-                                display: 'inline-flex',
                                 whiteSpace: 'nowrap',
                               }}
                             >
@@ -782,7 +803,6 @@ export default function Dashboard() {
                             style={{
                               minWidth: '40px',
                               padding: '6px 8px',
-                              display: 'inline-flex',
                               justifyContent: 'center',
                             }}
                           >
@@ -1029,15 +1049,38 @@ export default function Dashboard() {
                 <label>Amount to Collect</label>
                 <input type="number" value={collectAmount} onChange={(e) => setCollectAmount(Number(e.target.value))} placeholder="Enter amount" style={{ fontSize: '16px', fontWeight: '600' }} />
               </div>
-              <div className="form-group">
+              <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label>Payment Mode</label>
-                <select value={collectMode} onChange={(e) => setCollectMode(e.target.value)}>
+                <select value={collectMode} onChange={(e) => { setCollectMode(e.target.value); setCollectSubCategory(''); }}>
                   <option value="">Select Mode</option>
                   <option value="Cash">💵 Cash</option>
                   <option value="Card">💳 Card</option>
                   <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                  <option value="AKS Office">🏢 AKS Office</option>
                 </select>
               </div>
+              {collectMode === 'AKS Office' && (
+                <div className="form-group">
+                  <label>AKS Office Sub-Category</label>
+                  <select value={collectSubCategory} onChange={(e) => setCollectSubCategory(e.target.value)}>
+                    <option value="">Select Person</option>
+                    <option value="Rajat">Rajat</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Vishal">Vishal</option>
+                    <option value="Fyra">Fyra</option>
+                    <option value="Gateway">Gateway</option>
+                    <option value="Other">Other (Manual Entry)</option>
+                  </select>
+                  {collectSubCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Enter name manually"
+                      style={{ marginTop: '12px' }}
+                      onChange={(e) => setCollectSubCategory(e.target.value)}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -1126,8 +1169,8 @@ export default function Dashboard() {
       </Modal>
 
       {/* Checkout Modal */}
-      <Modal open={checkoutModal} onClose={() => setCheckoutModal(false)} title="Checkout" wide
-        footer={<><button className="btn btn-secondary" onClick={() => setCheckoutModal(false)}>Cancel</button><button className="btn btn-warning" onClick={doCheckout}><span className="material-icons">logout</span> Process Checkout</button></>}>
+      <Modal open={checkoutModal} onClose={() => { setCheckoutModal(false); setCheckoutPayMode(''); setCheckoutSubCategory(''); }} title="Checkout" wide
+        footer={<><button className="btn btn-secondary" onClick={() => { setCheckoutModal(false); setCheckoutPayMode(''); setCheckoutSubCategory(''); }}>Cancel</button><button className="btn btn-warning" onClick={doCheckout}><span className="material-icons">logout</span> Process Checkout</button></>}>
         {checkoutBooking && (() => {
           const t = getCheckoutTotals();
           return (
@@ -1260,10 +1303,29 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent-red)', fontWeight: 700 }}><span>Balance</span><strong>{formatCurrency(t.balance)}</strong></div>
               </div>
               <div className="form-group" style={{ marginTop: '16px' }}><label>Collect Balance Via</label>
-                <select value={checkoutPayMode} onChange={(e) => setCheckoutPayMode(e.target.value)}>
-                  <option value="">Don't collect now</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
+                <select value={checkoutPayMode} onChange={(e) => { setCheckoutPayMode(e.target.value); setCheckoutSubCategory(''); }}>
+                  <option value="">Don't collect now</option>
+                  <option value="Cash">💵 Cash</option>
+                  <option value="Card">💳 Card</option>
+                  <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                  <option value="AKS Office">🏢 AKS Office</option>
                 </select>
               </div>
+
+              {checkoutPayMode === 'AKS Office' && (
+                <div className="form-group" style={{ marginTop: '12px' }}>
+                  <label>AKS Office Sub-Category</label>
+                  <select value={checkoutSubCategory} onChange={(e) => setCheckoutSubCategory(e.target.value)}>
+                    <option value="">Select Person</option>
+                    <option value="Rajat">Rajat</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Vishal">Vishal</option>
+                    <option value="Fyra">Fyra</option>
+                    <option value="Gateway">Gateway</option>
+                    <option value="Other">Other (Manual Entry)</option>
+                  </select>
+                </div>
+              )}
 
               {/* Transfer to Agent Ledger Option */}
               {checkoutBooking && (checkoutBooking.paymentType === 'Ledger' || checkoutBooking.source === 'Agent') && t.balance > 0 && (

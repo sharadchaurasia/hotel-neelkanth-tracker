@@ -5,7 +5,10 @@ import { CreateDaybookEntryDto, SetBalanceDto } from './dto/create-daybook.dto';
 import { RequirePermissions, CurrentUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
 
-@Controller('api/daybook')
+// IMPORTANT: Do NOT add 'api/' prefix here
+// Global prefix 'api' is set in main.ts
+// This becomes /api/daybook automatically
+@Controller('daybook')
 export class DaybookController {
   constructor(
     private readonly daybookService: DaybookService,

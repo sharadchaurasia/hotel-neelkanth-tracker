@@ -2,7 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { RequirePermissions } from '../auth/decorators';
 
-@Controller('api/reports')
+// IMPORTANT: Do NOT add 'api/' prefix here
+// Global prefix 'api' is set in main.ts
+// This becomes /api/reports automatically
+@Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 

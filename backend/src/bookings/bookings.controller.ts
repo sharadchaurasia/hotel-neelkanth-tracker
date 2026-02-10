@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Put, Delete, Param, Body, Query, Res,
+  Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, Res,
   BadRequestException, ForbiddenException, NotFoundException,
   UseInterceptors, UploadedFile,
 } from '@nestjs/common';
@@ -24,7 +24,10 @@ if (!existsSync(PAYMENT_PROOFS_DIR)) {
   mkdirSync(PAYMENT_PROOFS_DIR, { recursive: true });
 }
 
-@Controller('api/bookings')
+// IMPORTANT: Do NOT add 'api/' prefix here
+// Global prefix 'api' is set in main.ts
+// This becomes /api/bookings automatically
+@Controller('bookings')
 export class BookingsController {
   constructor(
     private readonly bookingsService: BookingsService,
@@ -58,6 +61,16 @@ export class BookingsController {
     @Query('subCategory') subCategory?: string,
   ) {
     return this.bookingsService.getAksOfficePayments({ from, to, subCategory });
+  }
+
+  @Patch('aks-office-payments/:paymentId')
+  @RequirePermissions('bookings', 'edit')
+  updateAksOfficePayment(
+    @CurrentUser() user: User,
+    @Param('paymentId') paymentId: string,
+    @Body() dto: { subCategory: string }
+  ) {
+    return this.bookingsService.updateAksOfficePayment(+paymentId, dto.subCategory, user.name);
   }
 
   @Delete('aks-office-payments/:paymentId')

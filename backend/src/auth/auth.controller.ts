@@ -24,7 +24,10 @@ import {
   UpdateUserDto,
 } from './dto/auth.dto';
 
-@Controller('api')
+// IMPORTANT: Empty controller prefix because this handles multiple route groups (auth/*, users/*)
+// Global prefix 'api' is set in main.ts
+// Routes like @Post('auth/login') become /api/auth/login automatically
+@Controller()
 export class AuthController {
   constructor(private authService: AuthService) {}
 

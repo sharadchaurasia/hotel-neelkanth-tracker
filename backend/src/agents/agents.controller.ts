@@ -2,6 +2,9 @@ import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common'
 import { AgentsService } from './agents.service';
 import { CreateAgentDto, UpdateAgentDto } from './dto/create-agent.dto';
 
+// IMPORTANT: Do NOT add 'api/' prefix here
+// Global prefix 'api' is set in main.ts
+// This becomes /api/agents automatically
 @Controller('agents')
 export class AgentsController {
   constructor(private readonly agentsService: AgentsService) {}

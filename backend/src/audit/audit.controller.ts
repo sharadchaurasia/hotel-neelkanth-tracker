@@ -3,7 +3,10 @@ import { AuditService } from './audit.service';
 import { CurrentUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
 
-@Controller('api/audit')
+// IMPORTANT: Do NOT add 'api/' prefix here
+// Global prefix 'api' is set in main.ts
+// This becomes /api/audit automatically
+@Controller('audit')
 export class AuditController {
   constructor(private auditService: AuditService) {}
 

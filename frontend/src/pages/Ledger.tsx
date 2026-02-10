@@ -1,8 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../api/client';
 import type { Booking } from '../types';
 import { formatCurrency, formatDate } from '../hooks/useApi';
+
+interface AksOfficePayment {
+  id: number;
+  refBookingId: string;
+  guestName: string;
+  roomNo: string;
+  amount: number;
+  subCategory: string;
+  date: string;
+  context: string;
+  createdBy: string;
+}
 
 export default function Ledger() {
   const navigate = useNavigate();
@@ -11,12 +24,16 @@ export default function Ledger() {
   const [to, setTo] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
+  const [aksPayments, setAksPayments] = useState<AksOfficePayment[]>([]);
+  const [editingPayment, setEditingPayment] = useState<number | null>(null);
+  const [editSubCategory, setEditSubCategory] = useState('');
+  const [editingBooking, setEditingBooking] = useState<number | null>(null);
+  const [editHotelShare, setEditHotelShare] = useState(0);
 
   useEffect(() => {
-    // Fetch agents from agents master table
+    // Fetch all agents from agents master table
     api.get('/agents').then(res => {
-      const agentsList = res.data.filter((a: any) => a.status === 'ACTIVE');
-      const names = agentsList.map((a: any) => a.name);
+      const names = res.data.map((a: any) => a.name);
       setAgents(names.sort());
     }).catch(() => {});
   }, []);
@@ -31,6 +48,62 @@ export default function Ledger() {
       setBookings(data.bookings || data);
     }).catch(() => {});
   }, [agent, from, to]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    api.get('/bookings/aks-office-payments?' + params).then(res => {
+      setAksPayments(res.data);
+    }).catch(() => {});
+  }, [from, to]);
+
+  const handleEditSubCategory = (payment: AksOfficePayment) => {
+    setEditingPayment(payment.id);
+    setEditSubCategory(payment.subCategory || '');
+  };
+
+  const handleSaveSubCategory = async (paymentId: number) => {
+    if (!editSubCategory) {
+      toast.error('Please select a sub-category');
+      return;
+    }
+    try {
+      await api.patch(`/bookings/aks-office-payments/${paymentId}`, { subCategory: editSubCategory });
+      toast.success('Sub-category updated successfully');
+      setEditingPayment(null);
+      // Refresh AKS payments
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      const res = await api.get('/bookings/aks-office-payments?' + params);
+      setAksPayments(res.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update sub-category');
+    }
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking.id);
+    setEditHotelShare(Number(booking.hotelShare) || 0);
+  };
+
+  const handleSaveBooking = async (bookingId: number) => {
+    try {
+      await api.put(`/bookings/${bookingId}`, { hotelShare: editHotelShare });
+      toast.success('Hotel share updated successfully');
+      setEditingBooking(null);
+      // Refresh bookings
+      const params = new URLSearchParams();
+      if (agent) params.set('agent', agent);
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      const res = await api.get('/reports/ledger?' + params);
+      setBookings(res.data.bookings || res.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update booking');
+    }
+  };
 
   const agentSums: Record<string, { total: number; received: number; pending: number; count: number }> = {};
   const grandTotal = { total: 0, received: 0, pending: 0, count: 0 };
@@ -53,26 +126,56 @@ export default function Ledger() {
     grandTotal.count++;
   });
 
+  // Calculate AKS Office totals by sub-category
+  const aksSums: Record<string, { amount: number; count: number }> = {};
+  const aksGrandTotal = { amount: 0, count: 0 };
+  aksPayments.forEach(p => {
+    const cat = p.subCategory || 'Unassigned';
+    if (!aksSums[cat]) aksSums[cat] = { amount: 0, count: 0 };
+    aksSums[cat].amount += Number(p.amount);
+    aksSums[cat].count++;
+    aksGrandTotal.amount += Number(p.amount);
+    aksGrandTotal.count++;
+  });
+
   return (
-    <div>
-      <div className="section-header">
-        <h3><span className="material-icons">account_balance</span> Agent Ledger</h3>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button
-            onClick={() => navigate('/agent-ledger')}
-            className="btn-primary"
-            style={{ padding: '8px 16px', fontSize: '14px' }}
-          >
-            <span className="material-icons" style={{ fontSize: '18px' }}>assessment</span>
-            Agent Ledger Report
-          </button>
-          <div className="report-filters">
+    <div className="page-container">
+      <div className="page-header">
+        <h2>
+          <span className="material-icons">account_balance</span>
+          {agent ? `${agent} - Ledger` : 'All Agents - Ledger'}
+        </h2>
+        <button
+          onClick={() => navigate('/agent-ledger')}
+          className="btn-primary"
+          style={{ padding: '10px 20px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <span className="material-icons" style={{ fontSize: '20px' }}>assessment</span>
+          Agent Ledger Report
+        </button>
+      </div>
+
+      {/* Filters Card */}
+      <div className="filters-card" style={{ marginBottom: '24px' }}>
+        <div className="card-header">
+          <span className="material-icons">filter_list</span>
+          Filters
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', padding: '20px' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Agent</label>
             <select value={agent} onChange={(e) => setAgent(e.target.value)}>
               <option value="">All Agents</option>
               {agents.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="From" />
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} placeholder="To" />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>From Date</label>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>To Date</label>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
         </div>
       </div>
@@ -101,44 +204,209 @@ export default function Ledger() {
       {bookings.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px' }}>No bookings found for selected filters</p>
       ) : (
-        <table className="report-table">
-          <thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Room Rent</th><th>Hotel Share</th><th>Agent Commission</th><th>Collected</th><th>Pending</th><th>Status</th></tr></thead>
+        <div className="table-card">
+          <div className="table-header">
+            <span className="material-icons">list_alt</span>
+            Booking Details
+          </div>
+          <table className="report-table">
+            <thead><tr><th>ID</th><th>Guest</th><th>Agent</th><th>Room</th><th>Check-in</th><th>Checkout</th><th>Room Rent</th><th>Hotel Share</th><th>Agent Commission</th><th>Collected</th><th>Pending</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {bookings.map(b => {
+                const total = Number(b.totalAmount) || 0;
+                const hotelShare = editingBooking === b.id ? editHotelShare : (Number(b.hotelShare) || 0);
+                const agentCommission = total - hotelShare;
+                const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
+                const pend = Math.max(agentCommission - recv, 0);
+                const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
+                return (
+                  <tr key={b.id}>
+                    <td><strong>{b.bookingId}</strong></td>
+                    <td>{b.guestName}</td>
+                    <td>{b.sourceName || '-'}</td>
+                    <td>{b.roomNo || '-'}</td>
+                    <td>{formatDate(b.checkIn)}</td>
+                    <td>{formatDate(b.checkOut)}</td>
+                    <td className="amount">{formatCurrency(total)}</td>
+                    <td className="amount" style={{ color: 'var(--accent-cyan)' }}>
+                      {editingBooking === b.id ? (
+                        <input
+                          type="number"
+                          value={editHotelShare}
+                          onChange={(e) => setEditHotelShare(Number(e.target.value))}
+                          style={{ width: '100px', padding: '4px 8px', fontSize: '13px' }}
+                        />
+                      ) : (
+                        formatCurrency(hotelShare)
+                      )}
+                    </td>
+                    <td className="amount" style={{ fontWeight: '600' }}>{formatCurrency(agentCommission)}</td>
+                    <td className="amount amount-received">{formatCurrency(recv)}</td>
+                    <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
+                    <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
+                    <td>
+                      {editingBooking === b.id ? (
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => handleSaveBooking(b.id)}
+                            className="btn-icon btn-success"
+                            title="Save"
+                          >
+                            <span className="material-icons">check</span>
+                          </button>
+                          <button
+                            onClick={() => setEditingBooking(null)}
+                            className="btn-icon btn-secondary"
+                            title="Cancel"
+                          >
+                            <span className="material-icons">close</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleEditBooking(b)}
+                          className="btn-icon btn-primary"
+                          title="Edit Hotel Share"
+                        >
+                          <span className="material-icons">edit</span>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr className="total-row">
+                <td colSpan={6}>TOTAL ({grandTotal.count} bookings)</td>
+                <td className="amount">-</td>
+                <td className="amount">-</td>
+                <td className="amount">{formatCurrency(grandTotal.total)}</td>
+                <td className="amount amount-received">{formatCurrency(grandTotal.received)}</td>
+                <td className={`amount ${grandTotal.pending > 0 ? 'amount-pending' : ''}`}>{formatCurrency(grandTotal.pending)}</td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* AKS Office Ledger Section */}
+      <div className="page-header" style={{ marginTop: '48px' }}>
+        <h2>
+          <span className="material-icons">business_center</span>
+          AKS Office Ledger
+        </h2>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '500' }}>
+          Hotel's pending share from AKS Office payments
+        </div>
+      </div>
+
+      {/* AKS Office Summary Cards */}
+      <div className="monthly-grid">
+        {Object.entries(aksSums).sort(([, a], [, b]) => b.amount - a.amount).map(([cat, s]) => (
+          <div className="monthly-card" key={cat}>
+            <div className="mc-label">{cat} ({s.count})</div>
+            <div className="mc-value red">{formatCurrency(s.amount)}</div>
+          </div>
+        ))}
+        {aksGrandTotal.count > 0 && (
+          <div className="monthly-card" style={{ background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)', border: '2px solid #ef4444' }}>
+            <div className="mc-label" style={{ fontWeight: '700' }}>TOTAL ({aksGrandTotal.count})</div>
+            <div className="mc-value red" style={{ fontSize: '24px', fontWeight: '700' }}>{formatCurrency(aksGrandTotal.amount)}</div>
+          </div>
+        )}
+      </div>
+
+      {/* AKS Office Detail Table */}
+      {aksPayments.length === 0 ? (
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px' }}>No AKS Office payments found for the selected period</p>
+      ) : (
+        <div className="table-card">
+          <div className="table-header">
+            <span className="material-icons">receipt_long</span>
+            AKS Office Payment Details
+          </div>
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Booking ID</th>
+                <th>Guest Name</th>
+                <th>Room No</th>
+                <th>Amount</th>
+                <th>Sub-Category</th>
+                <th>Context</th>
+                <th>Created By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
           <tbody>
-            {bookings.map(b => {
-              const total = Number(b.totalAmount) || 0;
-              const hotelShare = Number(b.hotelShare) || 0;
-              const agentCommission = total - hotelShare;
-              const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-              const pend = Math.max(agentCommission - recv, 0);
-              const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
-              return (
-                <tr key={b.id}>
-                  <td><strong>{b.bookingId}</strong></td>
-                  <td>{b.guestName}</td>
-                  <td>{b.sourceName || '-'}</td>
-                  <td>{b.roomNo || '-'}</td>
-                  <td>{formatDate(b.checkIn)}</td>
-                  <td>{formatDate(b.checkOut)}</td>
-                  <td className="amount">{formatCurrency(total)}</td>
-                  <td className="amount" style={{ color: 'var(--accent-cyan)' }}>{formatCurrency(hotelShare)}</td>
-                  <td className="amount" style={{ fontWeight: '600' }}>{formatCurrency(agentCommission)}</td>
-                  <td className="amount amount-received">{formatCurrency(recv)}</td>
-                  <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
-                  <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
-                </tr>
-              );
-            })}
-            <tr className="total-row">
-              <td colSpan={6}>TOTAL ({grandTotal.count} bookings)</td>
-              <td className="amount">-</td>
-              <td className="amount">-</td>
-              <td className="amount">{formatCurrency(grandTotal.total)}</td>
-              <td className="amount amount-received">{formatCurrency(grandTotal.received)}</td>
-              <td className={`amount ${grandTotal.pending > 0 ? 'amount-pending' : ''}`}>{formatCurrency(grandTotal.pending)}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
+            {aksPayments.map((payment) => (
+              <tr key={payment.id}>
+                <td>{new Date(payment.date).toLocaleDateString('en-IN')}</td>
+                <td><strong>{payment.refBookingId || '-'}</strong></td>
+                <td>{payment.guestName}</td>
+                <td>{payment.roomNo || '-'}</td>
+                <td className="amount amount-pending"><strong>{formatCurrency(Number(payment.amount))}</strong></td>
+                <td>
+                  {editingPayment === payment.id ? (
+                    <select
+                      value={editSubCategory}
+                      onChange={(e) => setEditSubCategory(e.target.value)}
+                      style={{ padding: '4px 8px', fontSize: '13px' }}
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Rajat">Rajat</option>
+                      <option value="Happy">Happy</option>
+                      <option value="Vishal">Vishal</option>
+                      <option value="Fyra">Fyra</option>
+                      <option value="Gateway">Gateway</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  ) : (
+                    <span className="badge badge-info">{payment.subCategory || 'Unassigned'}</span>
+                  )}
+                </td>
+                <td>{payment.context || '-'}</td>
+                <td>{payment.createdBy}</td>
+                <td>
+                  {editingPayment === payment.id ? (
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        onClick={() => handleSaveSubCategory(payment.id)}
+                        className="btn-icon btn-success"
+                        title="Save"
+                      >
+                        <span className="material-icons">check</span>
+                      </button>
+                      <button
+                        onClick={() => setEditingPayment(null)}
+                        className="btn-icon btn-secondary"
+                        title="Cancel"
+                      >
+                        <span className="material-icons">close</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleEditSubCategory(payment)}
+                      className="btn-icon btn-primary"
+                      title="Edit Category"
+                    >
+                      <span className="material-icons">edit</span>
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+              <tr className="total-row">
+                <td colSpan={4}>TOTAL ({aksGrandTotal.count} payments)</td>
+                <td className="amount amount-pending"><strong>{formatCurrency(aksGrandTotal.amount)}</strong></td>
+                <td colSpan={4}></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

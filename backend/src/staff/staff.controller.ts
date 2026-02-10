@@ -4,7 +4,10 @@ import { CreateStaffDto, CreateAttendanceDto, CreateAdvanceDto, FnfDto } from '.
 import { RequirePermissions, CurrentUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
 
-@Controller('api')
+// IMPORTANT: Empty controller prefix because this handles multiple route groups
+// Global prefix 'api' is set in main.ts
+// Routes like @Get('staff') become /api/staff automatically
+@Controller()
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 

@@ -12,6 +12,12 @@ async function bootstrap() {
     // Apply global exception filter for error handling
     app.useGlobalFilters(new AllExceptionsFilter());
 
+    // Set global prefix for all routes
+    // IMPORTANT: All routes will be prefixed with /api
+    // Example: @Controller('bookings') becomes /api/bookings
+    // DO NOT add 'api/' in controller decorators to avoid /api/api/ duplication
+    app.setGlobalPrefix('api');
+
     const allowedOrigins = process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(',')
       : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:8000', 'http://localhost:8080'];

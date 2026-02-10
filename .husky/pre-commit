@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running controller prefix validation..."
+
+cd backend
+
+# Run the controller prefix validation test
+npm run test -- controller-prefix.spec.ts --silent
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-commit validation failed!"
+  echo "❌ Fix controller prefix issues before committing"
+  echo ""
+  exit 1
+fi
+
+echo "✅ Controller prefix validation passed"

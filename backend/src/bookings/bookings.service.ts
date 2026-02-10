@@ -631,6 +631,16 @@ export class BookingsService {
     return qb.getMany();
   }
 
+  async updateAksOfficePayment(id: number, subCategory: string, userName?: string): Promise<any> {
+    const payment = await this.aksOfficeRepo.findOne({ where: { id } });
+    if (!payment) throw new NotFoundException('AKS Office payment not found');
+
+    payment.subCategory = subCategory;
+    await this.aksOfficeRepo.save(payment);
+
+    return payment;
+  }
+
   async deleteAksOfficePayment(id: number): Promise<void> {
     const payment = await this.aksOfficeRepo.findOne({ where: { id } });
     if (!payment) throw new NotFoundException('AKS Office payment not found');

@@ -2,6 +2,9 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/co
 import { MonthEndService } from './month-end.service';
 import { JwtAuthGuard } from '../auth/auth.guard';
 
+// IMPORTANT: Do NOT add 'api/' prefix here
+// Global prefix 'api' is set in main.ts
+// This becomes /api/month-end automatically
 @Controller('month-end')
 @UseGuards(JwtAuthGuard)
 export class MonthEndController {
