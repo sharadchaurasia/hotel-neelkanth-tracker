@@ -226,20 +226,42 @@ export default function NewBooking() {
             <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
               Booking Source
             </h3>
-            <div style={{ marginBottom: (form.source === 'OTA' || form.source === 'Agent') ? '10px' : '0' }}>
+            <div>
               <label style={labelStyleLocal}>Source</label>
-              <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+              <select
+                value={form.source}
+                onChange={(e) => {
+                  const newSource = e.target.value;
+                  setForm({
+                    ...form,
+                    source: newSource,
+                    // Auto-set payment type to Ledger for agents
+                    paymentType: (newSource !== 'Walk-in' && newSource !== 'Self') ? 'Ledger' : 'Postpaid'
+                  });
+                }}
+                style={{ ...inputStyleLocal, cursor: 'pointer' }}
+              >
                 <option value="Walk-in">Walk-in</option>
-                <option value="OTA">Online (OTA)</option>
-                <option value="Agent">Agent</option>
+                <option value="Self">Self</option>
+                <option value="AKS Office">AKS Office</option>
+                <option value="MMT">MMT</option>
+                <option value="Ultimate">Ultimate</option>
+                <option value="Minto">Minto</option>
+                <option value="Jatin TA">Jatin TA</option>
+                <option value="Royal Sunshine">Royal Sunshine</option>
+                <option value="Gyanrachanatour">Gyanrachanatour</option>
+                <option value="My Vacation">My Vacation</option>
+                <option value="MIH">MIH</option>
+                <option value="Focus">Focus</option>
+                <option value="Global">Global</option>
+                <option value="Globe India">Globe India</option>
+                <option value="Holiday7">Holiday7</option>
+                <option value="Himalayan Queen">Himalayan Queen</option>
+                <option value="Raisooone">Raisooone</option>
+                <option value="Legendyatri">Legendyatri</option>
+                <option value="WCT">WCT</option>
               </select>
             </div>
-            {(form.source === 'OTA' || form.source === 'Agent') && (
-              <div>
-                <label style={labelStyleLocal}>{form.source} Name</label>
-                <input type="text" value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder={form.source === 'Agent' ? 'Enter agent name' : 'e.g. MakeMyTrip, Goibibo'} style={inputStyleLocal} />
-              </div>
-            )}
           </div>
 
           {/* Pricing */}
@@ -280,7 +302,7 @@ export default function NewBooking() {
               </div>
             </div>
 
-            {form.source === 'Agent' && (
+            {(form.source !== 'Walk-in' && form.source !== 'Self') && (
               <div>
                 <label style={labelStyleLocal}>Hotel Share</label>
                 <input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
