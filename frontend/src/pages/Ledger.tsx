@@ -29,8 +29,12 @@ export default function Ledger() {
   const [editSubCategory, setEditSubCategory] = useState('');
   const [editingBooking, setEditingBooking] = useState<number | null>(null);
   const [editHotelShare, setEditHotelShare] = useState(0);
-  const [editPaymentMode, setEditPaymentMode] = useState('');
-  const [editBookingSubCategory, setEditBookingSubCategory] = useState('');
+  const [editCollections, setEditCollections] = useState<Array<{
+    amount: number;
+    paymentMode: string;
+    type: string;
+    subCategory: string;
+  }>>([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
 
   useEffect(() => {
     // Fetch all agents from agents master table
@@ -88,29 +92,40 @@ export default function Ledger() {
   const handleEditBooking = (booking: Booking) => {
     setEditingBooking(booking.id);
     setEditHotelShare(Number(booking.hotelShare) || 0);
-    setEditPaymentMode(booking.paymentMode || '');
-    setEditBookingSubCategory('');
+    const totalCollection = (Number(booking.advanceReceived) || 0) + (Number(booking.balanceReceived) || 0);
+    setEditCollections([{
+      amount: totalCollection,
+      paymentMode: booking.paymentMode || '',
+      type: 'Room Rent',
+      subCategory: ''
+    }]);
   };
 
   const handleSaveBooking = async (bookingId: number) => {
-    if (!editPaymentMode) {
-      toast.error('Please select payment mode');
-      return;
+    // Validate collections
+    for (const col of editCollections) {
+      if (!col.amount || col.amount <= 0) {
+        toast.error('Please enter valid amount for all collections');
+        return;
+      }
+      if (!col.paymentMode) {
+        toast.error('Please select payment mode for all collections');
+        return;
+      }
+      if (col.paymentMode === 'AKS Office' && !col.subCategory) {
+        toast.error('Please select sub-category for AKS Office payments');
+        return;
+      }
     }
-    if (editPaymentMode === 'AKS Office' && !editBookingSubCategory) {
-      toast.error('Please select AKS Office sub-category');
-      return;
-    }
+
     try {
       await api.put(`/bookings/${bookingId}`, {
         hotelShare: editHotelShare,
-        paymentMode: editPaymentMode,
-        subCategory: editPaymentMode === 'AKS Office' ? editBookingSubCategory : undefined
+        collections: editCollections
       });
       toast.success('Booking updated successfully');
       setEditingBooking(null);
-      setEditPaymentMode('');
-      setEditBookingSubCategory('');
+      setEditCollections([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
       // Refresh bookings
       const params = new URLSearchParams();
       if (agent) params.set('agent', agent);
@@ -121,6 +136,22 @@ export default function Ledger() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update booking');
     }
+  };
+
+  const addCollectionEntry = () => {
+    setEditCollections([...editCollections, { amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
+  };
+
+  const removeCollectionEntry = (index: number) => {
+    if (editCollections.length > 1) {
+      setEditCollections(editCollections.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateCollectionEntry = (index: number, field: string, value: any) => {
+    const updated = [...editCollections];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditCollections(updated);
   };
 
   const agentSums: Record<string, { total: number; received: number; pending: number; count: number }> = {};
@@ -243,43 +274,120 @@ export default function Ledger() {
                     <td>{formatDate(b.checkOut)}</td>
                     <td className="amount" style={{ fontWeight: '600', color: 'var(--accent-cyan)' }}>
                       {editingBooking === b.id ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+                          <div style={{ fontWeight: '600', fontSize: '12px', color: '#64748b' }}>Hotel Share</div>
                           <input
                             type="number"
                             value={editHotelShare}
                             onChange={(e) => setEditHotelShare(Number(e.target.value))}
-                            style={{ width: '100%', padding: '6px 8px', fontSize: '13px' }}
-                            placeholder="Hotel Share"
+                            style={{ width: '100%', padding: '6px 8px', fontSize: '13px', fontWeight: '600' }}
+                            placeholder="Amount"
                           />
-                          <select
-                            value={editPaymentMode}
-                            onChange={(e) => {
-                              setEditPaymentMode(e.target.value);
-                              if (e.target.value !== 'AKS Office') setEditBookingSubCategory('');
-                            }}
-                            style={{ width: '100%', padding: '6px 8px', fontSize: '12px' }}
-                          >
-                            <option value="">Payment Mode</option>
-                            <option value="Cash">💵 Cash</option>
-                            <option value="Card">💳 Card</option>
-                            <option value="Bank Transfer">🏦 Bank Transfer</option>
-                            <option value="AKS Office">🏢 AKS Office</option>
-                          </select>
-                          {editPaymentMode === 'AKS Office' && (
-                            <select
-                              value={editBookingSubCategory}
-                              onChange={(e) => setEditBookingSubCategory(e.target.value)}
-                              style={{ width: '100%', padding: '6px 8px', fontSize: '12px' }}
-                            >
-                              <option value="">Select Person</option>
-                              <option value="Rajat">Rajat</option>
-                              <option value="Happy">Happy</option>
-                              <option value="Vishal">Vishal</option>
-                              <option value="Fyra">Fyra</option>
-                              <option value="Gateway">Gateway</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          )}
+                          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '8px', marginTop: '4px' }}>
+                            <div style={{ fontWeight: '600', fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>Collections</div>
+                            {editCollections.map((col, idx) => (
+                              <div key={idx} style={{
+                                background: '#f8fafc',
+                                padding: '8px',
+                                borderRadius: '6px',
+                                marginBottom: '6px',
+                                border: '1px solid #e2e8f0'
+                              }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#475569' }}>Entry {idx + 1}</span>
+                                  {editCollections.length > 1 && (
+                                    <button
+                                      onClick={() => removeCollectionEntry(idx)}
+                                      style={{
+                                        background: '#fee2e2',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        padding: '2px 6px',
+                                        fontSize: '10px',
+                                        color: '#dc2626',
+                                        cursor: 'pointer'
+                                      }}
+                                    >✕</button>
+                                  )}
+                                </div>
+                                <input
+                                  type="number"
+                                  value={col.amount || ''}
+                                  onChange={(e) => updateCollectionEntry(idx, 'amount', Number(e.target.value))}
+                                  style={{ width: '100%', padding: '5px 6px', fontSize: '12px', marginBottom: '4px' }}
+                                  placeholder="Amount"
+                                />
+                                <select
+                                  value={col.type}
+                                  onChange={(e) => updateCollectionEntry(idx, 'type', e.target.value)}
+                                  style={{ width: '100%', padding: '5px 6px', fontSize: '11px', marginBottom: '4px' }}
+                                >
+                                  <option value="Room Rent">Room Rent</option>
+                                  <option value="KOT">KOT</option>
+                                  <option value="Add-on">Add-on</option>
+                                  <option value="Other">Other</option>
+                                </select>
+                                <select
+                                  value={col.paymentMode}
+                                  onChange={(e) => {
+                                    updateCollectionEntry(idx, 'paymentMode', e.target.value);
+                                    if (e.target.value !== 'AKS Office') {
+                                      updateCollectionEntry(idx, 'subCategory', '');
+                                    }
+                                  }}
+                                  style={{ width: '100%', padding: '5px 6px', fontSize: '11px', marginBottom: '4px' }}
+                                >
+                                  <option value="">Payment Mode</option>
+                                  <option value="Cash">💵 Cash</option>
+                                  <option value="Card">💳 Card</option>
+                                  <option value="Bank Transfer">🏦 Bank Transfer</option>
+                                  <option value="AKS Office">🏢 AKS Office</option>
+                                </select>
+                                {col.paymentMode === 'AKS Office' && (
+                                  <select
+                                    value={col.subCategory}
+                                    onChange={(e) => updateCollectionEntry(idx, 'subCategory', e.target.value)}
+                                    style={{ width: '100%', padding: '5px 6px', fontSize: '11px' }}
+                                  >
+                                    <option value="">Select Person</option>
+                                    <option value="Rajat">Rajat</option>
+                                    <option value="Happy">Happy</option>
+                                    <option value="Vishal">Vishal</option>
+                                    <option value="Fyra">Fyra</option>
+                                    <option value="Gateway">Gateway</option>
+                                    <option value="Other">Other</option>
+                                  </select>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={addCollectionEntry}
+                              style={{
+                                width: '100%',
+                                padding: '6px',
+                                background: '#f0fdf4',
+                                border: '1px dashed #86efac',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                color: '#16a34a',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                              }}
+                            >+ Add Entry</button>
+                            <div style={{
+                              marginTop: '8px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: '#475569',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              paddingTop: '6px',
+                              borderTop: '1px solid #cbd5e1'
+                            }}>
+                              <span>Total:</span>
+                              <span>{formatCurrency(editCollections.reduce((sum, c) => sum + (Number(c.amount) || 0), 0))}</span>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         formatCurrency(hotelShare)
@@ -304,8 +412,7 @@ export default function Ledger() {
                           <button
                             onClick={() => {
                               setEditingBooking(null);
-                              setEditPaymentMode('');
-                              setEditBookingSubCategory('');
+                              setEditCollections([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
                             }}
                             className="btn-icon btn-secondary"
                             title="Cancel"
