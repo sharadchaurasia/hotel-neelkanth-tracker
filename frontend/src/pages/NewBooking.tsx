@@ -313,6 +313,7 @@ export default function NewBooking() {
               <div>
                 <label style={labelStyleLocal}>Payment Type</label>
                 <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                  <option value="At Check-in">At Check-in</option>
                   <option value="Postpaid">At Checkout</option>
                   <option value="Prepaid">Prepaid</option>
                   <option value="Ledger">Agent Ledger</option>
