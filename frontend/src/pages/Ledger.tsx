@@ -29,6 +29,8 @@ export default function Ledger() {
   const [editSubCategory, setEditSubCategory] = useState('');
   const [editingBooking, setEditingBooking] = useState<number | null>(null);
   const [editHotelShare, setEditHotelShare] = useState(0);
+  const [editPaymentMode, setEditPaymentMode] = useState('');
+  const [editBookingSubCategory, setEditBookingSubCategory] = useState('');
 
   useEffect(() => {
     // Fetch all agents from agents master table
@@ -86,13 +88,29 @@ export default function Ledger() {
   const handleEditBooking = (booking: Booking) => {
     setEditingBooking(booking.id);
     setEditHotelShare(Number(booking.hotelShare) || 0);
+    setEditPaymentMode(booking.paymentMode || '');
+    setEditBookingSubCategory('');
   };
 
   const handleSaveBooking = async (bookingId: number) => {
+    if (!editPaymentMode) {
+      toast.error('Please select payment mode');
+      return;
+    }
+    if (editPaymentMode === 'AKS Office' && !editBookingSubCategory) {
+      toast.error('Please select AKS Office sub-category');
+      return;
+    }
     try {
-      await api.put(`/bookings/${bookingId}`, { hotelShare: editHotelShare });
-      toast.success('Hotel share updated successfully');
+      await api.put(`/bookings/${bookingId}`, {
+        hotelShare: editHotelShare,
+        paymentMode: editPaymentMode,
+        subCategory: editPaymentMode === 'AKS Office' ? editBookingSubCategory : undefined
+      });
+      toast.success('Booking updated successfully');
       setEditingBooking(null);
+      setEditPaymentMode('');
+      setEditBookingSubCategory('');
       // Refresh bookings
       const params = new URLSearchParams();
       if (agent) params.set('agent', agent);
@@ -225,12 +243,44 @@ export default function Ledger() {
                     <td>{formatDate(b.checkOut)}</td>
                     <td className="amount" style={{ fontWeight: '600', color: 'var(--accent-cyan)' }}>
                       {editingBooking === b.id ? (
-                        <input
-                          type="number"
-                          value={editHotelShare}
-                          onChange={(e) => setEditHotelShare(Number(e.target.value))}
-                          style={{ width: '100px', padding: '4px 8px', fontSize: '13px' }}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px' }}>
+                          <input
+                            type="number"
+                            value={editHotelShare}
+                            onChange={(e) => setEditHotelShare(Number(e.target.value))}
+                            style={{ width: '100%', padding: '6px 8px', fontSize: '13px' }}
+                            placeholder="Hotel Share"
+                          />
+                          <select
+                            value={editPaymentMode}
+                            onChange={(e) => {
+                              setEditPaymentMode(e.target.value);
+                              if (e.target.value !== 'AKS Office') setEditBookingSubCategory('');
+                            }}
+                            style={{ width: '100%', padding: '6px 8px', fontSize: '12px' }}
+                          >
+                            <option value="">Payment Mode</option>
+                            <option value="Cash">💵 Cash</option>
+                            <option value="Card">💳 Card</option>
+                            <option value="Bank Transfer">🏦 Bank Transfer</option>
+                            <option value="AKS Office">🏢 AKS Office</option>
+                          </select>
+                          {editPaymentMode === 'AKS Office' && (
+                            <select
+                              value={editBookingSubCategory}
+                              onChange={(e) => setEditBookingSubCategory(e.target.value)}
+                              style={{ width: '100%', padding: '6px 8px', fontSize: '12px' }}
+                            >
+                              <option value="">Select Person</option>
+                              <option value="Rajat">Rajat</option>
+                              <option value="Happy">Happy</option>
+                              <option value="Vishal">Vishal</option>
+                              <option value="Fyra">Fyra</option>
+                              <option value="Gateway">Gateway</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          )}
+                        </div>
                       ) : (
                         formatCurrency(hotelShare)
                       )}
@@ -252,7 +302,11 @@ export default function Ledger() {
                             <span className="material-icons">check</span>
                           </button>
                           <button
-                            onClick={() => setEditingBooking(null)}
+                            onClick={() => {
+                              setEditingBooking(null);
+                              setEditPaymentMode('');
+                              setEditBookingSubCategory('');
+                            }}
                             className="btn-icon btn-secondary"
                             title="Cancel"
                           >
@@ -263,7 +317,7 @@ export default function Ledger() {
                         <button
                           onClick={() => handleEditBooking(b)}
                           className="btn-icon btn-primary"
-                          title="Edit Hotel Share"
+                          title="Edit Booking"
                         >
                           <span className="material-icons">edit</span>
                         </button>
