@@ -34,7 +34,8 @@ export default function Ledger() {
     paymentMode: string;
     type: string;
     subCategory: string;
-  }>>([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
+    date: string;
+  }>>([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '', date: new Date().toISOString().split('T')[0] }]);
 
   useEffect(() => {
     // Fetch all agents from agents master table
@@ -97,7 +98,8 @@ export default function Ledger() {
       amount: totalCollection,
       paymentMode: booking.paymentMode || '',
       type: 'Room Rent',
-      subCategory: ''
+      subCategory: '',
+      date: new Date().toISOString().split('T')[0]
     }]);
   };
 
@@ -106,6 +108,10 @@ export default function Ledger() {
     for (const col of editCollections) {
       if (!col.amount || col.amount <= 0) {
         toast.error('Please enter valid amount for all collections');
+        return;
+      }
+      if (!col.date) {
+        toast.error('Please select date for all collections');
         return;
       }
       if (!col.paymentMode) {
@@ -119,13 +125,17 @@ export default function Ledger() {
     }
 
     try {
+      // Backend should handle:
+      // 1. AKS Office payments → Count as zero in ledger & daybook (no entry)
+      // 2. KOT/Add-on → Create daybook income entry with specified date
+      // 3. Room Rent → Normal collection handling
       await api.put(`/bookings/${bookingId}`, {
         hotelShare: editHotelShare,
         collections: editCollections
       });
       toast.success('Booking updated successfully');
       setEditingBooking(null);
-      setEditCollections([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
+      setEditCollections([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '', date: new Date().toISOString().split('T')[0] }]);
       // Refresh bookings
       const params = new URLSearchParams();
       if (agent) params.set('agent', agent);
@@ -139,7 +149,7 @@ export default function Ledger() {
   };
 
   const addCollectionEntry = () => {
-    setEditCollections([...editCollections, { amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
+    setEditCollections([...editCollections, { amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '', date: new Date().toISOString().split('T')[0] }]);
   };
 
   const removeCollectionEntry = (index: number) => {
@@ -317,6 +327,12 @@ export default function Ledger() {
                                   style={{ width: '100%', padding: '5px 6px', fontSize: '12px', marginBottom: '4px' }}
                                   placeholder="Amount"
                                 />
+                                <input
+                                  type="date"
+                                  value={col.date}
+                                  onChange={(e) => updateCollectionEntry(idx, 'date', e.target.value)}
+                                  style={{ width: '100%', padding: '5px 6px', fontSize: '11px', marginBottom: '4px' }}
+                                />
                                 <select
                                   value={col.type}
                                   onChange={(e) => updateCollectionEntry(idx, 'type', e.target.value)}
@@ -412,7 +428,7 @@ export default function Ledger() {
                           <button
                             onClick={() => {
                               setEditingBooking(null);
-                              setEditCollections([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '' }]);
+                              setEditCollections([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '', date: new Date().toISOString().split('T')[0] }]);
                             }}
                             className="btn-icon btn-secondary"
                             title="Cancel"
