@@ -157,7 +157,6 @@ export default function NewBooking() {
                     WebkitAppearance: 'none',
                     MozAppearance: 'textfield',
                   }}
-                  min={getToday()}
                 />
               </div>
               <div>
