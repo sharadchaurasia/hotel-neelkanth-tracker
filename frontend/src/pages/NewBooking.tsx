@@ -304,9 +304,8 @@ export default function NewBooking() {
 
             {(form.source !== 'Walk-in' && form.source !== 'Self') && (
               <div>
-                <label style={labelStyleLocal}>Hotel Share</label>
+                <label style={labelStyleLocal}>Hotel Share (Ledger)</label>
                 <input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
-                <div style={{ fontSize: '12px', color: THEME.colors.textLight, marginTop: '4px' }}>Agent commission: ₹{((form.totalAmount || 0) - (form.hotelShare || 0)).toLocaleString()}</div>
               </div>
             )}
           </div>
