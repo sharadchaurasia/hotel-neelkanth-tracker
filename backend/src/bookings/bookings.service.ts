@@ -718,7 +718,8 @@ export class BookingsService {
       if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
       if (b.checkIn === today && !b.checkedIn) checkinGuests.push(b);
-      if (b.checkedIn && !b.checkedOut && b.checkOut >= today) {
+      // In-house: checked in but not checked out (regardless of checkout date)
+      if (b.checkedIn && !b.checkedOut) {
         inhouseGuests.push(b);
       }
       // Checkout guest list: always based on checkout date
