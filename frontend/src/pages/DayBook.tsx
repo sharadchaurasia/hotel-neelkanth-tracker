@@ -149,15 +149,32 @@ export default function DayBook() {
       <div className="section-header">
         <h3><span className="material-icons">menu_book</span> Day Book</h3>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button className="btn btn-secondary btn-small" onClick={() => {
-            const d = new Date(date + 'T00:00:00'); d.setDate(d.getDate() - 1);
-            setDate(d.toISOString().split('T')[0]);
-          }}>&lt;</button>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="month-selector" />
-          <button className="btn btn-secondary btn-small" onClick={() => {
-            const d = new Date(date + 'T00:00:00'); d.setDate(d.getDate() + 1);
-            setDate(d.toISOString().split('T')[0]);
-          }}>&gt;</button>
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => {
+              const d = new Date(date + 'T00:00:00');
+              d.setDate(d.getDate() - 1);
+              setDate(d.toISOString().split('T')[0]);
+            }}
+            type="button"
+          >&lt;</button>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            onClick={(e) => e.currentTarget.showPicker?.()}
+            className="month-selector"
+            style={{ cursor: 'pointer' }}
+          />
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => {
+              const d = new Date(date + 'T00:00:00');
+              d.setDate(d.getDate() + 1);
+              setDate(d.toISOString().split('T')[0]);
+            }}
+            type="button"
+          >&gt;</button>
         </div>
       </div>
 

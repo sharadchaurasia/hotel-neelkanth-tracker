@@ -3,22 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import toast from 'react-hot-toast';
 import { getToday, calculateNights } from '../hooks/useApi';
-import {
-  THEME,
-  inputStyle,
-  inputFocusProps,
-  labelStyle,
-  buttonPrimaryStyle,
-  buttonSecondaryStyle,
-  sectionStyle,
-  sectionTitleStyle,
-} from '../styles/theme';
+import { THEME } from '../styles/theme';
 
 const emptyBooking = {
   guestName: '',
   phone: '',
   pax: 1,
-  roomNo: '',
   noOfRooms: 1,
   roomCategory: '',
   checkIn: getToday(),
@@ -71,6 +61,8 @@ export default function NewBooking() {
     try {
       const payload = {
         ...form,
+        roomNo: '', // Will be assigned at check-in
+        kot: '', // Not needed during booking
         addOns: bookingAddOns.filter((a) => a.type && a.amount > 0),
         paymentSubCategory: form.paymentMode === 'AKS Office' ? paymentSubCategory : undefined,
       };
@@ -85,516 +77,300 @@ export default function NewBooking() {
     }
   };
 
+  const nights = form.checkIn && form.checkOut ? calculateNights(form.checkIn, form.checkOut) : 0;
+
+  const inputStyleLocal = {
+    width: '100%',
+    padding: '10px 12px',
+    background: THEME.colors.white,
+    border: `1px solid ${THEME.colors.border}`,
+    borderRadius: '6px',
+    fontSize: '14px',
+    color: THEME.colors.textDark,
+    outline: 'none',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit',
+  };
+
+  const labelStyleLocal = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '500',
+    color: THEME.colors.textDark,
+    marginBottom: '5px',
+  };
+
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: THEME.colors.background,
-        padding: '40px 20px',
-      }}
-    >
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1
-          style={{
-            fontSize: '38px',
-            fontWeight: '700',
-            color: THEME.colors.primary,
-            marginBottom: '8px',
-            letterSpacing: '1px',
-          }}
-        >
-          The Neelkanth Grand
-        </h1>
-        <p
-          style={{
-            fontSize: '12px',
-            color: THEME.colors.textLight,
-            letterSpacing: '2.5px',
-            textTransform: 'uppercase',
-          }}
-        >
+    <div style={{ minHeight: '100vh', background: THEME.colors.background, padding: '20px 15px' }}>
+      {/* Simple Header */}
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '600', color: THEME.colors.primary, marginBottom: '2px' }}>
           New Booking
+        </h1>
+        <p style={{ fontSize: '13px', color: THEME.colors.textLight }}>
+          The Neelkanth Grand
         </p>
       </div>
 
-      {/* Form Card */}
-      <div
-        style={{
-          maxWidth: '900px',
-          margin: '0 auto',
-          background: THEME.colors.cardBg,
-          borderRadius: THEME.radius.xlarge,
-          padding: '48px 40px',
-          boxShadow: THEME.shadows.card,
-        }}
-      >
+      {/* Small Friendly Form */}
+      <div style={{ maxWidth: '500px', margin: '0 auto', background: THEME.colors.cardBg, borderRadius: '12px', padding: '24px 20px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
         <form onSubmit={handleSubmit}>
-          {/* Guest Information */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Guest Information</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
+          {/* Guest Details */}
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
+              Guest Details
+            </h3>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={labelStyleLocal}>Guest Name *</label>
+              <input type="text" value={form.guestName} onChange={(e) => setForm({ ...form, guestName: e.target.value })} required placeholder="Enter guest name" style={inputStyleLocal} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px' }}>
               <div>
-                <label style={labelStyle}>Guest Name *</label>
-                <input
-                  type="text"
-                  value={form.guestName}
-                  onChange={(e) => setForm({ ...form, guestName: e.target.value })}
-                  required
-                  placeholder="Enter guest name"
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
+                <label style={labelStyleLocal}>Phone</label>
+                <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Mobile number" style={inputStyleLocal} />
               </div>
               <div>
-                <label style={labelStyle}>Phone Number</label>
-                <input
-                  type="text"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
+                <label style={labelStyleLocal}>Guests</label>
+                <input type="number" min="1" value={form.pax} onChange={(e) => setForm({ ...form, pax: Number(e.target.value) })} style={inputStyleLocal} />
               </div>
             </div>
-            <div style={{ marginTop: '16px' }}>
-              <label style={labelStyle}>Number of Guests (Pax)</label>
-              <input
-                type="number"
-                min="1"
-                value={form.pax}
-                onChange={(e) => setForm({ ...form, pax: Number(e.target.value) })}
-                style={inputStyle}
-                {...inputFocusProps}
-              />
+          </div>
+
+          {/* Check-in & Check-out */}
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
+              Check-in & Check-out
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: nights > 0 ? '1fr 1fr 80px' : '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={labelStyleLocal}>Check-in *</label>
+                <input
+                  type="date"
+                  value={form.checkIn}
+                  onChange={(e) => setForm({ ...form, checkIn: e.target.value })}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
+                  required
+                  style={{
+                    ...inputStyleLocal,
+                    cursor: 'pointer',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'textfield',
+                  }}
+                  min={getToday()}
+                />
+              </div>
+              <div>
+                <label style={labelStyleLocal}>Check-out *</label>
+                <input
+                  type="date"
+                  value={form.checkOut}
+                  onChange={(e) => setForm({ ...form, checkOut: e.target.value })}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
+                  required
+                  style={{
+                    ...inputStyleLocal,
+                    cursor: 'pointer',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'textfield',
+                  }}
+                  min={form.checkIn || getToday()}
+                />
+              </div>
+              {nights > 0 && (
+                <div>
+                  <label style={labelStyleLocal}>Nights</label>
+                  <div style={{ padding: '10px 8px', background: `${THEME.colors.primary}15`, border: `2px solid ${THEME.colors.primary}`, borderRadius: '8px', fontWeight: '700', fontSize: '16px', color: THEME.colors.primary, textAlign: 'center', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {nights}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Room Details */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Room Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
+              Room Details
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '10px', marginBottom: '10px' }}>
               <div>
-                <label style={labelStyle}>Number of Rooms</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.noOfRooms}
-                  onChange={(e) => setForm({ ...form, noOfRooms: Number(e.target.value) })}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
+                <label style={labelStyleLocal}>Rooms</label>
+                <input type="number" min="1" value={form.noOfRooms} onChange={(e) => setForm({ ...form, noOfRooms: Number(e.target.value) })} style={inputStyleLocal} />
               </div>
               <div>
-                <label style={labelStyle}>Room Number(s)</label>
-                <input
-                  type="text"
-                  value={form.roomNo}
-                  onChange={(e) => setForm({ ...form, roomNo: e.target.value })}
-                  placeholder="e.g. 201, 202"
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-              <div>
-                <label style={labelStyle}>Room Category</label>
-                <select
-                  value={form.roomCategory}
-                  onChange={(e) => setForm({ ...form, roomCategory: e.target.value })}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                >
-                  <option value="">Select Category</option>
+                <label style={labelStyleLocal}>Room Category</label>
+                <select value={form.roomCategory} onChange={(e) => setForm({ ...form, roomCategory: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                  <option value="">Select category</option>
                   <option value="Non-Balcony">Non-Balcony</option>
                   <option value="Balcony">Balcony</option>
                   <option value="Mini Family">Mini Family</option>
                   <option value="Royal Suite Duplex">Royal Suite Duplex</option>
                 </select>
               </div>
-              <div>
-                <label style={labelStyle}>Meal Plan</label>
-                <select
-                  value={form.mealPlan}
-                  onChange={(e) => setForm({ ...form, mealPlan: e.target.value })}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                >
-                  <option value="">Select Plan</option>
-                  <option value="EP">EP (Room Only)</option>
-                  <option value="CP">CP (Breakfast)</option>
-                  <option value="MAP">MAP (Breakfast + Dinner)</option>
-                  <option value="AP">AP (All Meals)</option>
-                </select>
-              </div>
             </div>
-          </div>
-
-          {/* Booking Dates */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Booking Dates</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Check-in Date *</label>
-                <input
-                  type="date"
-                  value={form.checkIn}
-                  onChange={(e) => setForm({ ...form, checkIn: e.target.value })}
-                  required
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Check-out Date *</label>
-                <input
-                  type="date"
-                  value={form.checkOut}
-                  onChange={(e) => setForm({ ...form, checkOut: e.target.value })}
-                  required
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
-              </div>
-              {form.checkIn && form.checkOut && (
-                <div>
-                  <label style={labelStyle}>Total Nights</label>
-                  <input
-                    type="text"
-                    value={calculateNights(form.checkIn, form.checkOut)}
-                    readOnly
-                    style={{
-                      ...inputStyle,
-                      background: THEME.colors.cardBg,
-                      fontWeight: '600',
-                      color: THEME.colors.primary,
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Booking Source */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Booking Source</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Source Type</label>
-                <select
-                  value={form.source}
-                  onChange={(e) => setForm({ ...form, source: e.target.value })}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                >
-                  <option value="Walk-in">Walk-in</option>
-                  <option value="OTA">OTA (MakeMyTrip, Goibibo, etc.)</option>
-                  <option value="Agent">Agent</option>
-                </select>
-              </div>
-              {(form.source === 'OTA' || form.source === 'Agent') && (
-                <div>
-                  <label style={labelStyle}>{form.source} Name</label>
-                  <input
-                    type="text"
-                    value={form.sourceName}
-                    onChange={(e) => setForm({ ...form, sourceName: e.target.value })}
-                    placeholder={form.source === 'Agent' ? 'Agent name' : 'OTA platform name'}
-                    style={inputStyle}
-                    {...inputFocusProps}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Pricing & Add-ons</h3>
             <div>
-              <label style={labelStyle}>Base Room Rent</label>
-              <input
-                type="number"
-                value={form.actualRoomRent || ''}
-                onChange={(e) => {
-                  const rent = Number(e.target.value);
-                  const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0);
-                  setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal });
-                }}
-                placeholder="Enter room rent"
-                style={inputStyle}
-                {...inputFocusProps}
-              />
-            </div>
-
-            {/* Add-ons */}
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ ...labelStyle, marginBottom: '12px' }}>Add-ons (Optional)</label>
-              {bookingAddOns.map((ao, i) => (
-                <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <select
-                    value={ao.type}
-                    onChange={(e) => {
-                      const na = [...bookingAddOns];
-                      na[i].type = e.target.value;
-                      setBookingAddOns(na);
-                    }}
-                    style={{ ...inputStyle, flex: 1 }}
-                    {...inputFocusProps}
-                  >
-                    <option value="">Select Add-on</option>
-                    <option value="Honeymoon">Honeymoon Package</option>
-                    <option value="Candle Night Dinner">Candle Night Dinner</option>
-                    <option value="Heater">Heater</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="Amount"
-                    value={ao.amount || ''}
-                    onChange={(e) => {
-                      const na = [...bookingAddOns];
-                      na[i].amount = Number(e.target.value);
-                      setBookingAddOns(na);
-                      const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0);
-                      setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal });
-                    }}
-                    style={{ ...inputStyle, width: '140px' }}
-                    {...inputFocusProps}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const na = bookingAddOns.filter((_, j) => j !== i);
-                      setBookingAddOns(na);
-                      const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0);
-                      setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal });
-                    }}
-                    style={{
-                      background: THEME.colors.errorBg,
-                      border: `1px solid ${THEME.colors.errorBorder}`,
-                      borderRadius: THEME.radius.medium,
-                      width: '36px',
-                      height: '36px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: THEME.colors.error,
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])}
-                style={{
-                  ...buttonSecondaryStyle,
-                  width: 'auto',
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  marginTop: '8px',
-                }}
-              >
-                + Add Item
-              </button>
-            </div>
-
-            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ ...labelStyle, color: THEME.colors.primary }}>Total Amount *</label>
-                <input
-                  type="number"
-                  value={form.totalAmount || ''}
-                  readOnly
-                  style={{
-                    ...inputStyle,
-                    background: `rgba(201,163,95,0.1)`,
-                    fontWeight: '700',
-                    fontSize: '18px',
-                    color: THEME.colors.primary,
-                    border: `2px solid ${THEME.colors.primary}`,
-                  }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Hotel Share</label>
-                <input
-                  type="number"
-                  value={form.hotelShare || ''}
-                  onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })}
-                  placeholder="Hotel's portion"
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Details */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Payment Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Payment Type</label>
-                <select
-                  value={form.paymentType}
-                  onChange={(e) => setForm({ ...form, paymentType: e.target.value })}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                >
-                  <option value="Postpaid">Postpaid (Pay at checkout)</option>
-                  <option value="Prepaid">Prepaid (Paid in advance)</option>
-                  <option value="Ledger">Ledger (Agent account)</option>
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Advance Received</label>
-                <input
-                  type="number"
-                  value={form.advanceReceived || ''}
-                  onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })}
-                  placeholder="0"
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-              <div>
-                <label style={labelStyle}>Payment Mode</label>
-                <select
-                  value={form.paymentMode}
-                  onChange={(e) => {
-                    setForm({ ...form, paymentMode: e.target.value });
-                    if (e.target.value !== 'AKS Office') setPaymentSubCategory('');
-                  }}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                >
-                  <option value="">Select Mode</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Card">Card</option>
-                  <option value="Bank Transfer">Bank Transfer (SBI Neelkanth)</option>
-                  <option value="AKS Office">AKS Office</option>
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Collection Amount</label>
-                <input
-                  type="number"
-                  value={form.collectionAmount || ''}
-                  onChange={(e) => setForm({ ...form, collectionAmount: Number(e.target.value) })}
-                  placeholder="Amount collected"
-                  style={inputStyle}
-                  {...inputFocusProps}
-                />
-              </div>
-            </div>
-
-            {form.paymentMode === 'AKS Office' && (
-              <div style={{ marginTop: '16px' }}>
-                <label style={labelStyle}>AKS Office Sub-Category</label>
-                <select
-                  value={paymentSubCategory}
-                  onChange={(e) => setPaymentSubCategory(e.target.value)}
-                  style={inputStyle}
-                  {...inputFocusProps}
-                >
-                  <option value="">Select Sub-Category</option>
-                  <option value="Rajat">Rajat</option>
-                  <option value="Happy">Happy</option>
-                  <option value="Vishal">Vishal</option>
-                  <option value="Gateway">Gateway</option>
-                  <option value="Fyra">Fyra</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            )}
-
-            <div style={{ marginTop: '16px' }}>
-              <label style={labelStyle}>Assign to Agent</label>
-              <select
-                value={form.agentId || ''}
-                onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })}
-                style={inputStyle}
-                {...inputFocusProps}
-              >
-                <option value="">No Agent</option>
-                {users
-                  .filter((u) => u.role === 'admin' || u.role === 'staff')
-                  .map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
+              <label style={labelStyleLocal}>Meal Plan</label>
+              <select value={form.mealPlan} onChange={(e) => setForm({ ...form, mealPlan: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                <option value="">Select meal plan</option>
+                <option value="EP">Room Only</option>
+                <option value="CP">With Breakfast</option>
+                <option value="MAP">Breakfast + Dinner</option>
+                <option value="AP">All Meals</option>
               </select>
             </div>
           </div>
 
-          {/* Additional Notes */}
-          <div style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Additional Notes</h3>
-            <label style={labelStyle}>Remarks / Special Instructions</label>
-            <textarea
-              value={form.remarks}
-              onChange={(e) => setForm({ ...form, remarks: e.target.value })}
-              placeholder="Any special requests or notes..."
-              rows={3}
-              style={{
-                ...inputStyle,
-                resize: 'vertical',
-              }}
-              {...inputFocusProps}
-            />
+          {/* Booking Source */}
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
+              Booking Source
+            </h3>
+            <div style={{ marginBottom: (form.source === 'OTA' || form.source === 'Agent') ? '10px' : '0' }}>
+              <label style={labelStyleLocal}>Source</label>
+              <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                <option value="Walk-in">Walk-in</option>
+                <option value="OTA">Online (OTA)</option>
+                <option value="Agent">Agent</option>
+              </select>
+            </div>
+            {(form.source === 'OTA' || form.source === 'Agent') && (
+              <div>
+                <label style={labelStyleLocal}>{form.source} Name</label>
+                <input type="text" value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder={form.source === 'Agent' ? 'Enter agent name' : 'e.g. MakeMyTrip, Goibibo'} style={inputStyleLocal} />
+              </div>
+            )}
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '32px' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              style={{ ...buttonSecondaryStyle, width: 'auto', minWidth: '120px' }}
-            >
+          {/* Pricing */}
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
+              Pricing
+            </h3>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={labelStyleLocal}>Room Rent *</label>
+              <input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal }); }} placeholder="₹ 0" style={inputStyleLocal} />
+            </div>
+
+            {/* Add-ons */}
+            {bookingAddOns.length > 0 && (
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ ...labelStyleLocal, marginBottom: '6px' }}>Extras</label>
+                {bookingAddOns.map((ao, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '5px' }}>
+                    <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ ...inputStyleLocal, flex: 2, cursor: 'pointer' }}>
+                      <option value="">Select</option>
+                      <option value="Honeymoon">Honeymoon</option>
+                      <option value="Candle Night Dinner">Candle Dinner</option>
+                      <option value="Heater">Heater</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <input type="number" placeholder="₹" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ ...inputStyleLocal, width: '90px' }} />
+                    <button type="button" onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ padding: '8px 10px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', cursor: 'pointer', color: '#c00', fontSize: '16px' }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button type="button" onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])} style={{ marginBottom: '10px', padding: '7px 12px', background: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: THEME.colors.textDark, fontWeight: '500' }}>+ Add Extra</button>
+
+            <div style={{ padding: '10px 12px', background: `${THEME.colors.primary}10`, borderRadius: '8px', border: `1px solid ${THEME.colors.primary}`, marginBottom: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: THEME.colors.textDark }}>Total Amount</span>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: THEME.colors.primary }}>₹{form.totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {form.source === 'Agent' && (
+              <div>
+                <label style={labelStyleLocal}>Hotel Share</label>
+                <input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
+                <div style={{ fontSize: '12px', color: THEME.colors.textLight, marginTop: '4px' }}>Agent commission: ₹{((form.totalAmount || 0) - (form.hotelShare || 0)).toLocaleString()}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment */}
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
+              Payment
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+              <div>
+                <label style={labelStyleLocal}>Payment Type</label>
+                <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                  <option value="Postpaid">At Checkout</option>
+                  <option value="Prepaid">Prepaid</option>
+                  <option value="Ledger">Agent Ledger</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyleLocal}>Advance</label>
+                <input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
+              </div>
+            </div>
+
+            {form.advanceReceived > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: form.paymentMode === 'AKS Office' ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '10px' }}>
+                <div>
+                  <label style={labelStyleLocal}>Payment Mode</label>
+                  <select value={form.paymentMode} onChange={(e) => { setForm({ ...form, paymentMode: e.target.value }); if (e.target.value !== 'AKS Office') setPaymentSubCategory(''); }} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                    <option value="">Select mode</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="AKS Office">AKS Office</option>
+                  </select>
+                </div>
+                {form.paymentMode === 'AKS Office' && (
+                  <div>
+                    <label style={labelStyleLocal}>Sub-Category</label>
+                    <select value={paymentSubCategory} onChange={(e) => setPaymentSubCategory(e.target.value)} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                      <option value="">Select</option>
+                      <option value="Rajat">Rajat</option>
+                      <option value="Happy">Happy</option>
+                      <option value="Vishal">Vishal</option>
+                      <option value="Gateway">Gateway</option>
+                      <option value="Fyra">Fyra</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={labelStyleLocal}>Collection</label>
+                <input type="number" value={form.collectionAmount || ''} onChange={(e) => setForm({ ...form, collectionAmount: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
+              </div>
+              <div>
+                <label style={labelStyleLocal}>Assign Agent</label>
+                <select value={form.agentId || ''} onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
+                  <option value="">None</option>
+                  {users.filter(u => u.role === 'admin' || u.role === 'staff').map(user => (
+                    <option key={user.id} value={user.id}>{user.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Remarks */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyleLocal}>Remarks</label>
+            <textarea value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Any special requests or notes..." rows={2} style={{ ...inputStyleLocal, resize: 'vertical', fontFamily: 'inherit' }} />
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: '10px', paddingTop: '10px', borderTop: `1px solid ${THEME.colors.border}` }}>
+            <button type="button" onClick={() => navigate('/')} disabled={loading} style={{ flex: 1, padding: '12px', background: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: THEME.colors.textDark }}>
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...buttonPrimaryStyle,
-                width: 'auto',
-                minWidth: '160px',
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.background = '#5a6a80';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = THEME.colors.secondary;
-              }}
-            >
+            <button type="submit" disabled={loading} style={{ flex: 2, padding: '12px', background: THEME.colors.secondary, border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', color: 'white', opacity: loading ? 0.6 : 1 }}>
               {loading ? 'Creating...' : 'Create Booking'}
             </button>
           </div>
         </form>
-      </div>
-
-      {/* Footer */}
-      <div
-        style={{
-          marginTop: '32px',
-          textAlign: 'center',
-          color: THEME.colors.textLight,
-          fontSize: '13px',
-        }}
-      >
-        The Neelkanth CRM
       </div>
     </div>
   );
