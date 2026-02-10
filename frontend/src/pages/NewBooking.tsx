@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import toast from 'react-hot-toast';
@@ -30,23 +30,9 @@ const emptyBooking = {
 export default function NewBooking() {
   const navigate = useNavigate();
   const [form, setForm] = useState(emptyBooking);
-  const [users, setUsers] = useState<any[]>([]);
   const [bookingAddOns, setBookingAddOns] = useState<{ type: string; amount: number }[]>([]);
   const [paymentSubCategory, setPaymentSubCategory] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const { data } = await api.get('/users');
-      setUsers(data);
-    } catch (error) {
-      console.error('Failed to load users');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -366,22 +352,6 @@ export default function NewBooking() {
                 )}
               </div>
             )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={labelStyleLocal}>Collection</label>
-                <input type="number" value={form.collectionAmount || ''} onChange={(e) => setForm({ ...form, collectionAmount: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
-              </div>
-              <div>
-                <label style={labelStyleLocal}>Assign Agent</label>
-                <select value={form.agentId || ''} onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
-                  <option value="">None</option>
-                  {users.filter(u => u.role === 'admin' || u.role === 'staff').map(user => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
           </div>
 
           {/* Remarks */}
