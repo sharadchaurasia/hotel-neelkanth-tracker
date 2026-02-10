@@ -301,18 +301,18 @@ export default function NewBooking() {
                 ))}
               </div>
             )}
-            <button type="button" onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])} style={{ marginBottom: '10px', padding: '7px 12px', background: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: THEME.colors.textDark, fontWeight: '500' }}>+ Add Extra</button>
+            <button type="button" onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])} style={{ marginBottom: '10px', padding: '7px 12px', background: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: THEME.colors.textDark, fontWeight: '500' }}>+ Add On</button>
 
             <div style={{ padding: '10px 12px', background: `${THEME.colors.primary}10`, borderRadius: '8px', border: `1px solid ${THEME.colors.primary}`, marginBottom: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: THEME.colors.textDark }}>Total Amount</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: THEME.colors.textDark }}>Hotel Share</span>
                 <span style={{ fontSize: '20px', fontWeight: '700', color: THEME.colors.primary }}>₹{form.totalAmount.toLocaleString()}</span>
               </div>
             </div>
 
-            {(form.source !== 'Walk-in' && form.source !== 'Self') && (
+            {(form.source !== 'Walk-in') && (
               <div>
-                <label style={labelStyleLocal}>Hotel Share (Ledger)</label>
+                <label style={labelStyleLocal}>Total Collection</label>
                 <input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
               </div>
             )}
