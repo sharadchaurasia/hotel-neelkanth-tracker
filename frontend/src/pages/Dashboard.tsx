@@ -712,12 +712,65 @@ export default function Dashboard() {
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                       <td>
-                        <div className="actions">
-                          {!isCR && pend > 0 && <button className="btn btn-primary btn-small" onClick={() => openCollect(b)}>Collect</button>}
-                          {!isCR && <button className="btn btn-warning btn-small" onClick={() => openCheckout(b)}><span className="material-icons" style={{ fontSize: '14px' }}>logout</span></button>}
-                          {!isCR && <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)}>Edit</button>}
-                          {!isCR && <button className="btn btn-danger btn-small" onClick={() => openCancel(b)}>Cancel</button>}
-                          <button className="btn btn-danger btn-small" onClick={() => deleteBooking(b.id)} title="Delete"><span className="material-icons" style={{ fontSize: '14px' }}>delete</span></button>
+                        <div style={{
+                          display: 'flex',
+                          gap: '6px',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                        }}>
+                          {!isCR && pend > 0 && (
+                            <button
+                              className="btn btn-primary btn-small"
+                              onClick={() => openCollect(b)}
+                              style={{ minWidth: '70px' }}
+                            >
+                              Collect
+                            </button>
+                          )}
+                          {!isCR && (
+                            <button
+                              className="btn btn-warning btn-small"
+                              onClick={() => openCheckout(b)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                minWidth: '90px',
+                              }}
+                            >
+                              <span className="material-icons" style={{ fontSize: '16px' }}>logout</span>
+                              Checkout
+                            </button>
+                          )}
+                          {!isCR && (
+                            <button
+                              className="btn btn-secondary btn-small"
+                              onClick={() => openEditBooking(b)}
+                              style={{ minWidth: '60px' }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {!isCR && (
+                            <button
+                              className="btn btn-danger btn-small"
+                              onClick={() => openCancel(b)}
+                              style={{ minWidth: '70px' }}
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          <button
+                            className="btn btn-danger btn-small"
+                            onClick={() => deleteBooking(b.id)}
+                            title="Delete"
+                            style={{
+                              minWidth: '40px',
+                              padding: '6px 8px',
+                            }}
+                          >
+                            <span className="material-icons" style={{ fontSize: '16px' }}>delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
