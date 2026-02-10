@@ -285,7 +285,7 @@ export default function NewBooking() {
             {/* Add-ons */}
             {bookingAddOns.length > 0 && (
               <div style={{ marginBottom: '10px' }}>
-                <label style={{ ...labelStyleLocal, marginBottom: '6px' }}>Extras</label>
+                <label style={{ ...labelStyleLocal, marginBottom: '6px' }}>Add Ons</label>
                 {bookingAddOns.map((ao, i) => (
                   <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '5px' }}>
                     <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ ...inputStyleLocal, flex: 2, cursor: 'pointer' }}>
