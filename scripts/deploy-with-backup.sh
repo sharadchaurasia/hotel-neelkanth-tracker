@@ -18,19 +18,64 @@ echo ""
 # 2. Build frontend
 echo "Step 2: Building frontend..."
 cd ../frontend
-npm run build
-echo "   ✓ Frontend built"
+
+# Clean dist directory before build
+rm -rf dist/
+echo "   ✓ Cleaned old build"
+
+# Build frontend
+if ! npm run build; then
+    echo ""
+    echo "❌ ERROR: Frontend build failed!"
+    echo "❌ Deployment stopped to prevent deploying broken code"
+    echo ""
+    exit 1
+fi
+
+# Verify build output
+if [ ! -f "dist/index.html" ]; then
+    echo ""
+    echo "❌ ERROR: Frontend build incomplete - index.html not found!"
+    echo "❌ Deployment stopped"
+    echo ""
+    exit 1
+fi
+
+echo "   ✓ Frontend built successfully"
 echo ""
 
 # 3. Build backend
 echo "Step 3: Building backend..."
 cd ../backend
-npm run build
-echo "   ✓ Backend built"
+
+# Clean dist directory before build
+rm -rf dist/
+echo "   ✓ Cleaned old build"
+
+# Build backend
+if ! npm run build; then
+    echo ""
+    echo "❌ ERROR: Backend build failed!"
+    echo "❌ Deployment stopped to prevent deploying broken code"
+    echo ""
+    exit 1
+fi
+
+# Verify build output
+if [ ! -f "dist/main.js" ]; then
+    echo ""
+    echo "❌ ERROR: Backend build incomplete - main.js not found!"
+    echo "❌ Deployment stopped"
+    echo ""
+    exit 1
+fi
+
+echo "   ✓ Backend built successfully"
 echo ""
 
 # 4. Deploy frontend
 echo "Step 4: Deploying frontend..."
+cd ../frontend
 rsync -avz --delete -e "ssh -i ~/.ssh/hotel-neelkanth.pem" dist/ ubuntu@65.1.252.58:/var/www/hotel-neelkanth/frontend/dist/
 echo "   ✓ Frontend deployed"
 echo ""
