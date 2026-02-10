@@ -62,7 +62,7 @@ if ! npm run build; then
 fi
 
 # Verify build output
-if [ ! -f "dist/main.js" ]; then
+if [ ! -f "dist/src/main.js" ]; then
     echo ""
     echo "❌ ERROR: Backend build incomplete - main.js not found!"
     echo "❌ Deployment stopped"
