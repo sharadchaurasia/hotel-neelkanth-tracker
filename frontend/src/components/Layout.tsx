@@ -77,7 +77,7 @@ export default function Layout() {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #3b82f6 100%)',
         boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
         padding: '10px 20px',
         display: 'flex',
