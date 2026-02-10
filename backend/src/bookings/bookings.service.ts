@@ -218,32 +218,83 @@ export class BookingsService {
 
     const newAddOnAmount = dto.addOnAmount !== undefined ? dto.addOnAmount : undefined;
 
-    Object.assign(booking, {
-      guestName: dto.guestName ?? booking.guestName,
-      phone: dto.phone ?? booking.phone,
-      pax: dto.pax ?? booking.pax,
-      kot: dto.kot ?? booking.kot,
-      roomNo: dto.roomNo ?? booking.roomNo,
-      noOfRooms: dto.noOfRooms ?? booking.noOfRooms,
-      roomCategory: dto.roomCategory ?? booking.roomCategory,
-      checkIn: dto.checkIn ?? booking.checkIn,
-      checkOut: dto.checkOut ?? booking.checkOut,
-      mealPlan: dto.mealPlan ?? booking.mealPlan,
-      source: dto.source ?? booking.source,
-      sourceName: dto.sourceName ?? booking.sourceName,
-      complimentary: dto.complimentary ?? booking.complimentary,
-      addOnAmount: newAddOnAmount !== undefined ? newAddOnAmount : booking.addOnAmount,
-      actualRoomRent: dto.actualRoomRent ?? booking.actualRoomRent,
-      totalAmount: dto.totalAmount ?? booking.totalAmount,
-      paymentType: dto.paymentType ?? booking.paymentType,
-      advanceReceived: dto.advanceReceived ?? booking.advanceReceived,
-      advanceDate: dto.advanceDate ?? booking.advanceDate,
-      paymentMode: dto.paymentMode ?? booking.paymentMode,
-      remarks: dto.remarks ?? booking.remarks,
-      collectionAmount: dto.collectionAmount ?? booking.collectionAmount,
-      agentId: dto.agentId ?? booking.agentId,
-      lastModifiedBy: userName || booking.lastModifiedBy,
-    });
+    // Handle collections array if provided
+    if (dto.collections && dto.collections.length > 0) {
+      let totalCollectionAmount = 0;
+      let firstPaymentMode = '';
+
+      for (const collection of dto.collections) {
+        const { amount, paymentMode, type, subCategory, date } = collection;
+
+        // Skip AKS Office payments (count as zero in ledger/daybook)
+        if (paymentMode === 'AKS Office') {
+          continue;
+        }
+
+        // Add to total collection
+        totalCollectionAmount += amount;
+
+        // Store first non-AKS Office payment mode
+        if (!firstPaymentMode) {
+          firstPaymentMode = paymentMode;
+        }
+
+        // Create daybook entry for KOT or Add-on
+        if (type === 'KOT' || type === 'Add-on') {
+          await this.createDaybookEntry({
+            date: date,
+            category: 'Accommodation',
+            incomeSource: type === 'KOT' ? 'KOT' : 'Add-on',
+            description: `${type} - ${booking.guestName} (${booking.bookingId})`,
+            amount: amount,
+            paymentMode: paymentMode,
+            refBookingId: booking.bookingId,
+            guestName: booking.guestName,
+          });
+        }
+      }
+
+      // Update booking with total collection
+      booking.advanceReceived = totalCollectionAmount;
+      booking.balanceReceived = 0;
+      booking.paymentMode = firstPaymentMode || booking.paymentMode;
+
+      // Update hotel share if provided
+      if (dto.hotelShare !== undefined) {
+        booking.hotelShare = dto.hotelShare;
+      }
+
+      booking.lastModifiedBy = userName || booking.lastModifiedBy;
+    } else {
+      // Original update logic for non-collection updates
+      Object.assign(booking, {
+        guestName: dto.guestName ?? booking.guestName,
+        phone: dto.phone ?? booking.phone,
+        pax: dto.pax ?? booking.pax,
+        kot: dto.kot ?? booking.kot,
+        roomNo: dto.roomNo ?? booking.roomNo,
+        noOfRooms: dto.noOfRooms ?? booking.noOfRooms,
+        roomCategory: dto.roomCategory ?? booking.roomCategory,
+        checkIn: dto.checkIn ?? booking.checkIn,
+        checkOut: dto.checkOut ?? booking.checkOut,
+        mealPlan: dto.mealPlan ?? booking.mealPlan,
+        source: dto.source ?? booking.source,
+        sourceName: dto.sourceName ?? booking.sourceName,
+        complimentary: dto.complimentary ?? booking.complimentary,
+        addOnAmount: newAddOnAmount !== undefined ? newAddOnAmount : booking.addOnAmount,
+        actualRoomRent: dto.actualRoomRent ?? booking.actualRoomRent,
+        totalAmount: dto.totalAmount ?? booking.totalAmount,
+        paymentType: dto.paymentType ?? booking.paymentType,
+        advanceReceived: dto.advanceReceived ?? booking.advanceReceived,
+        advanceDate: dto.advanceDate ?? booking.advanceDate,
+        paymentMode: dto.paymentMode ?? booking.paymentMode,
+        remarks: dto.remarks ?? booking.remarks,
+        collectionAmount: dto.collectionAmount ?? booking.collectionAmount,
+        agentId: dto.agentId ?? booking.agentId,
+        hotelShare: dto.hotelShare ?? booking.hotelShare,
+        lastModifiedBy: userName || booking.lastModifiedBy,
+      });
+    }
 
     // Recalculate status
     const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
