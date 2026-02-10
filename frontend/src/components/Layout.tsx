@@ -4,8 +4,6 @@ import toast from 'react-hot-toast';
 
 const tabs = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/new-booking', label: 'New Booking', icon: 'add_circle', highlight: true },
-  { path: '/kot', label: 'KOT', icon: 'restaurant', highlight: true },
   { path: '/inventory', label: 'Inventory', icon: 'meeting_room' },
   { path: '/ledger', label: 'Ledger', icon: 'account_balance' },
   { path: '/reports', label: 'Reports', icon: 'assessment' },
@@ -37,6 +35,82 @@ export default function Layout() {
 
   return (
     <div className="app-container">
+      {/* Sticky Quick Access Bar - KOT & New Booking */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+        padding: '10px 20px',
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <NavLink
+          to="/new-booking"
+          style={({ isActive }) => ({
+            padding: '10px 24px',
+            background: isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '15px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            textDecoration: 'none',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+          })}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+          }}
+          onMouseLeave={(e: any) => {
+            if (!e.currentTarget.classList.contains('active')) {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+            }
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: '20px' }}>add_circle</span>
+          New Booking
+        </NavLink>
+
+        <NavLink
+          to="/kot"
+          style={({ isActive }) => ({
+            padding: '10px 24px',
+            background: isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '15px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            textDecoration: 'none',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+          })}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+          }}
+          onMouseLeave={(e: any) => {
+            if (!e.currentTarget.classList.contains('active')) {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+            }
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: '20px' }}>restaurant</span>
+          KOT Orders
+        </NavLink>
+      </div>
+
       <div className="header">
         <div className="header-brand">
           <div>
@@ -74,24 +148,13 @@ export default function Layout() {
         </div>
       </div>
 
-      <div className="nav-tabs" style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-      }}>
+      <div className="nav-tabs">
         {tabs.map((tab) => (
           <NavLink
             key={tab.path}
             to={tab.path}
             end={tab.path === '/'}
             className={({ isActive }) => isActive ? 'active' : ''}
-            style={(tab as any).highlight ? {
-              background: 'rgba(255, 255, 255, 0.2)',
-              fontWeight: '700',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-            } : undefined}
           >
             <span className="material-icons">{tab.icon}</span> {tab.label}
           </NavLink>
