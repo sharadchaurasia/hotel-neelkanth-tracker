@@ -234,31 +234,40 @@ export default function NewBooking() {
                   setForm({
                     ...form,
                     source: newSource,
-                    // Auto-set payment type to Ledger for agents
-                    paymentType: (newSource !== 'Walk-in' && newSource !== 'Self') ? 'Ledger' : 'Postpaid'
+                    // Auto-set payment type to Ledger for agents and OTAs
+                    paymentType: (newSource !== 'Walk-in') ? 'Ledger' : 'Postpaid'
                   });
                 }}
                 style={{ ...inputStyleLocal, cursor: 'pointer' }}
               >
                 <option value="Walk-in">Walk-in</option>
-                <option value="Self">Self</option>
-                <option value="AKS Office">AKS Office</option>
-                <option value="MMT">MMT</option>
-                <option value="Ultimate">Ultimate</option>
-                <option value="Minto">Minto</option>
-                <option value="Jatin TA">Jatin TA</option>
-                <option value="Royal Sunshine">Royal Sunshine</option>
-                <option value="Gyanrachanatour">Gyanrachanatour</option>
-                <option value="My Vacation">My Vacation</option>
-                <option value="MIH">MIH</option>
-                <option value="Focus">Focus</option>
-                <option value="Global">Global</option>
-                <option value="Globe India">Globe India</option>
-                <option value="Holiday7">Holiday7</option>
-                <option value="Himalayan Queen">Himalayan Queen</option>
-                <option value="Raisooone">Raisooone</option>
-                <option value="Legendyatri">Legendyatri</option>
-                <option value="WCT">WCT</option>
+
+                <optgroup label="Agents">
+                  <option value="AKS Office">AKS Office</option>
+                  <option value="Self">Self</option>
+                  <option value="Ultimate">Ultimate</option>
+                  <option value="Minto">Minto</option>
+                  <option value="Jatin TA">Jatin TA</option>
+                  <option value="Royal Sunshine">Royal Sunshine</option>
+                  <option value="Gyanrachanatour">Gyanrachanatour</option>
+                  <option value="My Vacation">My Vacation</option>
+                  <option value="MIH">MIH</option>
+                  <option value="Focus">Focus</option>
+                  <option value="Global">Global</option>
+                  <option value="Globe India">Globe India</option>
+                  <option value="Holiday7">Holiday7</option>
+                  <option value="Himalayan Queen">Himalayan Queen</option>
+                  <option value="Raisooone">Raisooone</option>
+                  <option value="Legendyatri">Legendyatri</option>
+                  <option value="WCT">WCT</option>
+                </optgroup>
+
+                <optgroup label="OTA (Online Travel Agents)">
+                  <option value="MMT">MMT</option>
+                  <option value="Goibibo">Goibibo</option>
+                  <option value="Cleartrip">Cleartrip</option>
+                  <option value="Booking.com">Booking.com</option>
+                </optgroup>
               </select>
             </div>
           </div>
