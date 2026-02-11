@@ -548,6 +548,19 @@ export default function Dashboard() {
               </tr></thead>
               <tbody>
                 {guests.map((b) => {
+                  // Debug logging
+                  if (b.guestName?.includes('Shubhasis') || b.guestName?.includes('shubhasis')) {
+                    console.log('DEBUG - Shubhasis booking:', {
+                      guestName: b.guestName,
+                      paymentType: b.paymentType,
+                      paymentMode: b.paymentMode,
+                      totalAmount: b.totalAmount,
+                      collectionAmount: b.collectionAmount,
+                      hotelShare: b.hotelShare,
+                      advanceReceived: b.advanceReceived
+                    });
+                  }
+
                   // For AKS Office, use hotelShare; for others use collectionAmount or totalAmount
                   const collAmt = b.paymentMode === 'AKS Office'
                     ? Number(b.hotelShare) || Number(b.totalAmount)
