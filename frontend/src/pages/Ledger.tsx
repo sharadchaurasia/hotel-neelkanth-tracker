@@ -97,7 +97,7 @@ export default function Ledger() {
     const totalCollection = (Number(booking.advanceReceived) || 0) + (Number(booking.balanceReceived) || 0);
     setEditCollections([{
       amount: totalCollection,
-      paymentMode: booking.paymentMode || '',
+      paymentMode: '', // Always start with empty selection for fresh choice
       type: 'Room Rent',
       subCategory: '',
       date: new Date().toISOString().split('T')[0]
