@@ -538,7 +538,7 @@ export default function Dashboard() {
           <div className="guest-list-empty">No {type === 'checkin' ? 'check-ins' : type === 'inhouse' ? 'in-house guests' : 'check-outs'} today</div>
         ) : (
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <table className="guest-list-table">
+            <table className="guest-list-table" style={{ minWidth: '1000px' }}>
               <thead><tr>
                 <th>Guest</th><th>Pax</th><th>Room</th><th>Source</th>
                 {type !== 'inhouse' && <th>Collection</th>}
@@ -563,8 +563,8 @@ export default function Dashboard() {
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                       {type === 'checkin' && (
-                        <td>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <td style={{ minWidth: '200px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
                             <button className="btn btn-primary btn-small" onClick={() => openCheckin(b)}>
                               <span className="material-icons" style={{ fontSize: '14px' }}>login</span> Check-in
                             </button>
@@ -584,8 +584,8 @@ export default function Dashboard() {
                         </td>
                       )}
                       {type === 'checkout' && (
-                        <td>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <td style={{ minWidth: '200px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
                             <button className="btn btn-warning btn-small" onClick={() => openCheckout(b)}>
                               <span className="material-icons" style={{ fontSize: '14px' }}>logout</span> Checkout
                             </button>
