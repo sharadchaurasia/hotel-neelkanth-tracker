@@ -1263,7 +1263,8 @@ select:focus {
   padding: 0;
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .guest-list-section .section-title {
