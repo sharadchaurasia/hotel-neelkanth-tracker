@@ -548,7 +548,10 @@ export default function Dashboard() {
               </tr></thead>
               <tbody>
                 {guests.map((b) => {
-                  const collAmt = Number(b.collectionAmount) || Number(b.totalAmount);
+                  // For AKS Office, use hotelShare; for others use collectionAmount or totalAmount
+                  const collAmt = b.paymentMode === 'AKS Office'
+                    ? Number(b.hotelShare) || Number(b.totalAmount)
+                    : (Number(b.collectionAmount) > 0 ? Number(b.collectionAmount) : Number(b.totalAmount));
                   const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
                   const pend = collAmt - recv;
                   const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
