@@ -309,19 +309,32 @@ export default function NewBooking() {
               <div>
                 <label style={labelStyleLocal}>Payment Type</label>
                 <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })} style={{ ...inputStyleLocal, cursor: 'pointer' }}>
-                  <option value="At Check-in">At Check-in</option>
+                  <option value="Pay at Check-in">Pay at Check-in</option>
                   <option value="Postpaid">At Checkout</option>
                   <option value="Prepaid">Prepaid</option>
                   <option value="Ledger">Agent Ledger</option>
                 </select>
               </div>
               <div>
-                <label style={labelStyleLocal}>Advance</label>
-                <input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
+                <label style={labelStyleLocal}>{form.paymentType === 'Pay at Check-in' ? 'Collection Amount' : 'Advance'}</label>
+                <input
+                  type="number"
+                  value={form.paymentType === 'Pay at Check-in' ? (form.collectionAmount || '') : (form.advanceReceived || '')}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (form.paymentType === 'Pay at Check-in') {
+                      setForm({ ...form, collectionAmount: val });
+                    } else {
+                      setForm({ ...form, advanceReceived: val });
+                    }
+                  }}
+                  placeholder="₹ 0"
+                  style={inputStyleLocal}
+                />
               </div>
             </div>
 
-            {form.advanceReceived > 0 && (
+            {((form.paymentType === 'Pay at Check-in' && form.collectionAmount > 0) || form.advanceReceived > 0) && (
               <div style={{ display: 'grid', gridTemplateColumns: form.paymentMode === 'AKS Office' ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '10px' }}>
                 <div>
                   <label style={labelStyleLocal}>Payment Mode</label>
