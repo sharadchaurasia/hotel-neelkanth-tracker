@@ -355,21 +355,40 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent-blue);
+  background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
   color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 .btn-primary:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
 .btn-secondary {
   background: white;
-  border: 1px solid var(--glass-border);
+  border: 2px solid #e2e8f0;
   color: var(--text-primary);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .btn-secondary:hover {
   background: #f8fafc;
-  border-color: var(--accent-blue);
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .btn-success {
