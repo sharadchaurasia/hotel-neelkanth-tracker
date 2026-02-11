@@ -807,12 +807,18 @@ input[type="month"]::-moz-calendar-picker-indicator {
 }
 
 .modal-footer {
-  padding: 16px 24px;
+  padding: 20px 24px;
   border-top: 1px solid var(--glass-border);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   background: #f8fafc !important;
+}
+
+.modal-footer .btn-primary,
+.modal-footer .btn-secondary {
+  min-width: 100px;
+  font-size: 14px;
 }
 
 /* ---------- Form Groups ---------- */
