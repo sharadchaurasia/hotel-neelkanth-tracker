@@ -48,7 +48,7 @@ export default function App() {
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/bookings/new" element={<NewBooking />} />
+          <Route path="/new-booking" element={<NewBooking />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/ledger" element={<Ledger />} />
           <Route path="/agent-ledger" element={<AgentLedger />} />
