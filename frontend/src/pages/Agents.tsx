@@ -93,7 +93,7 @@ export default function Agents() {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <div className="section-header">
         <h3><span className="material-icons">group</span> Agents Master</h3>
         <button className="btn btn-primary" onClick={openNew}>

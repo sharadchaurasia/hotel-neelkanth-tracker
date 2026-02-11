@@ -63,7 +63,7 @@
 
 /* ---------- Body ---------- */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Helvetica Neue', 'Arial', sans-serif;
   background: var(--bg-base);
   min-height: 100vh;
   color: var(--text-primary);
@@ -71,38 +71,245 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 /* ---------- App Container ---------- */
 .app-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0;
-  position: relative;
-  z-index: 1;
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: 240px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+}
+
+.sidebar-header {
+  padding: 20px 16px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-logo {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #d4a574 0%, #92674a 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+
+.sidebar-logo .material-icons {
+  font-size: 26px;
+  color: white;
+}
+
+.sidebar-brand h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.sidebar-brand p {
+  font-size: 9px;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.sidebar-new-booking {
+  margin: 12px 12px 8px;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, #d4a574 0%, #c9a35f 100%);
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(212,165,116,0.25);
+}
+
+.sidebar-new-booking:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(212,165,116,0.35);
+  background: linear-gradient(135deg, #c9a35f 0%, #b8934f 100%);
+}
+
+.sidebar-new-booking .material-icons {
+  font-size: 18px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  margin: 2px 0;
+}
+
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: #e2e8f0;
+}
+
+.sidebar-item.active {
+  background: rgba(59,130,246,0.15);
+  color: white;
+  border-left-color: #3b82f6;
+  font-weight: 600;
+}
+
+.sidebar-item .material-icons {
+  font-size: 19px;
+  opacity: 0.9;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: auto;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.05);
+}
+
+.sidebar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-role {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.sidebar-logout {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: var(--radius-md);
+  color: #fca5a5;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.3);
+  color: #ef4444;
+}
+
+/* ---------- Main Content ---------- */
+.main-content {
+  margin-left: 240px;
+  flex: 1;
+  min-height: 100vh;
+  background: var(--bg-base);
 }
 
 .page-container {
-  padding: 20px;
+  padding: 24px;
+  max-width: 1400px;
 }
 
-/* ---------- Header ---------- */
+/* ---------- Header (Hidden - using sidebar now) ---------- */
 .header {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  color: white;
-  padding: 20px 32px;
-  border-radius: 0;
-  margin-bottom: 0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
+  display: none;
+}
+
+/* ---------- Welcome Header ---------- */
+.welcome-header {
+  padding: 20px 24px;
+  background: white;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.welcome-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  letter-spacing: -0.3px;
+}
+
+.welcome-header p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .header-brand { display: flex; align-items: center; gap: 15px; }
@@ -242,7 +449,7 @@ body {
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 16px;
@@ -251,10 +458,11 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  letter-spacing: -0.2px;
 }
 
 .section-title .material-icons {
-  font-size: 24px;
+  font-size: 22px;
   color: var(--accent-blue);
 }
 
@@ -273,16 +481,17 @@ body {
 }
 
 .page-header h2 {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  letter-spacing: -0.3px;
 }
 
 .page-header h2 .material-icons {
-  font-size: 28px;
+  font-size: 26px;
   color: var(--accent-blue);
 }
 
@@ -304,49 +513,62 @@ body {
   border-collapse: collapse;
 }
 
+/* ---------- Date & Month Inputs ---------- */
 .date-input,
-input[type="date"] {
-  padding: 10px 12px;
+input[type="date"],
+input[type="month"] {
+  padding: 10px 14px;
   border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-family: inherit;
-  background: var(--input-bg);
+  background: white;
   color: var(--text-primary);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
-  min-width: 150px;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
+  min-width: 160px;
+  font-weight: 500;
+}
+
+.date-input:hover,
+input[type="date"]:hover,
+input[type="month"]:hover {
+  border-color: var(--accent-blue);
+  background: #f8fafc;
 }
 
 .date-input:focus,
-input[type="date"]:focus {
+input[type="date"]:focus,
+input[type="month"]:focus {
   outline: none;
-  border-color: var(--accent-gold);
+  border-color: var(--accent-blue);
   box-shadow: 0 0 0 3px var(--input-focus);
+  background: white;
 }
 
-/* Make calendar icon visible and clickable */
-input[type="date"]::-webkit-calendar-picker-indicator {
+/* Calendar icon styling */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  opacity: 1;
+  opacity: 0.7;
   padding: 4px;
   border-radius: 4px;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%236b7b93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
-  width: 20px;
-  height: 20px;
+  transition: all 0.2s ease;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+  width: 18px;
+  height: 18px;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
-  background-color: rgba(107, 123, 147, 0.1);
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
-/* Firefox date picker */
-input[type="date"]::-moz-calendar-picker-indicator {
+/* Firefox */
+input[type="date"]::-moz-calendar-picker-indicator,
+input[type="month"]::-moz-calendar-picker-indicator {
   cursor: pointer;
 }
 
@@ -414,17 +636,9 @@ input[type="date"]::-moz-calendar-picker-indicator {
   color: var(--text-muted);
 }
 
-/* ---------- Navigation Tabs ---------- */
+/* ---------- Navigation Tabs (Hidden - using sidebar now) ---------- */
 .nav-tabs {
-  display: flex;
-  gap: 4px;
-  margin: 16px 20px;
-  flex-wrap: wrap;
-  background: white;
-  padding: 6px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-sm);
+  display: none;
 }
 
 .nav-tabs a {
@@ -604,6 +818,38 @@ input[type="date"]::-moz-calendar-picker-indicator {
   letter-spacing: 0.3px;
 }
 
+/* ---------- Select Dropdowns ---------- */
+select {
+  padding: 10px 36px 10px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-weight: 500;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+}
+
+select:hover {
+  border-color: var(--accent-blue);
+  background-color: #f8fafc;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px var(--input-focus);
+  background-color: white;
+}
+
+/* Form group inputs */
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -613,9 +859,27 @@ input[type="date"]::-moz-calendar-picker-indicator {
   border-radius: var(--radius-md);
   font-size: 14px;
   font-family: inherit;
-  background: var(--input-bg);
+  background: white;
   color: var(--text-primary);
   transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.form-group select {
+  padding-right: 36px;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--accent-blue);
+  background-color: #f8fafc;
 }
 
 .form-group input:focus,
@@ -624,7 +888,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
   outline: none;
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 3px var(--input-focus);
-  background: #fafafa;
+  background-color: white;
 }
 
 /* ---------- Alert Boxes ---------- */
@@ -1074,19 +1338,38 @@ input[type="date"]::-moz-calendar-picker-indicator {
 .filter-group input,
 .filter-group select {
   padding: 10px 14px;
-  border: 2px solid var(--glass-border);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   background: white;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.filter-group select {
+  padding-right: 36px;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+.filter-group input:hover,
+.filter-group select:hover {
+  border-color: var(--accent-blue);
+  background-color: #f8fafc;
 }
 
 .filter-group input:focus,
 .filter-group select:focus {
   outline: none;
-  border-color: var(--accent-gold);
+  border-color: var(--accent-blue);
   box-shadow: 0 0 0 3px var(--input-focus);
+  background-color: white;
 }
 
 /* ---------- Dashboard Specific Sections ---------- */
@@ -1181,11 +1464,33 @@ input[type="date"]::-moz-calendar-picker-indicator {
 }
 
 .month-selector {
-  padding: 8px 12px;
+  padding: 10px 36px 10px 14px;
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
   font-family: inherit;
+  background: white;
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.month-selector:hover {
+  border-color: var(--accent-blue);
+  background-color: #f8fafc;
+}
+
+.month-selector:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px var(--input-focus);
+  background-color: white;
 }
 
 .monthly-grid {

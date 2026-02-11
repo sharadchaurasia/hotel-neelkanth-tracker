@@ -208,7 +208,7 @@ export default function Salary() {
   };
 
   return (
-    <div>
+    <div className="page-container">
       {/* Staff List */}
       <div className="salary-section">
         <div className="section-header">

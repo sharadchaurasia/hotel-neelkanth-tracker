@@ -54,7 +54,7 @@ export default function Reports() {
   }, { bookings: 0, totalAmount: 0, collected: 0, pending: 0 });
 
   return (
-    <div>
+    <div className="page-container">
       {/* Source-wise Report */}
       <div className="report-section">
         <div className="section-header">

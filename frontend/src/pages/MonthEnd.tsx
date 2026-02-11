@@ -104,7 +104,7 @@ export default function MonthEnd() {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <div className="section-header">
         <h3>
           <span className="material-icons">event_note</span> Month-End Closing

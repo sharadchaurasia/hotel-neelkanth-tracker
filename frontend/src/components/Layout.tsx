@@ -36,133 +36,71 @@ export default function Layout() {
 
   return (
     <div className="app-container">
-      <div className="header">
-        <div className="header-brand">
-          <div>
+      {/* Sidebar */}
+      <div className="sidebar">
+        {/* Logo & Brand */}
+        <div className="sidebar-header">
+          <div className="sidebar-logo">
+            <span className="material-icons">hotel</span>
+          </div>
+          <div className="sidebar-brand">
             <h1>The Neelkanth Grand</h1>
             <p>By AKS Hospitality - CRM</p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#7a8699', fontSize: '14px', fontWeight: '500' }}>
-            {userName}
-          </span>
-          <button onClick={handleLogout} style={{
-            padding: '8px 20px',
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          }}>
+
+        {/* New Booking Button */}
+        <NavLink to="/new-booking" className="sidebar-new-booking" style={{ textDecoration: 'none' }}>
+          <span className="material-icons">add</span>
+          New Booking
+        </NavLink>
+
+        {/* Navigation Items */}
+        <div className="sidebar-nav">
+          {tabs.map((tab) => (
+            <NavLink
+              key={tab.path}
+              to={tab.path}
+              end={tab.path === '/'}
+              className={({ isActive }) => isActive ? 'sidebar-item active' : 'sidebar-item'}
+              style={{ textDecoration: 'none' }}
+            >
+              <span className="material-icons">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </NavLink>
+          ))}
+          <NavLink
+            to="/kot"
+            className={({ isActive }) => isActive ? 'sidebar-item active' : 'sidebar-item'}
+            style={{ textDecoration: 'none' }}
+          >
+            <span className="material-icons">restaurant</span>
+            <span>KOT Orders</span>
+          </NavLink>
+        </div>
+
+        {/* User Profile & Logout */}
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{userName}</div>
+              <div className="sidebar-user-role">Admin</div>
+            </div>
+          </div>
+          <button onClick={handleLogout} className="sidebar-logout">
             <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
             Logout
           </button>
         </div>
       </div>
 
-      {/* Sticky Quick Access Bar - KOT & New Booking */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #3b82f6 100%)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-        padding: '10px 20px',
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <NavLink
-          to="/new-booking"
-          style={({ isActive }) => ({
-            padding: '10px 24px',
-            background: isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.15)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '15px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            textDecoration: 'none',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-          })}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-          }}
-          onMouseLeave={(e: any) => {
-            if (!e.currentTarget.classList.contains('active')) {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-            }
-          }}
-        >
-          <span className="material-icons" style={{ fontSize: '20px' }}>add_circle</span>
-          New Booking
-        </NavLink>
-
-        <NavLink
-          to="/kot"
-          style={({ isActive }) => ({
-            padding: '10px 24px',
-            background: isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.15)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '15px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            textDecoration: 'none',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-          })}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-          }}
-          onMouseLeave={(e: any) => {
-            if (!e.currentTarget.classList.contains('active')) {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-            }
-          }}
-        >
-          <span className="material-icons" style={{ fontSize: '20px' }}>restaurant</span>
-          KOT Orders
-        </NavLink>
+      {/* Main Content */}
+      <div className="main-content">
+        <Outlet />
       </div>
-
-      <div className="nav-tabs">
-        {tabs.map((tab) => (
-          <NavLink
-            key={tab.path}
-            to={tab.path}
-            end={tab.path === '/'}
-            className={({ isActive }) => isActive ? 'active' : ''}
-          >
-            <span className="material-icons">{tab.icon}</span> {tab.label}
-          </NavLink>
-        ))}
-      </div>
-
-      <Outlet />
     </div>
   );
 }

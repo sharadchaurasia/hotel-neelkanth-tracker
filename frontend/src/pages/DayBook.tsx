@@ -144,7 +144,7 @@ export default function DayBook() {
   const subItems = EXPENSE_CATEGORIES[expCat] || [];
 
   return (
-    <div>
+    <div className="page-container">
       {/* Date Nav */}
       <div className="section-header">
         <h3><span className="material-icons">menu_book</span> Day Book</h3>

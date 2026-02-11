@@ -46,7 +46,7 @@ export default function Inventory() {
   const today = getToday();
 
   return (
-    <div>
+    <div className="page-container">
       {/* Day View */}
       <div className="inventory-section">
         <div className="section-header">

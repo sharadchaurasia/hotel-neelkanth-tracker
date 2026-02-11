@@ -593,8 +593,17 @@ export default function Dashboard() {
     );
   };
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userName = user.name || 'User';
+
   return (
-    <div>
+    <div className="page-container">
+      {/* Welcome Header */}
+      <div className="welcome-header">
+        <h1>Welcome, {userName}</h1>
+        <p>Admin Dashboard</p>
+      </div>
+
       {/* Header Actions */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <button className="btn btn-primary" onClick={() => navigate('/bookings/new')}>
@@ -603,7 +612,7 @@ export default function Dashboard() {
         <button
           className="btn btn-primary"
           onClick={openKotModal}
-          style={{ background: '#6b7b93' }}
+          style={{ background: 'var(--accent-blue)' }}
         >
           <span className="material-icons">restaurant</span> New KOT Order
         </button>
