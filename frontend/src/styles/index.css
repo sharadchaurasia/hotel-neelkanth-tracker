@@ -437,7 +437,9 @@ body {
   box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
 }
 .btn-warning:hover {
-  background: #d97706;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+  transform: translateY(-1px);
 }
 
 .btn-small { padding: 8px 14px; font-size: 12px; border-radius: var(--radius-sm); }

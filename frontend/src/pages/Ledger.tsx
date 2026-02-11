@@ -593,8 +593,8 @@ export default function Ledger() {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setEditModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleSaveBooking} className="btn-primary">Save Changes</button>
+              <button onClick={() => setEditModal(false)} className="btn btn-secondary">Cancel</button>
+              <button onClick={handleSaveBooking} className="btn btn-primary">Save Changes</button>
             </div>
           </div>
         </div>
