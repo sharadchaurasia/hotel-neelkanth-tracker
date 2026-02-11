@@ -23,6 +23,7 @@ export interface Booking {
   actualRoomRent: number;
   totalAmount: number;
   hotelShare: number;
+  collectionAmount: number;
   paymentType: string;
   advanceReceived: number;
   advanceDate: string;
