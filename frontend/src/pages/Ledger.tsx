@@ -154,7 +154,17 @@ export default function Ledger() {
   };
 
   const addCollectionEntry = () => {
-    setEditCollections([...editCollections, { amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '', date: new Date().toISOString().split('T')[0] }]);
+    // Calculate remaining balance
+    const totalEntered = editCollections.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    const remaining = Math.max(0, editHotelShare - totalEntered);
+
+    setEditCollections([...editCollections, {
+      amount: remaining, // Auto-fill remaining balance
+      paymentMode: '',
+      type: 'Room Rent',
+      subCategory: '',
+      date: new Date().toISOString().split('T')[0]
+    }]);
   };
 
   const removeCollectionEntry = (index: number) => {
