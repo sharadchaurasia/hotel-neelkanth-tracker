@@ -98,6 +98,16 @@ export default function Dashboard() {
 
   useEffect(() => { fetchDashboard(); fetchBookings(); fetchUsers(); }, [fetchDashboard, fetchBookings, fetchUsers]);
 
+  // Check for openKOT query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('openKOT') === 'true') {
+      openKotModal();
+      // Clear the query parameter
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const refreshAll = () => { fetchDashboard(); fetchBookings(); };
 
   // Summary calculation
