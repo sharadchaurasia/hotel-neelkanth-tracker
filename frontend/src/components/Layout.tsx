@@ -55,6 +55,12 @@ export default function Layout() {
           New Booking
         </NavLink>
 
+        {/* KOT Button */}
+        <NavLink to="/?openKOT=true" className="sidebar-kot-button" style={{ textDecoration: 'none' }}>
+          <span className="material-icons">restaurant_menu</span>
+          New KOT Order
+        </NavLink>
+
         {/* Navigation Items */}
         <div className="sidebar-nav">
           {tabs.map((tab) => (
