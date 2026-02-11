@@ -558,8 +558,10 @@ export default function Dashboard() {
                       <td>{b.pax || 1}</td>
                       <td>{b.roomNo ? <strong>{b.roomNo.replace(/,/g, ' / ')}</strong> : <em style={{ color: 'var(--accent-orange)', fontSize: '12px' }}>Not assigned</em>}</td>
                       <td>{b.source}{b.sourceName && <><br /><small>{b.sourceName}</small></>}</td>
-                      {type !== 'inhouse' && <td className="amount">{formatCurrency(collAmt)}</td>}
-                      {type === 'inhouse' && <><td>{formatDate(b.checkIn)}</td><td>{formatDate(b.checkOut)}</td><td className="amount">{formatCurrency(collAmt)}</td><td className="amount amount-received">{formatCurrency(recv)}</td></>}
+                      <td>{formatDate(b.checkIn)}</td>
+                      <td>{formatDate(b.checkOut)}</td>
+                      <td className="amount">{formatCurrency(collAmt)}</td>
+                      {type === 'inhouse' && <td className="amount amount-received">{formatCurrency(recv)}</td>}
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                       {type === 'checkin' && (
