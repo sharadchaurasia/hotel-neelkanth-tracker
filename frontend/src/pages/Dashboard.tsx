@@ -142,7 +142,7 @@ export default function Dashboard() {
       paymentType: b.paymentType || 'Postpaid',
       advanceReceived: Number(b.advanceReceived) || 0, paymentMode: b.paymentMode || '',
       remarks: b.remarks || '',
-      collectionAmount: Number((b as any).collectionAmount) || 0,
+      collectionAmount: Number(b.collectionAmount) || 0,
       agentId: (b as any).agentId || undefined,
     });
     setBookingAddOns(b.addOns || []);
@@ -537,7 +537,7 @@ export default function Dashboard() {
         {guests.length === 0 ? (
           <div className="guest-list-empty">No {type === 'checkin' ? 'check-ins' : type === 'inhouse' ? 'in-house guests' : 'check-outs'} today</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table className="guest-list-table">
               <thead><tr>
                 <th>Guest</th><th>Pax</th><th>Room</th><th>Source</th>
@@ -548,8 +548,9 @@ export default function Dashboard() {
               </tr></thead>
               <tbody>
                 {guests.map((b) => {
+                  const collAmt = Number(b.collectionAmount) || Number(b.totalAmount);
                   const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-                  const pend = Number(b.totalAmount) - recv;
+                  const pend = collAmt - recv;
                   const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
                   return (
                     <tr key={b.id}>
@@ -557,8 +558,8 @@ export default function Dashboard() {
                       <td>{b.pax || 1}</td>
                       <td>{b.roomNo ? <strong>{b.roomNo.replace(/,/g, ' / ')}</strong> : <em style={{ color: 'var(--accent-orange)', fontSize: '12px' }}>Not assigned</em>}</td>
                       <td>{b.source}{b.sourceName && <><br /><small>{b.sourceName}</small></>}</td>
-                      {type !== 'inhouse' && <td className="amount">{formatCurrency(b.totalAmount)}</td>}
-                      {type === 'inhouse' && <><td>{formatDate(b.checkIn)}</td><td>{formatDate(b.checkOut)}</td><td className="amount">{formatCurrency(b.totalAmount)}</td><td className="amount amount-received">{formatCurrency(recv)}</td></>}
+                      {type !== 'inhouse' && <td className="amount">{formatCurrency(collAmt)}</td>}
+                      {type === 'inhouse' && <><td>{formatDate(b.checkIn)}</td><td>{formatDate(b.checkOut)}</td><td className="amount">{formatCurrency(collAmt)}</td><td className="amount amount-received">{formatCurrency(recv)}</td></>}
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                       {type === 'checkin' && (
