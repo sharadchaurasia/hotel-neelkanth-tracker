@@ -550,7 +550,6 @@ export default function Ledger() {
                         <option value="Cash">💵 Cash</option>
                         <option value="Card">💳 Card</option>
                         <option value="SBI Neelkanth">🏦 SBI Neelkanth</option>
-                        <option value="Bank Transfer">🏦 Bank Transfer</option>
                         <option value="AKS Office">🏢 AKS Office</option>
                       </select>
                     </div>
