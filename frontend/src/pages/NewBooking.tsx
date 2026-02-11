@@ -342,7 +342,7 @@ export default function NewBooking() {
                     <option value="">Select mode</option>
                     <option value="Cash">Cash</option>
                     <option value="Card">Card</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="SBI Neelkanth">SBI Neelkanth</option>
                     <option value="AKS Office">AKS Office</option>
                   </select>
                 </div>
