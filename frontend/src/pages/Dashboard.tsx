@@ -541,8 +541,8 @@ export default function Dashboard() {
             <table className="guest-list-table" style={{ minWidth: '1000px' }}>
               <thead><tr>
                 <th>Guest</th><th>Pax</th><th>Room</th><th>Source</th>
-                {type !== 'inhouse' && <th>Collection</th>}
-                {type === 'inhouse' && <><th>Check-in</th><th>Checkout</th><th>Collection</th><th>Received</th></>}
+                <th>Check-in</th><th>Checkout</th><th>Collection</th>
+                {type === 'inhouse' && <th>Received</th>}
                 <th>Pending</th><th>Status</th>
                 <th>Actions</th>
               </tr></thead>
