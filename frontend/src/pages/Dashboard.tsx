@@ -581,33 +581,44 @@ export default function Dashboard() {
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                       {type === 'checkin' && (
-                        <td style={{ minWidth: '200px' }}>
+                        <td style={{ minWidth: '250px' }}>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
                             <button className="btn btn-primary btn-small" onClick={() => openCheckin(b)}>
                               <span className="material-icons" style={{ fontSize: '14px' }}>login</span> Check-in
                             </button>
                             {pend > 0 && <button className="btn btn-secondary btn-small" onClick={() => openCollect(b)}>Collect</button>}
+                            <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)} title="Edit Booking">
+                              <span className="material-icons" style={{ fontSize: '14px' }}>edit</span>
+                            </button>
                           </div>
                         </td>
                       )}
                       {type === 'inhouse' && (
-                        <td>
-                          <button
-                            className="btn btn-primary btn-small"
-                            onClick={() => navigate('/kot')}
-                            style={{ background: '#6b7b93' }}
-                          >
-                            <span className="material-icons" style={{ fontSize: '14px' }}>restaurant</span> Add KOT
-                          </button>
+                        <td style={{ minWidth: '200px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                            <button
+                              className="btn btn-primary btn-small"
+                              onClick={() => navigate('/kot')}
+                              style={{ background: '#6b7b93' }}
+                            >
+                              <span className="material-icons" style={{ fontSize: '14px' }}>restaurant</span> Add KOT
+                            </button>
+                            <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)} title="Edit Booking">
+                              <span className="material-icons" style={{ fontSize: '14px' }}>edit</span>
+                            </button>
+                          </div>
                         </td>
                       )}
                       {type === 'checkout' && (
-                        <td style={{ minWidth: '200px' }}>
+                        <td style={{ minWidth: '250px' }}>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
                             <button className="btn btn-warning btn-small" onClick={() => openCheckout(b)}>
                               <span className="material-icons" style={{ fontSize: '14px' }}>logout</span> Checkout
                             </button>
                             {pend > 0 && <button className="btn btn-primary btn-small" onClick={() => openCollect(b)}>Collect</button>}
+                            <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)} title="Edit Booking">
+                              <span className="material-icons" style={{ fontSize: '14px' }}>edit</span>
+                            </button>
                           </div>
                         </td>
                       )}

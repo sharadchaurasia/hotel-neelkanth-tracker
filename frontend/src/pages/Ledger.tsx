@@ -537,20 +537,30 @@ export default function Ledger() {
                     <div className="form-group" style={{ marginBottom: '10px' }}>
                       <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block', color: '#64748b' }}>Payment Mode</label>
                       <select
-                        value={col.paymentMode}
-                        onChange={(e) => {
-                          updateCollectionEntry(idx, 'paymentMode', e.target.value);
-                          if (e.target.value !== 'AKS Office') {
-                            updateCollectionEntry(idx, 'subCategory', '');
-                          }
+                        value={col.paymentMode || ''}
+                        onClick={() => {
+                          console.log('Select CLICKED!');
                         }}
-                        style={{ width: '100%', padding: '8px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                        onFocus={() => {
+                          console.log('Select FOCUSED!');
+                        }}
+                        onChange={(e) => {
+                          console.log('onChange FIRED! New value:', e.target.value);
+                          const newValue = e.target.value;
+                          const updated = [...editCollections];
+                          updated[idx] = { ...updated[idx], paymentMode: newValue };
+                          if (newValue !== 'AKS Office') {
+                            updated[idx].subCategory = '';
+                          }
+                          setEditCollections(updated);
+                        }}
+                        style={{ width: '100%', padding: '8px', fontSize: '13px', border: '2px solid #f97316', borderRadius: '6px', cursor: 'pointer', backgroundColor: 'white' }}
                       >
                         <option value="">Select Mode</option>
-                        <option value="Cash">💵 Cash</option>
-                        <option value="Card">💳 Card</option>
-                        <option value="SBI Neelkanth">🏦 SBI Neelkanth</option>
-                        <option value="AKS Office">🏢 AKS Office</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="SBI Neelkanth">SBI Neelkanth</option>
+                        <option value="AKS Office">AKS Office</option>
                       </select>
                     </div>
                     {col.paymentMode === 'AKS Office' && (
