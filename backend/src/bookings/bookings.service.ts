@@ -222,15 +222,46 @@ export class BookingsService {
     if (dto.collections && dto.collections.length > 0) {
       let totalCollectionAmount = 0;
       let firstPaymentMode = '';
+      const today = new Date().toISOString().split('T')[0];
 
       for (const collection of dto.collections) {
         const { amount, paymentMode, type, subCategory, date } = collection;
 
-        // Skip AKS Office payments (count as zero in ledger/daybook)
+        // AKS Office payment handling (same logic as checkout)
         if (paymentMode === 'AKS Office') {
+          // For Room Rent: Create AKS payment record, don't add to collection
+          if (type === 'Room Rent') {
+            const aksPayment = this.aksOfficeRepo.create({
+              booking: booking,
+              refBookingId: booking.bookingId,
+              guestName: booking.guestName,
+              roomNo: booking.roomNo,
+              amount: amount,
+              subCategory: subCategory,
+              date: date || today,
+              context: 'ledger-edit',
+              createdBy: userName,
+            });
+            await this.aksOfficeRepo.save(aksPayment);
+          } else if (type === 'KOT' || type === 'Add-on') {
+            // For KOT/Add-on: Create daybook entry (hotel's direct income)
+            await this.createDaybookEntry({
+              date: date,
+              category: type === 'KOT' ? 'KOT' : 'Other',
+              incomeSource: type === 'KOT' ? 'KOT' : 'Add-On',
+              description: `${type} - ${booking.guestName} (${booking.bookingId})`,
+              amount: amount,
+              paymentMode: paymentMode,
+              refBookingId: booking.bookingId,
+              guestName: booking.guestName,
+            });
+            // Add to total collection (KOT/add-on is real income)
+            totalCollectionAmount += amount;
+          }
           continue;
         }
 
+        // Non-AKS Office payments
         // Add to total collection
         totalCollectionAmount += amount;
 
@@ -239,12 +270,23 @@ export class BookingsService {
           firstPaymentMode = paymentMode;
         }
 
-        // Create daybook entry for KOT or Add-on
-        if (type === 'KOT' || type === 'Add-on') {
+        // Create daybook entry for all types
+        if (type === 'Room Rent') {
           await this.createDaybookEntry({
             date: date,
-            category: 'Accommodation',
-            incomeSource: type === 'KOT' ? 'KOT' : 'Add-on',
+            category: 'Room Rent',
+            incomeSource: 'Room Rent (Collection)',
+            description: `Collection - ${booking.guestName} (${booking.bookingId})`,
+            amount: amount,
+            paymentMode: paymentMode,
+            refBookingId: booking.bookingId,
+            guestName: booking.guestName,
+          });
+        } else if (type === 'KOT' || type === 'Add-on') {
+          await this.createDaybookEntry({
+            date: date,
+            category: type === 'KOT' ? 'KOT' : 'Other',
+            incomeSource: type === 'KOT' ? 'KOT' : 'Add-On',
             description: `${type} - ${booking.guestName} (${booking.bookingId})`,
             amount: amount,
             paymentMode: paymentMode,
