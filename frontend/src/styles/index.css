@@ -1171,6 +1171,11 @@ select:focus {
   color: var(--accent-red);
 }
 
+/* Guest Lists Container */
+.guest-lists {
+  margin-bottom: 24px;
+}
+
 /* Guest List Section */
 .guest-list-section {
   background: white;
