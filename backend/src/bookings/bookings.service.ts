@@ -244,7 +244,7 @@ export class BookingsService {
             });
             await this.aksOfficeRepo.save(aksPayment);
           } else if (type === 'KOT' || type === 'Add-on') {
-            // For KOT/Add-on: Create daybook entry (hotel's direct income)
+            // For KOT/Add-on: Create daybook entry only (NOT in ledger collection)
             await this.createDaybookEntry({
               date: date,
               category: type === 'KOT' ? 'KOT' : 'Other',
@@ -255,23 +255,22 @@ export class BookingsService {
               refBookingId: booking.bookingId,
               guestName: booking.guestName,
             });
-            // Add to total collection (KOT/add-on is real income)
-            totalCollectionAmount += amount;
+            // DO NOT add to collection - KOT/Add-on only in daybook
           }
           continue;
         }
 
         // Non-AKS Office payments
-        // Add to total collection
-        totalCollectionAmount += amount;
-
-        // Store first non-AKS Office payment mode
-        if (!firstPaymentMode) {
-          firstPaymentMode = paymentMode;
-        }
-
-        // Create daybook entry for all types
+        // Only add Room Rent to ledger collection
         if (type === 'Room Rent') {
+          totalCollectionAmount += amount;
+
+          // Store first non-AKS Office payment mode
+          if (!firstPaymentMode) {
+            firstPaymentMode = paymentMode;
+          }
+
+          // Create daybook entry for Room Rent
           await this.createDaybookEntry({
             date: date,
             category: 'Room Rent',
@@ -283,6 +282,7 @@ export class BookingsService {
             guestName: booking.guestName,
           });
         } else if (type === 'KOT' || type === 'Add-on') {
+          // KOT/Add-on: Only daybook, NOT in ledger collection
           await this.createDaybookEntry({
             date: date,
             category: type === 'KOT' ? 'KOT' : 'Other',
