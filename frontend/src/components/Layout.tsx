@@ -406,6 +406,69 @@ export default function Layout() {
             );
           })}
         </nav>
+
+        {/* Professional Submenu Bar */}
+        {activeDropdown && navigationItems.find(i => i.label === activeDropdown)?.dropdown && (
+          <div style={{
+            background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+            padding: '16px 32px',
+            display: 'flex',
+            gap: '12px',
+            borderTop: '2px solid rgba(251, 191, 36, 0.3)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            flexWrap: 'wrap',
+            animation: 'slideDown 0.3s ease',
+          }}>
+            {navigationItems.find(i => i.label === activeDropdown)?.dropdown?.map((subItem) => (
+              <NavLink
+                key={subItem.path}
+                to={subItem.path}
+                onClick={() => setActiveDropdown(null)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px 20px',
+                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)',
+                  border: '2px solid rgba(251, 191, 36, 0.3)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.15) 100%)';
+                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)';
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+                }}
+              >
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'rgba(251, 191, 36, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <span className="material-icons" style={{ fontSize: '18px', color: '#fbbf24' }}>{subItem.icon}</span>
+                </div>
+                {subItem.label}
+              </NavLink>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Main Content Area */}
