@@ -35,9 +35,18 @@ export class CreateBookingDto {
 }
 
 export class CollectPaymentDto {
-  amount: number;
+  // For non-split payment
+  amount?: number;
   paymentMode?: string;
   subCategory?: string;
+
+  // For split payment
+  splitPayment?: boolean;
+  bookingAmount?: number;
+  bookingPaymentMode?: string;
+  bookingSubCategory?: string;
+  kotAmount?: number;
+  kotPaymentMode?: string;
 }
 
 export class CheckinDto {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Booking } from './booking.entity';
@@ -387,20 +387,103 @@ export class BookingsService {
     let booking;
     try {
       booking = await this.findOne(id);
-      if (booking.status === 'COLLECTED') {
-        throw new NotFoundException('Payment already collected for this booking');
-      }
       const today = new Date().toISOString().split('T')[0];
 
+      // Handle split payment
+      if (dto.splitPayment) {
+        const bookingAmt = Number(dto.bookingAmount || 0);
+        const kotAmt = Number(dto.kotAmount || 0);
+
+        // Process booking payment
+        if (bookingAmt > 0) {
+          if (dto.bookingPaymentMode === 'AKS Office') {
+            // AKS Office: no daybook entry, only track in balanceReceived
+            booking.balanceReceived = Number(booking.balanceReceived || 0) + bookingAmt;
+            booking.balancePaymentMode = 'AKS Office' + (dto.bookingSubCategory ? ' - ' + dto.bookingSubCategory : '');
+            booking.balanceDate = today;
+            booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+              `[AKS Office collection ₹${bookingAmt} (${dto.bookingSubCategory || 'N/A'}) by ${userName || 'unknown'} on ${today}]`;
+
+            // Create AKS Office payment record
+            const hotelShare = Math.max(0,
+              Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
+              - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0) + bookingAmt
+            );
+            if (hotelShare > 0) {
+              const aksPayment = this.aksOfficeRepo.create({
+                booking,
+                refBookingId: booking.bookingId,
+                guestName: booking.guestName,
+                roomNo: booking.roomNo,
+                amount: hotelShare,
+                subCategory: dto.bookingSubCategory,
+                date: today,
+                context: 'collect',
+                createdBy: userName,
+              });
+              await this.aksOfficeRepo.save(aksPayment);
+            }
+          } else {
+            // Cash/Card/SBI: create daybook entry
+            booking.balanceReceived = Number(booking.balanceReceived || 0) + bookingAmt;
+            booking.balancePaymentMode = dto.bookingPaymentMode || booking.balancePaymentMode;
+            booking.balanceDate = today;
+
+            // Create daybook entry for booking collection
+            if (dto.bookingPaymentMode) {
+              await this.createDaybookEntry({
+                date: today,
+                category: 'Room Rent',
+                incomeSource: 'Room Rent (Collection)',
+                description: `Booking payment collected - ${booking.guestName}`,
+                amount: bookingAmt,
+                paymentMode: dto.bookingPaymentMode,
+                refBookingId: booking.bookingId,
+                guestName: booking.guestName,
+              });
+            }
+          }
+        }
+
+        // Process KOT/Add-on payment (always goes to daybook only)
+        if (kotAmt > 0 && dto.kotPaymentMode) {
+          await this.createDaybookEntry({
+            date: today,
+            category: 'Room Rent',
+            incomeSource: 'KOT/Add-on',
+            description: `KOT/Add-on collected - ${booking.guestName}`,
+            amount: kotAmt,
+            paymentMode: dto.kotPaymentMode,
+            refBookingId: booking.bookingId,
+            guestName: booking.guestName,
+          });
+          booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+            `[KOT/Add-on ₹${kotAmt} collected via ${dto.kotPaymentMode} by ${userName || 'unknown'} on ${today}]`;
+        }
+
+        // Update booking status
+        booking.lastModifiedBy = userName || booking.lastModifiedBy;
+        const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
+        const pending = Number(booking.collectionAmount || booking.totalAmount || 0) - totalReceived;
+        booking.status = pending <= 0 ? 'COLLECTED' : 'PARTIAL';
+
+        return await this.bookingRepo.save(booking);
+      }
+
+      // Handle non-split payment (original flow)
+      const amount = Number(dto.amount || 0);
+      if (amount <= 0) {
+        throw new BadRequestException('Amount must be greater than 0');
+      }
+
       if (dto.paymentMode === 'AKS Office') {
-        // AKS Office: track in balanceReceived (so checkout knows), but no daybook entry
-        // Hotel's share = actualRoomRent + addOnAmount - what hotel already received
+        // AKS Office: track in balanceReceived but no daybook entry
         const totalDue = Number(booking.collectionAmount || booking.totalAmount || 0) - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0);
         const hotelShare = Math.max(0,
           Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
           - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
         );
-        booking.balanceReceived = Number(booking.balanceReceived || 0) + totalDue;
+        booking.balanceReceived = Number(booking.balanceReceived || 0) + Math.min(amount, totalDue);
         booking.balancePaymentMode = 'AKS Office' + (dto.subCategory ? ' - ' + dto.subCategory : '');
         booking.balanceDate = today;
         booking.status = 'COLLECTED';
@@ -428,7 +511,8 @@ export class BookingsService {
         return saved;
       }
 
-      booking.balanceReceived = Number(booking.balanceReceived || 0) + dto.amount;
+      // Cash/Card/SBI: create daybook entry
+      booking.balanceReceived = Number(booking.balanceReceived || 0) + amount;
       booking.balancePaymentMode = dto.paymentMode || booking.balancePaymentMode;
       booking.balanceDate = today;
       booking.lastModifiedBy = userName || booking.lastModifiedBy;
@@ -440,13 +524,13 @@ export class BookingsService {
       const saved = await this.bookingRepo.save(booking);
 
       // Auto-create daybook entry for collected payment
-      if (dto.amount > 0 && dto.paymentMode) {
+      if (dto.paymentMode) {
         await this.createDaybookEntry({
           date: today,
           category: 'Room Rent',
           incomeSource: 'Room Rent (Collection)',
           description: `Payment collected - ${booking.guestName}`,
-          amount: dto.amount,
+          amount,
           paymentMode: dto.paymentMode,
           refBookingId: booking.bookingId,
           guestName: booking.guestName,
@@ -455,11 +539,11 @@ export class BookingsService {
 
       return saved;
     } catch (error) {
-      // Don't wrap NotFoundException - let it pass through
-      if (error instanceof NotFoundException) {
+      // Don't wrap NotFoundException or BadRequestException - let them pass through
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      ErrorLogger.logPaymentError('collectPayment', booking?.bookingId || 'unknown', dto.amount, error);
+      ErrorLogger.logPaymentError('collectPayment', booking?.bookingId || 'unknown', dto.amount || 0, error);
       throw new InternalServerErrorException('Failed to collect payment. Please verify the transaction and try again.');
     }
   }

@@ -42,6 +42,12 @@ export default function Dashboard() {
   const [collectAmount, setCollectAmount] = useState(0);
   const [collectMode, setCollectMode] = useState('');
   const [collectSubCategory, setCollectSubCategory] = useState('');
+  const [collectKotAmount, setCollectKotAmount] = useState(0);
+  const [collectSplitPayment, setCollectSplitPayment] = useState(false);
+  const [collectBookingAmount, setCollectBookingAmount] = useState(0);
+  const [collectBookingMode, setCollectBookingMode] = useState('');
+  const [collectBookingSubCategory, setCollectBookingSubCategory] = useState('');
+  const [collectKotMode, setCollectKotMode] = useState('');
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelAction, setCancelAction] = useState('cancel');
@@ -187,34 +193,94 @@ export default function Dashboard() {
   };
 
   // Collect
-  const openCollect = (b: Booking) => {
+  const openCollect = async (b: Booking) => {
     const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-    const pend = Number(b.collectionAmount) - recv;
+    const bookingPending = Number(b.collectionAmount) - recv;
+
+    // Fetch pending KOT amount if guest is in-house
+    let kotPending = 0;
+    if (b.checkedIn && !b.checkedOut) {
+      try {
+        const kotRes = await api.get(`/kot/booking/${b.id}/unpaid`);
+        const unpaidOrders = kotRes.data || [];
+        kotPending = unpaidOrders.reduce((sum: number, order: any) =>
+          sum + Number(order.totalAmount || order.amount || 0), 0
+        );
+      } catch {
+        kotPending = Number(b.kotAmount) || 0;
+      }
+    }
+
     setCollectBooking(b);
-    setCollectAmount(pend > 0 ? pend : 0);
+    setCollectBookingAmount(bookingPending > 0 ? bookingPending : 0);
+    setCollectKotAmount(kotPending);
+    setCollectAmount(bookingPending + kotPending);
     setCollectMode('');
+    setCollectBookingMode('');
+    setCollectKotMode('');
+    setCollectSplitPayment(false);
+    setCollectSubCategory('');
+    setCollectBookingSubCategory('');
     setCollectModal(true);
   };
 
   const doCollect = async () => {
-    if (!collectBooking || collectAmount <= 0) return;
-    if (!collectMode) {
-      toast.error('Please select payment mode');
-      return;
+    if (!collectBooking) return;
+
+    if (collectSplitPayment) {
+      // Split payment validation
+      if (collectBookingAmount > 0 && !collectBookingMode) {
+        toast.error('Please select payment mode for booking collection');
+        return;
+      }
+      if (collectKotAmount > 0 && !collectKotMode) {
+        toast.error('Please select payment mode for KOT/Add-on collection');
+        return;
+      }
+      if (collectBookingMode === 'AKS Office' && !collectBookingSubCategory) {
+        toast.error('Please select AKS Office sub-category for booking');
+        return;
+      }
+      if (collectKotMode === 'AKS Office') {
+        toast.error('KOT/Add-ons cannot be collected via AKS Office. Please choose Cash/Card/SBI.');
+        return;
+      }
+    } else {
+      // Single payment validation
+      if (!collectMode) {
+        toast.error('Please select payment mode');
+        return;
+      }
+      if (collectMode === 'AKS Office' && !collectSubCategory) {
+        toast.error('Please select AKS Office sub-category');
+        return;
+      }
+      if (collectMode === 'AKS Office' && collectKotAmount > 0) {
+        toast.error('Cannot collect KOT/Add-ons via AKS Office. Please use split payment.');
+        return;
+      }
     }
-    if (collectMode === 'AKS Office' && !collectSubCategory) {
-      toast.error('Please select AKS Office sub-category');
-      return;
-    }
+
     try {
-      await api.post(`/bookings/${collectBooking.id}/collect`, {
+      const payload: any = collectSplitPayment ? {
+        splitPayment: true,
+        bookingAmount: collectBookingAmount,
+        bookingPaymentMode: collectBookingMode,
+        bookingSubCategory: collectBookingMode === 'AKS Office' ? collectBookingSubCategory : undefined,
+        kotAmount: collectKotAmount,
+        kotPaymentMode: collectKotMode
+      } : {
+        splitPayment: false,
         amount: collectAmount,
         paymentMode: collectMode,
         subCategory: collectMode === 'AKS Office' ? collectSubCategory : undefined
-      });
+      };
+
+      await api.post(`/bookings/${collectBooking.id}/collect`, payload);
       toast.success('Payment collected!');
       setCollectModal(false);
       setCollectSubCategory('');
+      setCollectBookingSubCategory('');
       refreshAll();
     } catch { toast.error('Error collecting payment'); }
   };
@@ -1090,60 +1156,133 @@ export default function Dashboard() {
         footer={<><button className="btn btn-secondary" onClick={() => setCollectModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCollect}><span className="material-icons">check_circle</span> Collect Payment</button></>}>
         {collectBooking && (
           <>
-            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <small style={{ color: '#7a8699', display: 'block', marginBottom: '4px' }}>Pending Amount</small>
-                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#ef4444' }}>
-                    {formatCurrency(Number(collectBooking.totalAmount) - (Number(collectBooking.advanceReceived) || 0) - (Number(collectBooking.balanceReceived) || 0))}
-                  </h2>
+            {/* Payment Breakdown */}
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '600', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons" style={{ fontSize: '20px' }}>receipt_long</span>
+                Payment Breakdown
+              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', padding: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '8px' }}>
+                <span>Booking Collection Remaining:</span>
+                <strong style={{ color: '#ef4444' }}>{formatCurrency(collectBookingAmount)}</strong>
+              </div>
+              {collectKotAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', padding: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '8px' }}>
+                  <span>KOT/Add-on Charges:</span>
+                  <strong style={{ color: '#f97316' }}>{formatCurrency(collectKotAmount)}</strong>
                 </div>
-                <span className="material-icons" style={{ fontSize: '48px', color: 'rgba(239, 68, 68, 0.3)' }}>pending_actions</span>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', padding: '12px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))', borderRadius: '8px', border: '2px solid rgba(34, 197, 94, 0.3)' }}>
+                <span style={{ fontWeight: '700', fontSize: '16px' }}>Total to Collect:</span>
+                <strong style={{ color: '#22c55e', fontSize: '18px' }}>{formatCurrency(collectAmount)}</strong>
               </div>
             </div>
 
-            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.15)', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="material-icons" style={{ fontSize: '20px' }}>payments</span>
-                Payment Details
-              </h3>
-              <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label>Amount to Collect</label>
-                <input type="number" value={collectAmount} onChange={(e) => setCollectAmount(Number(e.target.value))} placeholder="Enter amount" style={{ fontSize: '16px', fontWeight: '600' }} />
+            {/* Split Payment Option */}
+            {collectBookingAmount > 0 && collectKotAmount > 0 && (
+              <div style={{ marginBottom: '20px', padding: '12px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '600', color: '#92400e' }}>
+                  <input type="checkbox" checked={collectSplitPayment} onChange={(e) => setCollectSplitPayment(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                  <span className="material-icons" style={{ fontSize: '20px', color: '#f59e0b' }}>call_split</span>
+                  Split Payment (Different payment modes for booking & KOT)
+                </label>
               </div>
-              <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label>Payment Mode</label>
-                <select value={collectMode} onChange={(e) => { setCollectMode(e.target.value); setCollectSubCategory(''); }}>
-                  <option value="">Select Mode</option>
-                  <option value="Cash">💵 Cash</option>
-                  <option value="Card">💳 Card</option>
-                  <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
-                  <option value="AKS Office">🏢 AKS Office</option>
-                </select>
-              </div>
-              {collectMode === 'AKS Office' && (
-                <div className="form-group">
-                  <label>AKS Office Sub-Category</label>
-                  <select value={collectSubCategory} onChange={(e) => setCollectSubCategory(e.target.value)}>
-                    <option value="">Select Person</option>
-                    <option value="Rajat">Rajat</option>
-                    <option value="Happy">Happy</option>
-                    <option value="Vishal">Vishal</option>
-                    <option value="Fyra">Fyra</option>
-                    <option value="Gateway">Gateway</option>
-                    <option value="Other">Other (Manual Entry)</option>
+            )}
+
+            {/* Payment Details */}
+            {!collectSplitPayment ? (
+              <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.15)', marginBottom: '20px' }}>
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="material-icons" style={{ fontSize: '20px' }}>payments</span>
+                  Payment Details
+                </h3>
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label>Payment Mode</label>
+                  <select value={collectMode} onChange={(e) => { setCollectMode(e.target.value); setCollectSubCategory(''); }}>
+                    <option value="">Select Mode</option>
+                    <option value="Cash">💵 Cash</option>
+                    <option value="Card">💳 Card</option>
+                    <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                    <option value="AKS Office">🏢 AKS Office</option>
                   </select>
-                  {collectSubCategory === 'Other' && (
-                    <input
-                      type="text"
-                      placeholder="Enter name manually"
-                      style={{ marginTop: '12px' }}
-                      onChange={(e) => setCollectSubCategory(e.target.value)}
-                    />
-                  )}
                 </div>
-              )}
-            </div>
+                {collectMode === 'AKS Office' && (
+                  <div className="form-group">
+                    <label>AKS Office Sub-Category</label>
+                    <select value={collectSubCategory} onChange={(e) => setCollectSubCategory(e.target.value)}>
+                      <option value="">Select Person</option>
+                      <option value="Rajat">Rajat</option>
+                      <option value="Happy">Happy</option>
+                      <option value="Vishal">Vishal</option>
+                      <option value="Fyra">Fyra</option>
+                      <option value="Gateway">Gateway</option>
+                      <option value="Other">Other (Manual Entry)</option>
+                    </select>
+                    {collectSubCategory === 'Other' && (
+                      <input type="text" placeholder="Enter name manually" style={{ marginTop: '12px' }} onChange={(e) => setCollectSubCategory(e.target.value)} />
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Booking Payment */}
+                {collectBookingAmount > 0 && (
+                  <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.04))', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.15)', marginBottom: '16px' }}>
+                    <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="material-icons" style={{ fontSize: '18px' }}>hotel</span>
+                      Booking Payment ({formatCurrency(collectBookingAmount)})
+                    </h3>
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label>Payment Mode</label>
+                      <select value={collectBookingMode} onChange={(e) => { setCollectBookingMode(e.target.value); setCollectBookingSubCategory(''); }}>
+                        <option value="">Select Mode</option>
+                        <option value="Cash">💵 Cash</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                        <option value="AKS Office">🏢 AKS Office</option>
+                      </select>
+                    </div>
+                    {collectBookingMode === 'AKS Office' && (
+                      <div className="form-group">
+                        <label>AKS Office Sub-Category</label>
+                        <select value={collectBookingSubCategory} onChange={(e) => setCollectBookingSubCategory(e.target.value)}>
+                          <option value="">Select Person</option>
+                          <option value="Rajat">Rajat</option>
+                          <option value="Happy">Happy</option>
+                          <option value="Vishal">Vishal</option>
+                          <option value="Fyra">Fyra</option>
+                          <option value="Gateway">Gateway</option>
+                          <option value="Other">Other (Manual Entry)</option>
+                        </select>
+                        {collectBookingSubCategory === 'Other' && (
+                          <input type="text" placeholder="Enter name manually" style={{ marginTop: '12px' }} onChange={(e) => setCollectBookingSubCategory(e.target.value)} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* KOT/Add-on Payment */}
+                {collectKotAmount > 0 && (
+                  <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(249, 115, 22, 0.04))', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.15)' }}>
+                    <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#f97316', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="material-icons" style={{ fontSize: '18px' }}>restaurant</span>
+                      KOT/Add-on Payment ({formatCurrency(collectKotAmount)})
+                    </h3>
+                    <div className="form-group">
+                      <label>Payment Mode (Cash/Card/SBI only)</label>
+                      <select value={collectKotMode} onChange={(e) => setCollectKotMode(e.target.value)}>
+                        <option value="">Select Mode</option>
+                        <option value="Cash">💵 Cash</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
       </Modal>
