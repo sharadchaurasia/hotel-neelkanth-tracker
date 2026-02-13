@@ -119,6 +119,7 @@ export default function Layout() {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
+        overflow: 'visible',
       }}>
         {/* Company Banner */}
         <div style={{
@@ -261,6 +262,7 @@ export default function Layout() {
           gap: '4px',
           padding: '0 32px',
           overflowX: 'auto',
+          overflowY: 'visible',
           scrollbarWidth: 'thin',
         }}>
           {navigationItems.map((item) => {
@@ -367,7 +369,7 @@ export default function Layout() {
                       minWidth: '220px',
                       overflow: 'hidden',
                       animation: 'slideDown 0.2s ease',
-                      zIndex: 1100,
+                      zIndex: 9999,
                     }}>
                     {item.dropdown.map((dropItem) => (
                       <NavLink
