@@ -189,7 +189,7 @@ export default function Dashboard() {
   // Collect
   const openCollect = (b: Booking) => {
     const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
-    const pend = Number(b.totalAmount) - recv;
+    const pend = Number(b.collectionAmount) - recv;
     setCollectBooking(b);
     setCollectAmount(pend > 0 ? pend : 0);
     setCollectMode('');
@@ -576,10 +576,8 @@ export default function Dashboard() {
                     });
                   }
 
-                  // For AKS Office, use hotelShare; for others use collectionAmount or totalAmount
-                  const collAmt = b.paymentMode === 'AKS Office'
-                    ? Number(b.hotelShare) || Number(b.totalAmount)
-                    : (Number(b.collectionAmount) > 0 ? Number(b.collectionAmount) : Number(b.totalAmount));
+                  // Always use collectionAmount (MEMORY.md rule)
+                  const collAmt = Number(b.collectionAmount) || 0;
                   const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
                   const pend = collAmt - recv;
                   const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
