@@ -116,10 +116,8 @@ export default function Layout() {
       <header style={{
         background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-        position: 'sticky',
-        top: 0,
+        position: 'relative',
         zIndex: 1000,
-        overflow: 'visible',
       }}>
         {/* Company Banner */}
         <div style={{
@@ -359,17 +357,17 @@ export default function Layout() {
                 {activeDropdown === item.label && item.dropdown && (
                   <div
                     style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      marginTop: '0px',
+                      position: 'fixed',
+                      top: '140px',
+                      left: '0',
+                      right: '0',
                       background: 'white',
-                      borderRadius: '0 8px 8px 8px',
+                      borderRadius: '8px',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-                      minWidth: '220px',
-                      overflow: 'hidden',
-                      animation: 'slideDown 0.2s ease',
-                      zIndex: 9999,
+                      maxWidth: '400px',
+                      margin: '0 auto',
+                      padding: '10px',
+                      zIndex: 10000,
                     }}>
                     {item.dropdown.map((dropItem) => (
                       <NavLink
