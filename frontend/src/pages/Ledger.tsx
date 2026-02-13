@@ -289,6 +289,12 @@ export default function Ledger() {
                 const totalCollection = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
                 const totalPending = hotelShare - totalCollection;
                 const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
+
+                // Find AKS Office payments for this booking
+                const aksPaymentsForBooking = aksPayments.filter(p => p.refBookingId === b.bookingId);
+                const aksTotal = aksPaymentsForBooking.reduce((sum, p) => sum + Number(p.amount), 0);
+                const aksSubCategories = [...new Set(aksPaymentsForBooking.map(p => p.subCategory).filter(Boolean))].join(', ');
+
                 return (
                   <tr key={b.id}>
                     <td><strong>{b.bookingId}</strong></td>
@@ -305,7 +311,14 @@ export default function Ledger() {
                       {formatCurrency(Math.abs(totalPending))}
                       {totalPending < 0 && <span style={{ fontSize: '11px', marginLeft: '4px' }}>(extra)</span>}
                     </td>
-                    <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
+                    <td>
+                      <span className={`badge ${statusClass}`}>{b.status}</span>
+                      {aksPaymentsForBooking.length > 0 && (
+                        <div style={{ fontSize: '10px', marginTop: '4px', color: '#6b7280' }}>
+                          AKS Office ({aksSubCategories}) {formatCurrency(aksTotal)}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <button
                         onClick={() => handleEditBooking(b)}
