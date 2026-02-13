@@ -357,16 +357,14 @@ export default function Layout() {
                 {activeDropdown === item.label && item.dropdown && (
                   <div
                     style={{
-                      position: 'fixed',
-                      top: '140px',
-                      left: '0',
-                      right: '0',
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      marginTop: '0px',
                       background: 'white',
                       borderRadius: '8px',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-                      maxWidth: '400px',
-                      margin: '0 auto',
-                      padding: '10px',
+                      minWidth: '220px',
                       zIndex: 10000,
                     }}>
                     {item.dropdown.map((dropItem) => (
@@ -415,6 +413,7 @@ export default function Layout() {
         flex: 1,
         overflowY: 'auto',
         background: '#f8fafc',
+        marginTop: '10px',
       }}>
         <Outlet />
       </main>
