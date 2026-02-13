@@ -38,6 +38,9 @@ export default function Ledger() {
     date: string;
   }>>([{ amount: 0, paymentMode: '', type: 'Room Rent', subCategory: '', date: new Date().toISOString().split('T')[0] }]);
 
+  // Loading state to prevent double-click
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     // Fetch all agents from agents master table
     api.get('/agents').then(res => {
@@ -95,18 +98,49 @@ export default function Ledger() {
     setEditingBooking(booking);
     setEditHotelShare(Number(booking.hotelShare) || 0);
     const totalCollection = (Number(booking.advanceReceived) || 0) + (Number(booking.balanceReceived) || 0);
-    setEditCollections([{
-      amount: totalCollection,
-      paymentMode: '', // Always start with empty selection for fresh choice
-      type: 'Room Rent',
-      subCategory: '',
-      date: new Date().toISOString().split('T')[0]
-    }]);
+
+    // Show existing collection as starting point
+    const existingEntries: Array<{amount: number; paymentMode: string; type: string; subCategory: string; date: string}> = [];
+
+    // Add Room Rent collection if exists
+    if (totalCollection > 0) {
+      existingEntries.push({
+        amount: totalCollection,
+        paymentMode: booking.balancePaymentMode || booking.paymentMode || '',
+        type: 'Room Rent',
+        subCategory: '',
+        date: booking.balanceDate || booking.advanceDate || new Date().toISOString().split('T')[0]
+      });
+    }
+
+    // Add KOT if exists
+    if (Number(booking.kotAmount) > 0) {
+      existingEntries.push({
+        amount: Number(booking.kotAmount),
+        paymentMode: '',
+        type: 'KOT',
+        subCategory: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+
+    // If no existing entries, start with blank
+    if (existingEntries.length === 0) {
+      existingEntries.push({
+        amount: 0,
+        paymentMode: '',
+        type: 'Room Rent',
+        subCategory: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+
+    setEditCollections(existingEntries);
     setEditModal(true);
   };
 
   const handleSaveBooking = async () => {
-    if (!editingBooking) return;
+    if (!editingBooking || isSaving) return;
     const bookingId = editingBooking.id;
     // Validate collections
     for (const col of editCollections) {
@@ -128,6 +162,7 @@ export default function Ledger() {
       }
     }
 
+    setIsSaving(true);
     try {
       // Backend should handle:
       // 1. AKS Office payments → Count as zero in ledger & daybook (no entry)
@@ -150,6 +185,8 @@ export default function Ledger() {
       setBookings(res.data.bookings || res.data);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update booking');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -177,6 +214,47 @@ export default function Ledger() {
     const updated = [...editCollections];
     updated[index] = { ...updated[index], [field]: value };
     setEditCollections(updated);
+  };
+
+  const handleSendToAgentLedger = async () => {
+    if (!editingBooking || isSaving) return;
+    const pendingAmount = editHotelShare - ((Number(editingBooking.advanceReceived) || 0) + (Number(editingBooking.balanceReceived) || 0));
+
+    if (pendingAmount <= 0) {
+      toast.error('No pending amount to send to agent ledger');
+      return;
+    }
+
+    const subCategory = prompt('Select person (Rajat/Happy/Vishal/Fyra/Gateway/Getaway):', 'Gateway');
+    if (!subCategory) return;
+
+    setIsSaving(true);
+    try {
+      await api.put(`/bookings/${editingBooking.id}`, {
+        hotelShare: editHotelShare,
+        collections: [{
+          amount: pendingAmount,
+          paymentMode: 'AKS Office',
+          type: 'Room Rent',
+          subCategory: subCategory,
+          date: new Date().toISOString().split('T')[0]
+        }]
+      });
+      toast.success(`₹${pendingAmount} marked as pending in ${subCategory}'s ledger`);
+      setEditModal(false);
+      setEditingBooking(null);
+      // Refresh bookings
+      const params = new URLSearchParams();
+      if (agent) params.set('agent', agent);
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      const res = await api.get('/reports/ledger?' + params);
+      setBookings(res.data.bookings || res.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to send to agent ledger');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const agentSums: Record<string, { total: number; received: number; pending: number; count: number }> = {};
@@ -480,6 +558,49 @@ export default function Ledger() {
               <button onClick={() => setEditModal(false)} className="modal-close">×</button>
             </div>
             <div className="modal-body" style={{ padding: '24px' }}>
+              {/* Current Status Info */}
+              <div style={{
+                background: '#eff6ff',
+                border: '2px solid #93c5fd',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '20px',
+                fontSize: '13px'
+              }}>
+                <div style={{ fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>Current Status:</div>
+                <div style={{ color: '#1e3a8a', lineHeight: '1.6' }}>
+                  Hotel Share: {formatCurrency(editingBooking?.hotelShare || 0)}<br />
+                  Collected: {formatCurrency((Number(editingBooking?.advanceReceived) || 0) + (Number(editingBooking?.balanceReceived) || 0))}<br />
+                  Pending: {formatCurrency((editingBooking?.hotelShare || 0) - ((Number(editingBooking?.advanceReceived) || 0) + (Number(editingBooking?.balanceReceived) || 0)))}<br />
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    ⚠️ Editing will replace all existing entries to prevent duplicates
+                  </span>
+                </div>
+              </div>
+
+              {/* Send to Agent Ledger Button */}
+              {((Number(editingBooking?.advanceReceived) || 0) + (Number(editingBooking?.balanceReceived) || 0)) === 0 && (editingBooking?.hotelShare || 0) > 0 && (
+                <button
+                  onClick={handleSendToAgentLedger}
+                  disabled={isSaving}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: isSaving ? '#94a3b8' : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    marginBottom: '20px',
+                    opacity: isSaving ? 0.6 : 1
+                  }}
+                >
+                  {isSaving ? '⏳ Processing...' : '📋 Send Full Amount to Agent Ledger (Pending)'}
+                </button>
+              )}
+
               {/* Hotel Share */}
               <div className="form-group" style={{ marginBottom: '20px' }}>
                 <label style={{ fontWeight: '600', fontSize: '14px', marginBottom: '8px', display: 'block' }}>Hotel Share</label>
@@ -632,8 +753,10 @@ export default function Ledger() {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setEditModal(false)} className="btn btn-secondary">Cancel</button>
-              <button onClick={handleSaveBooking} className="btn btn-primary">Save Changes</button>
+              <button onClick={() => setEditModal(false)} className="btn btn-secondary" disabled={isSaving}>Cancel</button>
+              <button onClick={handleSaveBooking} className="btn btn-primary" disabled={isSaving}>
+                {isSaving ? '⏳ Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>

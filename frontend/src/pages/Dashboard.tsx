@@ -59,6 +59,10 @@ export default function Dashboard() {
   const [transferToAgent, setTransferToAgent] = useState(false);
   const [collectFromGuest, setCollectFromGuest] = useState(0);
 
+  // Loading states to prevent double-click
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
   // KOT Modal
   const [kotModal, setKotModal] = useState(false);
   const [kotCustomerType, setKotCustomerType] = useState<'inhouse' | 'walkin'>('walkin');
@@ -248,15 +252,21 @@ export default function Dashboard() {
   };
 
   const doCheckin = async () => {
-    if (!checkinBooking) return;
+    if (!checkinBooking || isCheckingIn) return;
     const rooms = checkinRooms.filter(Boolean);
     if (rooms.length === 0) { toast.error('Select at least one room'); return; }
+
+    setIsCheckingIn(true);
     try {
       await api.post(`/bookings/${checkinBooking.id}/checkin`, { roomNo: rooms.join(','), noOfRooms: rooms.length });
       toast.success(`${checkinBooking.guestName} checked in!`);
       setCheckinModal(false);
       refreshAll();
-    } catch { toast.error('Error'); }
+    } catch {
+      toast.error('Error');
+    } finally {
+      setIsCheckingIn(false);
+    }
   };
 
   // KOT Functions
@@ -491,7 +501,7 @@ export default function Dashboard() {
   };
 
   const doCheckout = async () => {
-    if (!checkoutBooking) return;
+    if (!checkoutBooking || isCheckingOut) return;
 
     // Validate AKS Office sub-category if selected
     if (checkoutPayMode === 'AKS Office' && !checkoutSubCategory) {
@@ -499,6 +509,7 @@ export default function Dashboard() {
       return;
     }
 
+    setIsCheckingOut(true);
     try {
       await api.post(`/bookings/${checkoutBooking.id}/checkout`, {
         kotAmount,
@@ -515,7 +526,11 @@ export default function Dashboard() {
       setTransferToAgent(false);
       setCollectFromGuest(0);
       refreshAll();
-    } catch { toast.error('Error'); }
+    } catch {
+      toast.error('Error');
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const getCheckoutTotals = () => {
@@ -1178,7 +1193,7 @@ export default function Dashboard() {
 
       {/* Check-in Modal */}
       <Modal open={checkinModal} onClose={() => setCheckinModal(false)} title="🏨 Check-in & Room Allotment"
-        footer={<><button className="btn btn-secondary" onClick={() => setCheckinModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCheckin}><span className="material-icons">login</span> Confirm Check-in</button></>}>
+        footer={<><button className="btn btn-secondary" onClick={() => setCheckinModal(false)} disabled={isCheckingIn}>Cancel</button><button className="btn btn-primary" onClick={doCheckin} disabled={isCheckingIn}><span className="material-icons">{isCheckingIn ? 'hourglass_empty' : 'login'}</span> {isCheckingIn ? 'Processing...' : 'Confirm Check-in'}</button></>}>
         {checkinBooking && (
           <>
             <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.08), rgba(0, 102, 204, 0.04))', borderRadius: '12px', border: '1px solid rgba(0, 102, 204, 0.15)', marginBottom: '20px' }}>
@@ -1219,7 +1234,7 @@ export default function Dashboard() {
 
       {/* Checkout Modal */}
       <Modal open={checkoutModal} onClose={() => { setCheckoutModal(false); setCheckoutPayMode(''); setCheckoutSubCategory(''); }} title="Checkout" wide
-        footer={<><button className="btn btn-secondary" onClick={() => { setCheckoutModal(false); setCheckoutPayMode(''); setCheckoutSubCategory(''); }}>Cancel</button><button className="btn btn-warning" onClick={doCheckout}><span className="material-icons">logout</span> Process Checkout</button></>}>
+        footer={<><button className="btn btn-secondary" onClick={() => { setCheckoutModal(false); setCheckoutPayMode(''); setCheckoutSubCategory(''); }} disabled={isCheckingOut}>Cancel</button><button className="btn btn-warning" onClick={doCheckout} disabled={isCheckingOut}><span className="material-icons">{isCheckingOut ? 'hourglass_empty' : 'logout'}</span> {isCheckingOut ? 'Processing...' : 'Process Checkout'}</button></>}>
         {checkoutBooking && (() => {
           const t = getCheckoutTotals();
           return (

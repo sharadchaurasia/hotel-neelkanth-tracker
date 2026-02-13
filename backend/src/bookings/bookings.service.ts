@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Booking } from './booking.entity';
 import { BookingAddon } from './booking-addon.entity';
 import { AksOfficePayment } from './aks-office-payment.entity';
@@ -220,6 +220,17 @@ export class BookingsService {
 
     // Handle collections array if provided
     if (dto.collections && dto.collections.length > 0) {
+      // IMPORTANT: Delete existing daybook entries and AKS Office payments for this booking
+      // This prevents duplicate entries when editing
+      await this.daybookRepo.delete({
+        refBookingId: booking.bookingId,
+        incomeSource: In(['Room Rent (Collection)', 'KOT', 'Add-On'])
+      });
+
+      await this.aksOfficeRepo.delete({
+        refBookingId: booking.bookingId
+      });
+
       let totalCollectionAmount = 0;
       let firstPaymentMode = '';
       const today = new Date().toISOString().split('T')[0];

@@ -78,23 +78,14 @@ body {
 /* ---------- App Container ---------- */
 .app-container {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--bg-base);
 }
 
-/* ---------- Sidebar ---------- */
+/* ---------- Sidebar (Deprecated - Using Top Nav Now) ---------- */
 .sidebar {
-  width: 240px;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 1000;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  display: none; /* Not used anymore - top navigation */
 }
 
 .sidebar-header {
@@ -300,10 +291,11 @@ body {
 
 /* ---------- Main Content ---------- */
 .main-content {
-  margin-left: 240px;
+  margin-left: 0; /* No sidebar - using top nav */
   flex: 1;
-  min-height: 100vh;
+  min-height: calc(100vh - 120px); /* Adjust for top nav height */
   background: var(--bg-base);
+  overflow-y: auto;
 }
 
 .page-container {
@@ -766,13 +758,13 @@ input[type="month"]::-moz-calendar-picker-indicator {
 .empty-state h3 { color: var(--text-muted); font-size: 18px; margin-bottom: 8px; }
 .empty-state p { color: var(--text-muted); font-size: 14px; }
 
-/* ---------- Modal ---------- */
+/* ---------- Modal (Login Theme Colors) ---------- */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(26, 35, 50, 0.85); /* Dark navy from login */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   padding: 20px;
   overflow-y: auto;
@@ -782,61 +774,65 @@ input[type="month"]::-moz-calendar-picker-indicator {
 }
 
 .modal-content {
-  background: white !important;
-  border-radius: var(--radius-xl);
+  background: #f5f3ef !important; /* Cream from login */
+  border-radius: 20px;
   max-width: 900px;
   width: 100%;
   margin: 40px auto;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  border: none;
 }
 
 .modal-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--glass-border);
+  padding: 24px 28px;
+  border-bottom: 2px solid rgba(166, 124, 82, 0.2); /* Gold tint */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8fafc !important;
+  background: linear-gradient(135deg, #c9a35f 0%, #a67c52 100%) !important; /* Gold gradient */
+  border-radius: 20px 20px 0 0;
 }
 
 .modal-header h2 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
-  color: var(--text-primary) !important;
+  color: white !important; /* White text on gold header */
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header h2 .material-icons {
-  color: var(--accent-blue);
+  color: white !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .modal-close {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 8px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  color: var(--text-muted) !important;
+  color: white !important;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .modal-close:hover {
-  background: rgba(0,0,0,0.05);
-  color: var(--text-primary) !important;
+  background: rgba(255, 255, 255, 0.3);
+  color: white !important;
+  transform: rotate(90deg);
 }
 
 .modal-body {
-  padding: 28px;
+  padding: 32px;
   max-height: calc(100vh - 300px);
   overflow-y: auto;
-  background: white !important;
+  background: #f5f3ef !important; /* Cream background */
 }
 
 .modal-body * {
