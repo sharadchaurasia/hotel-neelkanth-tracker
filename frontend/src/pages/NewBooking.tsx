@@ -87,11 +87,11 @@ export default function NewBooking() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: THEME.colors.background, padding: '20px 15px' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '20px 15px' }}>
       {/* Simple Header */}
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '600', color: THEME.colors.primary, marginBottom: '2px' }}>
-          New Booking
+      <div style={{ textAlign: 'center', marginBottom: '20px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1e3a8a', marginBottom: '8px' }}>
+          📋 New Booking
         </h1>
         <p style={{ fontSize: '13px', color: THEME.colors.textLight }}>
           The Neelkanth Grand
