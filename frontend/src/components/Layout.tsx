@@ -311,10 +311,9 @@ export default function Layout() {
               <div
                 key={item.label}
                 style={{ position: 'relative' }}
-                onMouseEnter={() => setActiveDropdown(item.label)}
-                onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
+                  onClick={() => setActiveDropdown(activeDropdown === item.label ? null : item.label)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
