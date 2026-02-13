@@ -311,15 +311,10 @@ export default function Layout() {
               <div
                 key={item.label}
                 style={{ position: 'relative' }}
+                onMouseEnter={() => setActiveDropdown(item.label)}
+                onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
-                  onMouseEnter={(e) => {
-                    setActiveDropdown(item.label);
-                    if (!isActive && !item.highlight) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.color = 'white';
-                    }
-                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -340,6 +335,12 @@ export default function Layout() {
                     whiteSpace: 'nowrap',
                     borderRadius: item.highlight ? '8px 8px 0 0' : '0',
                   }}
+                  onMouseEnter={(e) => {
+                    if (!isActive && !item.highlight) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.color = 'white';
+                    }
+                  }}
                   onMouseLeave={(e) => {
                     if (!isActive && !item.highlight) {
                       e.currentTarget.style.background = 'transparent';
@@ -356,8 +357,6 @@ export default function Layout() {
 
                 {activeDropdown === item.label && item.dropdown && (
                   <div
-                    onMouseEnter={() => setActiveDropdown(item.label)}
-                    onMouseLeave={() => setActiveDropdown(null)}
                     style={{
                       position: 'absolute',
                       top: '100%',
