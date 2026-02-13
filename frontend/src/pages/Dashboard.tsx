@@ -48,6 +48,8 @@ export default function Dashboard() {
   const [collectBookingMode, setCollectBookingMode] = useState('');
   const [collectBookingSubCategory, setCollectBookingSubCategory] = useState('');
   const [collectKotMode, setCollectKotMode] = useState('');
+  const [collectTransferToAgent, setCollectTransferToAgent] = useState(false);
+  const [collectAmountFromGuest, setCollectAmountFromGuest] = useState(0);
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelAction, setCancelAction] = useState('cancel');
@@ -221,6 +223,8 @@ export default function Dashboard() {
     setCollectSplitPayment(false);
     setCollectSubCategory('');
     setCollectBookingSubCategory('');
+    setCollectTransferToAgent(false);
+    setCollectAmountFromGuest(0);
     setCollectModal(true);
   };
 
@@ -268,19 +272,25 @@ export default function Dashboard() {
         bookingPaymentMode: collectBookingMode,
         bookingSubCategory: collectBookingMode === 'AKS Office' ? collectBookingSubCategory : undefined,
         kotAmount: collectKotAmount,
-        kotPaymentMode: collectKotMode
+        kotPaymentMode: collectKotMode,
+        transferToAgentLedger: collectTransferToAgent,
+        amountFromGuest: collectTransferToAgent ? collectAmountFromGuest : undefined
       } : {
         splitPayment: false,
-        amount: collectAmount,
+        amount: collectTransferToAgent ? collectAmountFromGuest : collectAmount,
         paymentMode: collectMode,
-        subCategory: collectMode === 'AKS Office' ? collectSubCategory : undefined
+        subCategory: collectMode === 'AKS Office' ? collectSubCategory : undefined,
+        transferToAgentLedger: collectTransferToAgent,
+        totalPending: collectTransferToAgent ? collectBookingAmount : undefined
       };
 
       await api.post(`/bookings/${collectBooking.id}/collect`, payload);
-      toast.success('Payment collected!');
+      toast.success(collectTransferToAgent ? 'Payment collected and balance transferred to agent ledger!' : 'Payment collected!');
       setCollectModal(false);
       setCollectSubCategory('');
       setCollectBookingSubCategory('');
+      setCollectTransferToAgent(false);
+      setCollectAmountFromGuest(0);
       refreshAll();
     } catch { toast.error('Error collecting payment'); }
   };
@@ -1282,6 +1292,44 @@ export default function Dashboard() {
                   </div>
                 )}
               </>
+            )}
+
+            {/* Transfer to Agent Ledger Option */}
+            {collectBooking && (collectBooking.source === 'Agent' || collectBooking.paymentType === 'Ledger') && collectBookingAmount > 0 && (
+              <div style={{ marginTop: '20px', padding: '16px', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05))', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '12px', fontWeight: '600', color: '#92400e' }}>
+                  <input
+                    type="checkbox"
+                    checked={collectTransferToAgent}
+                    onChange={(e) => {
+                      setCollectTransferToAgent(e.target.checked);
+                      if (e.target.checked) setCollectAmountFromGuest(0);
+                    }}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span className="material-icons" style={{ fontSize: '20px', color: '#f59e0b' }}>account_balance</span>
+                  Transfer unpaid balance to Agent Ledger
+                </label>
+                <p style={{ fontSize: '13px', color: '#92400e', marginBottom: '12px', marginLeft: '26px' }}>
+                  Guest didn't pay or paid partial? Remaining amount will be added to agent's ledger as debit (agent will pay later)
+                </p>
+                {collectTransferToAgent && (
+                  <div className="form-group" style={{ marginTop: '12px' }}>
+                    <label style={{ fontWeight: '600' }}>Amount Collected from Guest</label>
+                    <input
+                      type="number"
+                      value={collectAmountFromGuest || ''}
+                      onChange={(e) => setCollectAmountFromGuest(Number(e.target.value))}
+                      placeholder={`Max: ${formatCurrency(collectBookingAmount)}`}
+                      max={collectBookingAmount}
+                      style={{ fontSize: '16px', fontWeight: '600' }}
+                    />
+                    <small style={{ display: 'block', marginTop: '8px', color: '#92400e', fontWeight: '600' }}>
+                      Remaining {formatCurrency(Math.max(0, collectBookingAmount - (collectAmountFromGuest || 0)))} will go to agent ledger
+                    </small>
+                  </div>
+                )}
+              </div>
             )}
           </>
         )}

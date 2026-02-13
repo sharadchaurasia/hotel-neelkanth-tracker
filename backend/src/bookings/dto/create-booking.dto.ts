@@ -47,6 +47,11 @@ export class CollectPaymentDto {
   bookingSubCategory?: string;
   kotAmount?: number;
   kotPaymentMode?: string;
+
+  // Transfer to agent ledger
+  transferToAgentLedger?: boolean;
+  amountFromGuest?: number;
+  totalPending?: number;
 }
 
 export class CheckinDto {

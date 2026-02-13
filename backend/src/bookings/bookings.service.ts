@@ -389,6 +389,43 @@ export class BookingsService {
       booking = await this.findOne(id);
       const today = new Date().toISOString().split('T')[0];
 
+      // Handle transfer to agent ledger (guest didn't pay or paid partial)
+      if (dto.transferToAgentLedger) {
+        const amountFromGuest = Number(dto.amountFromGuest || 0);
+        const totalPending = Number(dto.totalPending || dto.bookingAmount || booking.collectionAmount || booking.totalAmount || 0) -
+                            (Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0));
+        const transferToAgent = totalPending - amountFromGuest;
+
+        // Update balanceReceived with whatever guest paid
+        if (amountFromGuest > 0) {
+          booking.balanceReceived = Number(booking.balanceReceived || 0) + amountFromGuest;
+          booking.balancePaymentMode = dto.paymentMode || dto.bookingPaymentMode || booking.balancePaymentMode;
+          booking.balanceDate = today;
+
+          // Create daybook entry for guest payment (if Cash/SBI/Card)
+          if (dto.paymentMode && dto.paymentMode !== 'AKS Office') {
+            await this.createDaybookEntry({
+              date: today,
+              category: 'Room Rent',
+              incomeSource: 'Room Rent (Collection)',
+              description: `Partial payment from guest - ${booking.guestName}`,
+              amount: amountFromGuest,
+              paymentMode: dto.paymentMode,
+              refBookingId: booking.bookingId,
+              guestName: booking.guestName,
+            });
+          }
+        }
+
+        // Mark as collected and add remark about agent responsibility
+        booking.status = 'COLLECTED';
+        booking.lastModifiedBy = userName || booking.lastModifiedBy;
+        booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+          `[Guest paid ₹${amountFromGuest}, Remaining ₹${transferToAgent} transferred to agent ledger by ${userName || 'unknown'} on ${today}]`;
+
+        return await this.bookingRepo.save(booking);
+      }
+
       // Handle split payment
       if (dto.splitPayment) {
         const bookingAmt = Number(dto.bookingAmount || 0);
