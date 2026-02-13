@@ -125,7 +125,7 @@ export class BookingsService {
     try {
       const bookingId = await this.generateBookingId();
       const advanceReceived = dto.advanceReceived || 0;
-      const pending = dto.totalAmount - advanceReceived;
+      const pending = (dto.collectionAmount || dto.totalAmount) - advanceReceived;
       let status = 'PENDING';
       if (pending <= 0) status = 'COLLECTED';
       else if (advanceReceived > 0) status = 'PARTIAL';
@@ -351,7 +351,7 @@ export class BookingsService {
 
     // Recalculate status
     const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
-    const pending = Number(booking.totalAmount || 0) - totalReceived;
+    const pending = Number(booking.collectionAmount || booking.totalAmount || 0) - totalReceived;
     if (pending <= 0) booking.status = 'COLLECTED';
     else if (totalReceived > 0) booking.status = 'PARTIAL';
     else booking.status = 'PENDING';
@@ -395,7 +395,7 @@ export class BookingsService {
       if (dto.paymentMode === 'AKS Office') {
         // AKS Office: track in balanceReceived (so checkout knows), but no daybook entry
         // Hotel's share = actualRoomRent + addOnAmount - what hotel already received
-        const totalDue = Number(booking.totalAmount || 0) - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0);
+        const totalDue = Number(booking.collectionAmount || booking.totalAmount || 0) - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0);
         const hotelShare = Math.max(0,
           Number(booking.actualRoomRent || 0) + Number(booking.addOnAmount || 0)
           - Number(booking.advanceReceived || 0) - Number(booking.balanceReceived || 0)
@@ -434,7 +434,7 @@ export class BookingsService {
       booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
       const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived);
-      const pending = Number(booking.totalAmount || 0) - totalReceived;
+      const pending = Number(booking.collectionAmount || booking.totalAmount || 0) - totalReceived;
       booking.status = pending <= 0 ? 'COLLECTED' : 'PARTIAL';
 
       const saved = await this.bookingRepo.save(booking);
@@ -827,7 +827,7 @@ export class BookingsService {
     for (const b of allBookings) {
       if (b.status === 'CANCELLED' || b.status === 'DELETED') continue;
       const totalReceived = Number(b.advanceReceived || 0) + Number(b.balanceReceived || 0);
-      let pending = Number(b.totalAmount || 0) - totalReceived;
+      let pending = Number(b.collectionAmount || b.totalAmount || 0) - totalReceived;
       // AKS Office COLLECTED bookings have zero pending (paid via AKS Office)
       if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
