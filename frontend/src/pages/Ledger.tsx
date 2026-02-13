@@ -313,11 +313,17 @@ export default function Ledger() {
                     </td>
                     <td>
                       <span className={`badge ${statusClass}`}>{b.status}</span>
-                      {aksPaymentsForBooking.length > 0 && (
+                      {totalCollection > 0 ? (
+                        // Show payment mode if collection at hotel
+                        <div style={{ fontSize: '10px', marginTop: '4px', color: '#6b7280' }}>
+                          ({b.balancePaymentMode || b.paymentMode || 'Cash'}) {formatCurrency(totalCollection)}
+                        </div>
+                      ) : aksPaymentsForBooking.length > 0 ? (
+                        // Show AKS Office if no collection at hotel
                         <div style={{ fontSize: '10px', marginTop: '4px', color: '#6b7280' }}>
                           AKS Office ({aksSubCategories}) {formatCurrency(aksTotal)}
                         </div>
-                      )}
+                      ) : null}
                     </td>
                     <td>
                       <button
