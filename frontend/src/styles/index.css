@@ -765,7 +765,7 @@ input[type="month"]::-moz-calendar-picker-indicator {
   background: rgba(26, 35, 50, 0.85); /* Dark navy from login */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  z-index: 1000;
+  z-index: 2000;
   padding: 20px;
   overflow-y: auto;
   display: flex;

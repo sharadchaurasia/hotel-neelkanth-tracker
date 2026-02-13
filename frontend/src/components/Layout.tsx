@@ -222,6 +222,7 @@ export default function Layout() {
                 minWidth: '200px',
                 overflow: 'hidden',
                 animation: 'slideDown 0.2s ease',
+                zIndex: 1100,
               }}>
                 <button
                   onClick={handleLogout}
@@ -366,7 +367,7 @@ export default function Layout() {
                     minWidth: '220px',
                     overflow: 'hidden',
                     animation: 'slideDown 0.2s ease',
-                    zIndex: 1000,
+                    zIndex: 1100,
                   }}>
                     {item.dropdown.map((dropItem) => (
                       <NavLink
