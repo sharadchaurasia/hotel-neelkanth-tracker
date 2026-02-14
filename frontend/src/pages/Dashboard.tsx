@@ -1076,10 +1076,11 @@ export default function Dashboard() {
                 <option value="Walk-in">Walk-in</option>
                 <option value="OTA">OTA (MakeMyTrip, Goibibo, etc.)</option>
                 <option value="Agent">Agent</option>
+                <option value="AKS Office">AKS Office</option>
               </select>
             </div>
             {(form.source === 'OTA' || form.source === 'Agent') && (
-              <div className="form-group"><label>{form.source} Name</label><input value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder={form.source === 'Agent' ? 'Agent name' : 'OTA platform name'} /></div>
+              <div className="form-group"><label>{form.source} Name</label><input value={form.sourceName || ''} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder={form.source === 'Agent' ? 'Agent name' : 'OTA platform name'} /></div>
             )}
           </div>
         </div>
