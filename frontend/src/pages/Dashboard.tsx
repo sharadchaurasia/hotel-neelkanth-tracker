@@ -57,6 +57,11 @@ export default function Dashboard() {
   const [checkinModal, setCheckinModal] = useState(false);
   const [checkinBooking, setCheckinBooking] = useState<Booking | null>(null);
   const [checkinRooms, setCheckinRooms] = useState<string[]>(['']);
+  const [checkinAddOns, setCheckinAddOns] = useState<{type: string; amount: number}[]>([]);
+  const [checkinCollectNow, setCheckinCollectNow] = useState(false);
+  const [checkinCollectAmount, setCheckinCollectAmount] = useState(0);
+  const [checkinPaymentMode, setCheckinPaymentMode] = useState('');
+  const [checkinSubCategory, setCheckinSubCategory] = useState('');
   const [checkoutModal, setCheckoutModal] = useState(false);
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   const [kotAmount, setKotAmount] = useState(0);
@@ -324,6 +329,13 @@ export default function Dashboard() {
     setCheckinBooking(b);
     const existing = (b.roomNo || '').split(',').map(r => r.trim()).filter(Boolean);
     setCheckinRooms(existing.length > 0 ? existing : ['']);
+    setCheckinAddOns([]);
+    setCheckinCollectNow(false);
+    const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
+    const pending = Number(b.collectionAmount || 0) - recv;
+    setCheckinCollectAmount(pending > 0 ? pending : 0);
+    setCheckinPaymentMode('');
+    setCheckinSubCategory('');
     setCheckinModal(true);
   };
 
@@ -332,10 +344,35 @@ export default function Dashboard() {
     const rooms = checkinRooms.filter(Boolean);
     if (rooms.length === 0) { toast.error('Select at least one room'); return; }
 
+    if (checkinCollectNow && !checkinPaymentMode) {
+      toast.error('Please select payment mode for collection');
+      return;
+    }
+
+    if (checkinCollectNow && checkinPaymentMode === 'AKS Office' && !checkinSubCategory) {
+      toast.error('Please select AKS Office sub-category');
+      return;
+    }
+
     setIsCheckingIn(true);
     try {
-      await api.post(`/bookings/${checkinBooking.id}/checkin`, { roomNo: rooms.join(','), noOfRooms: rooms.length });
-      toast.success(`${checkinBooking.guestName} checked in!`);
+      // First do check-in with add-ons
+      await api.post(`/bookings/${checkinBooking.id}/checkin`, {
+        roomNo: rooms.join(','),
+        noOfRooms: rooms.length,
+        addOns: checkinAddOns.filter(a => a.type && a.amount > 0)
+      });
+
+      // Then collect payment if requested
+      if (checkinCollectNow && checkinCollectAmount > 0) {
+        await api.post(`/bookings/${checkinBooking.id}/collect`, {
+          amount: checkinCollectAmount,
+          paymentMode: checkinPaymentMode,
+          subCategory: checkinPaymentMode === 'AKS Office' ? checkinSubCategory : undefined
+        });
+      }
+
+      toast.success(`${checkinBooking.guestName} checked in${checkinCollectNow ? ' and payment collected' : ''}!`);
       setCheckinModal(false);
       refreshAll();
     } catch {
@@ -1413,6 +1450,76 @@ export default function Dashboard() {
                 Add Another Room
               </button>
             </div>
+
+            {/* Hotel Add-ons */}
+            <div style={{ marginTop: '20px', padding: '16px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.04))', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '600', color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons" style={{ fontSize: '20px' }}>add_circle</span>
+                Hotel Add-ons (Optional)
+              </h3>
+              {checkinAddOns.map((ao, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <select value={ao.type} onChange={(e) => { const na = [...checkinAddOns]; na[i].type = e.target.value; setCheckinAddOns(na); }} style={{ flex: 1, padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }}>
+                    <option value="">Select Add-on</option>
+                    <option value="Heater">Heater</option>
+                    <option value="Bonfire">Bonfire</option>
+                    <option value="BJ">BJ</option>
+                    <option value="Honeymoon">Honeymoon</option>
+                    <option value="Birthday">Birthday</option>
+                    <option value="DJ">DJ</option>
+                    <option value="Cake">Cake</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <input type="number" placeholder="₹ Amount" value={ao.amount || ''} onChange={(e) => { const na = [...checkinAddOns]; na[i].amount = Number(e.target.value); setCheckinAddOns(na); }} style={{ width: '120px', padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }} />
+                  <button onClick={() => setCheckinAddOns(checkinAddOns.filter((_, j) => j !== i))} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer' }}>
+                    <span className="material-icons" style={{ fontSize: '16px', color: 'var(--accent-red)' }}>close</span>
+                  </button>
+                </div>
+              ))}
+              <button className="btn btn-secondary btn-small" onClick={() => setCheckinAddOns([...checkinAddOns, { type: '', amount: 0 }])} style={{ marginTop: '8px' }}>+ Add Charge</button>
+            </div>
+
+            {/* Collect Payment at Check-in */}
+            {checkinCollectAmount > 0 && (
+              <div style={{ marginTop: '20px', padding: '16px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.15)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '12px', fontWeight: '600', color: '#059669' }}>
+                  <input type="checkbox" checked={checkinCollectNow} onChange={(e) => setCheckinCollectNow(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                  <span className="material-icons" style={{ fontSize: '20px', color: '#22c55e' }}>payments</span>
+                  Collect Payment Now ({formatCurrency(checkinCollectAmount)} pending)
+                </label>
+                {checkinCollectNow && (
+                  <>
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label>Payment Mode</label>
+                      <select value={checkinPaymentMode} onChange={(e) => { setCheckinPaymentMode(e.target.value); setCheckinSubCategory(''); }}>
+                        <option value="">Select Mode</option>
+                        <option value="Cash">💵 Cash</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
+                        <option value="AKS Office">🏢 AKS Office</option>
+                      </select>
+                    </div>
+                    {checkinPaymentMode === 'AKS Office' && (
+                      <div className="form-group">
+                        <label>AKS Office Sub-Category</label>
+                        <select value={checkinSubCategory} onChange={(e) => setCheckinSubCategory(e.target.value)}>
+                          <option value="">Select Person</option>
+                          <option value="Rajat">Rajat</option>
+                          <option value="Happy">Happy</option>
+                          <option value="Vishal">Vishal</option>
+                          <option value="Fyra">Fyra</option>
+                          <option value="Gateway">Gateway</option>
+                          <option value="Other">Other (Manual Entry)</option>
+                        </select>
+                        {checkinSubCategory === 'Other' && (
+                          <input type="text" placeholder="Enter name manually" style={{ marginTop: '12px' }} onChange={(e) => setCheckinSubCategory(e.target.value)} />
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </>
         )}
       </Modal>

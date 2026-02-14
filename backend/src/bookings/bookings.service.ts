@@ -592,6 +592,33 @@ export class BookingsService {
     booking.checkedIn = true;
     booking.checkedInTime = new Date();
     booking.lastModifiedBy = userName || booking.lastModifiedBy;
+
+    // Handle add-ons if provided
+    if (dto.addOns && dto.addOns.length > 0) {
+      const validAddOns = dto.addOns.filter(a => a.type && a.amount > 0);
+      if (validAddOns.length > 0) {
+        // Clear existing add-ons
+        await this.addonRepo.delete({ booking: { id: booking.id } });
+
+        // Add new add-ons
+        const totalAddOnAmount = validAddOns.reduce((sum, a) => sum + Number(a.amount || 0), 0);
+        booking.addOnAmount = totalAddOnAmount;
+
+        // Save add-ons to BookingAddon table
+        for (const addon of validAddOns) {
+          const addonEntity = this.addonRepo.create({
+            booking,
+            type: addon.type,
+            amount: Number(addon.amount),
+          });
+          await this.addonRepo.save(addonEntity);
+        }
+
+        booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
+          `[Check-in add-ons: ${validAddOns.map(a => `${a.type} ₹${a.amount}`).join(', ')} by ${userName || 'unknown'}]`;
+      }
+    }
+
     return this.bookingRepo.save(booking);
   }
 

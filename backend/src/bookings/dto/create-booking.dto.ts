@@ -57,6 +57,7 @@ export class CollectPaymentDto {
 export class CheckinDto {
   roomNo: string;
   noOfRooms?: number;
+  addOns?: { type: string; amount: number }[];
 }
 
 export class CheckoutDto {
