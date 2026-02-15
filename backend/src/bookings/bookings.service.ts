@@ -83,6 +83,7 @@ export class BookingsService {
   }): Promise<Booking[]> {
     const qb = this.bookingRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.addOns', 'addons')
+      .leftJoinAndSelect('b.agent', 'agent')
       .orderBy('b.check_out', 'ASC');
 
     if (query.date) {
@@ -112,7 +113,7 @@ export class BookingsService {
   }
 
   async findOne(id: number): Promise<Booking> {
-    const booking = await this.bookingRepo.findOne({ where: { id }, relations: ['addOns'] });
+    const booking = await this.bookingRepo.findOne({ where: { id }, relations: ['addOns', 'agent'] });
     if (!booking) throw new NotFoundException('Booking not found');
     return booking;
   }
@@ -187,10 +188,11 @@ export class BookingsService {
         await this.addonRepo.save(addon);
       }
 
-      // Auto-create daybook entry for advance payment (skip for AKS Office)
-      if (advanceReceived > 0 && dto.paymentMode && dto.paymentMode !== 'AKS Office') {
+      // Auto-create daybook entry for advance payment (skip for Office)
+      const advanceDate = dto.advanceDate || new Date().toISOString().split('T')[0];
+      if (advanceReceived > 0 && dto.paymentMode && dto.paymentMode !== 'Office') {
         await this.createDaybookEntry({
-          date: new Date().toISOString().split('T')[0],
+          date: advanceDate,
           category: 'Room Rent',
           incomeSource: 'Room Rent (Advance)',
           description: `Advance - ${dto.guestName}${dto.paymentSubCategory ? ' (' + dto.paymentSubCategory + ')' : ''}`,
@@ -199,6 +201,21 @@ export class BookingsService {
           refBookingId: saved.bookingId,
           guestName: dto.guestName,
         });
+      }
+
+      // Create Office payment entry if payment mode is Office
+      if (advanceReceived > 0 && dto.paymentMode === 'Office') {
+        const officePayment = this.aksOfficeRepo.create({
+          refBookingId: saved.bookingId,
+          guestName: dto.guestName,
+          roomNo: dto.roomNo || '',
+          amount: advanceReceived,
+          subCategory: dto.paymentSubCategory || 'Other',
+          date: advanceDate,
+          context: `Advance payment for booking ${saved.bookingId}`,
+          createdBy: 'System',
+        });
+        await this.aksOfficeRepo.save(officePayment);
       }
 
       return this.findOne(saved.id);
@@ -374,13 +391,28 @@ export class BookingsService {
     return this.findOne(saved.id);
   }
 
-  async delete(id: number, userName?: string): Promise<Booking> {
+  async delete(id: number, userName?: string): Promise<void> {
     const booking = await this.findOne(id);
-    booking.status = 'DELETED';
-    booking.lastModifiedBy = userName || booking.lastModifiedBy;
-    booking.remarks = (booking.remarks ? booking.remarks + '\n' : '') +
-      `[DELETED by ${userName || 'unknown'} on ${new Date().toISOString().split('T')[0]}]`;
-    return this.bookingRepo.save(booking);
+    const bookingId = booking.bookingId;
+
+    try {
+      // 1. Delete all DayBook entries for this booking
+      await this.daybookRepo.delete({ refBookingId: bookingId });
+
+      // 2. Delete all AKS Office payments for this booking
+      await this.aksOfficeRepo.delete({ refBookingId: bookingId });
+
+      // 3. Delete all Add-ons for this booking
+      await this.addonRepo.delete({ booking: { id } });
+
+      // 4. Finally, delete the booking itself (hard delete)
+      await this.bookingRepo.remove(booking);
+
+      console.log(`[INFO] Booking ${bookingId} permanently deleted by ${userName || 'unknown'}`);
+    } catch (error) {
+      console.error(`[ERROR] Failed to delete booking ${bookingId}:`, error.message);
+      throw new InternalServerErrorException('Failed to delete booking and related entries');
+    }
   }
 
   async collectPayment(id: number, dto: CollectPaymentDto, userName?: string): Promise<Booking> {
@@ -653,7 +685,11 @@ export class BookingsService {
     booking.totalAmount = newTotal;
 
     const received = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
-    const balance = newTotal - received;
+
+    // If collection amount already collected (PARTIAL/COLLECTED status), only collect KOT/add-ons
+    // Otherwise, collect full balance
+    const collectionAlreadyDone = (booking.status === 'PARTIAL' || booking.status === 'COLLECTED');
+    const balance = collectionAlreadyDone ? (kotAmt + addOnTotal) : (newTotal - received);
     const today = new Date().toISOString().split('T')[0];
     const isAksOffice = dto.paymentMode === 'AKS Office';
 
@@ -680,13 +716,16 @@ export class BookingsService {
           `[₹${ledgerAmt} transferred to ${booking.sourceName || 'Agent'} ledger by ${userName || 'unknown'} on ${today}]`;
       }
     } else if (dto.paymentMode && balance > 0) {
-      booking.balanceReceived = Number(booking.balanceReceived || 0) + balance;
-      // Don't overwrite AKS Office payment mode when only collecting KOT/add-ons
-      const roomRentPortion = balance - kotAmt - addOnTotal;
-      if (roomRentPortion > 0 || !booking.balancePaymentMode || !booking.balancePaymentMode.startsWith('AKS Office')) {
-        booking.balancePaymentMode = dto.paymentMode;
+      // If collection already done, don't add to balanceReceived (KOT/add-ons only go to DayBook)
+      // Otherwise, add full balance to balanceReceived
+      if (!collectionAlreadyDone) {
+        booking.balanceReceived = Number(booking.balanceReceived || 0) + balance;
+        const roomRentPortion = balance - kotAmt - addOnTotal;
+        if (roomRentPortion > 0 || !booking.balancePaymentMode || !booking.balancePaymentMode.startsWith('AKS Office')) {
+          booking.balancePaymentMode = dto.paymentMode;
+        }
+        booking.balanceDate = today;
       }
-      booking.balanceDate = today;
       booking.status = 'COLLECTED';
     } else {
       const totalRecv = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
@@ -961,7 +1000,7 @@ export class BookingsService {
 
   async getDashboardStats(): Promise<any> {
     const today = new Date().toISOString().split('T')[0];
-    const allBookings = await this.bookingRepo.find({ relations: ['addOns'] });
+    const allBookings = await this.bookingRepo.find({ relations: ['addOns', 'agent'] });
 
     const checkinGuests: Booking[] = [];
     const inhouseGuests: Booking[] = [];
@@ -979,9 +1018,12 @@ export class BookingsService {
       // AKS Office COLLECTED bookings have zero pending (paid via AKS Office)
       if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
-      if (b.checkIn === today && !b.checkedIn) checkinGuests.push(b);
-      // In-house: checked in but not checked out (regardless of checkout date)
-      if (b.checkedIn && !b.checkedOut) {
+      // Today Check-in: Not checked in yet OR checked in but payment pending
+      if (b.checkIn === today && (!b.checkedIn || (b.checkedIn && b.status === 'PENDING'))) {
+        checkinGuests.push(b);
+      }
+      // In-house: Checked in AND payment collected (PARTIAL or COLLECTED status)
+      if (b.checkedIn && !b.checkedOut && (b.status === 'PARTIAL' || b.status === 'COLLECTED')) {
         inhouseGuests.push(b);
       }
       // Checkout guest list: always based on checkout date

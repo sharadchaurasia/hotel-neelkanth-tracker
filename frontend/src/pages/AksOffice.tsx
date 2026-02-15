@@ -65,7 +65,7 @@ export default function AksOffice() {
       <div className="page-header">
         <h2>
           <span className="material-icons">business</span>
-          AKS Office Payments
+          Office Payments
         </h2>
       </div>
 

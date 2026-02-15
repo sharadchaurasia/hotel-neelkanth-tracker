@@ -12,7 +12,7 @@ const emptyBooking = {
   guestName: '', phone: '', pax: 1, kot: '', roomNo: '', noOfRooms: 1,
   roomCategory: '', checkIn: getToday(), checkOut: '', mealPlan: '', source: 'Walk-in',
   sourceName: '', complimentary: '', actualRoomRent: 0, totalAmount: 0, hotelShare: 0,
-  paymentType: 'Postpaid', advanceReceived: 0, paymentMode: '', remarks: '',
+  paymentType: 'Postpaid', advanceReceived: 0, advanceDate: '', paymentMode: '', remarks: '',
   collectionAmount: 0, agentId: undefined as number | undefined,
 };
 
@@ -20,7 +20,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
   const [filterDate, setFilterDate] = useState(getToday());
   const [filterViewBy, setFilterViewBy] = useState('checkout');
   const [filterStatus, setFilterStatus] = useState('');
@@ -106,14 +106,14 @@ export default function Dashboard() {
     } catch { /* ignore */ }
   }, [filterDate, filterViewBy, filterStatus, filterSource, filterAgent]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchAgents = useCallback(async () => {
     try {
-      const res = await api.get('/users');
-      setUsers(res.data);
+      const res = await api.get('/agents');
+      setAgents(res.data);
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { fetchDashboard(); fetchBookings(); fetchUsers(); }, [fetchDashboard, fetchBookings, fetchUsers]);
+  useEffect(() => { fetchDashboard(); fetchBookings(); fetchAgents(); }, [fetchDashboard, fetchBookings, fetchAgents]);
 
   // Check for openKOT query parameter
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function Dashboard() {
       complimentary: b.complimentary || '', actualRoomRent: Number(b.actualRoomRent) || 0,
       totalAmount: Number(b.totalAmount), hotelShare: Number(b.hotelShare) || 0,
       paymentType: b.paymentType || 'Postpaid',
-      advanceReceived: Number(b.advanceReceived) || 0, paymentMode: b.paymentMode || '',
+      advanceReceived: Number(b.advanceReceived) || 0, advanceDate: b.advanceDate || '', paymentMode: b.paymentMode || '',
       remarks: b.remarks || '',
       collectionAmount: Number(b.collectionAmount) || 0,
       agentId: (b as any).agentId || undefined,
@@ -167,16 +167,43 @@ export default function Dashboard() {
     setBookingModal(true);
   };
 
+  const openNewBooking = () => {
+    setEditId(null);
+    setForm(emptyBooking);
+    setBookingAddOns([]);
+    setPaymentSubCategory('');
+    setBookingModal(true);
+  };
+
   const saveBooking = async () => {
     if (!form.guestName || !form.checkIn || !form.checkOut || !form.totalAmount) {
       toast.error('Please fill all required fields');
       return;
     }
+    // Validate advance payment fields
+    if (form.paymentType === 'Advance') {
+      if (!form.advanceReceived || form.advanceReceived <= 0) {
+        toast.error('Please enter advance amount');
+        return;
+      }
+      if (!form.advanceDate) {
+        toast.error('Please select advance collection date');
+        return;
+      }
+      if (!form.paymentMode) {
+        toast.error('Please select payment mode for advance');
+        return;
+      }
+      if (form.paymentMode === 'Office' && !paymentSubCategory) {
+        toast.error('Please select Office sub-category');
+        return;
+      }
+    }
     try {
       const payload = {
         ...form,
         addOns: bookingAddOns.filter(a => a.type && a.amount > 0),
-        paymentSubCategory: form.paymentMode === 'AKS Office' ? paymentSubCategory : undefined,
+        paymentSubCategory: form.paymentMode === 'Office' ? paymentSubCategory : undefined,
       };
       if (editId) {
         await api.put(`/bookings/${editId}`, payload);
@@ -328,7 +355,13 @@ export default function Dashboard() {
   const openCheckin = (b: Booking) => {
     setCheckinBooking(b);
     const existing = (b.roomNo || '').split(',').map(r => r.trim()).filter(Boolean);
-    setCheckinRooms(existing.length > 0 ? existing : ['']);
+    const numRooms = b.noOfRooms || 1;
+    if (existing.length > 0) {
+      setCheckinRooms(existing);
+    } else {
+      // Create array of empty strings based on noOfRooms from booking
+      setCheckinRooms(Array(numRooms).fill(''));
+    }
     setCheckinAddOns([]);
     setCheckinCollectNow(false);
     const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
@@ -344,13 +377,14 @@ export default function Dashboard() {
     const rooms = checkinRooms.filter(Boolean);
     if (rooms.length === 0) { toast.error('Select at least one room'); return; }
 
+    // Payment collection is OPTIONAL - only if user checks the box
     if (checkinCollectNow && !checkinPaymentMode) {
       toast.error('Please select payment mode for collection');
       return;
     }
 
-    if (checkinCollectNow && checkinPaymentMode === 'AKS Office' && !checkinSubCategory) {
-      toast.error('Please select AKS Office sub-category');
+    if (checkinCollectNow && checkinPaymentMode === 'Office' && !checkinSubCategory) {
+      toast.error('Please select Office sub-category');
       return;
     }
 
@@ -363,12 +397,12 @@ export default function Dashboard() {
         addOns: checkinAddOns.filter(a => a.type && a.amount > 0)
       });
 
-      // Then collect payment if requested
+      // Then collect payment if user requested
       if (checkinCollectNow && checkinCollectAmount > 0) {
         await api.post(`/bookings/${checkinBooking.id}/collect`, {
           amount: checkinCollectAmount,
-          paymentMode: checkinPaymentMode,
-          subCategory: checkinPaymentMode === 'AKS Office' ? checkinSubCategory : undefined
+          paymentMode: checkinPaymentMode === 'Office' ? 'AKS Office' : checkinPaymentMode,
+          subCategory: checkinPaymentMode === 'Office' ? checkinSubCategory : undefined
         });
       }
 
@@ -699,7 +733,16 @@ export default function Dashboard() {
                       <td><strong>{b.guestName}</strong>{b.phone && <><br /><small style={{ color: 'var(--text-muted)' }}>{b.phone}</small></>}</td>
                       <td>{b.pax || 1}</td>
                       <td>{b.roomNo ? <strong>{b.roomNo.replace(/,/g, ' / ')}</strong> : <em style={{ color: 'var(--accent-orange)', fontSize: '12px' }}>Not assigned</em>}</td>
-                      <td>{b.source}{b.sourceName && <><br /><small>{b.sourceName}</small></>}</td>
+                      <td>
+                        {b.source === 'Agent' && (b as any).agentId ?
+                          (() => {
+                            if ((b as any).agentId === 0) return 'AKS Office';
+                            const agent = agents.find(a => a.id === (b as any).agentId);
+                            return agent ? agent.name : b.source;
+                          })()
+                          : b.source}
+                        {b.sourceName && <><br /><small>{b.sourceName}</small></>}
+                      </td>
                       <td>{formatDate(b.checkIn)}</td>
                       <td>{formatDate(b.checkOut)}</td>
                       <td className="amount">{formatCurrency(collAmt)}</td>
@@ -707,8 +750,8 @@ export default function Dashboard() {
                       <td className={`amount ${pend > 0 ? 'amount-pending' : ''}`}>{formatCurrency(pend)}</td>
                       <td><span className={`badge ${statusClass}`}>{b.status}</span></td>
                       {type === 'checkin' && (
-                        <td style={{ minWidth: '250px' }}>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                        <td style={{ minWidth: '300px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
                             <button className="btn btn-primary btn-small" onClick={() => openCheckin(b)}>
                               <span className="material-icons" style={{ fontSize: '14px' }}>login</span> Check-in
                             </button>
@@ -716,12 +759,15 @@ export default function Dashboard() {
                             <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)} title="Edit Booking">
                               <span className="material-icons" style={{ fontSize: '14px' }}>edit</span>
                             </button>
+                            <button className="btn btn-danger btn-small" onClick={() => deleteBooking(b.id)} title="Delete Booking">
+                              <span className="material-icons" style={{ fontSize: '14px' }}>delete</span>
+                            </button>
                           </div>
                         </td>
                       )}
                       {type === 'inhouse' && (
-                        <td style={{ minWidth: '200px' }}>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                        <td style={{ minWidth: '250px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
                             <button
                               className="btn btn-primary btn-small"
                               onClick={() => navigate('/kot')}
@@ -732,18 +778,24 @@ export default function Dashboard() {
                             <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)} title="Edit Booking">
                               <span className="material-icons" style={{ fontSize: '14px' }}>edit</span>
                             </button>
+                            <button className="btn btn-danger btn-small" onClick={() => deleteBooking(b.id)} title="Delete Booking">
+                              <span className="material-icons" style={{ fontSize: '14px' }}>delete</span>
+                            </button>
                           </div>
                         </td>
                       )}
                       {type === 'checkout' && (
-                        <td style={{ minWidth: '250px' }}>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                        <td style={{ minWidth: '300px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
                             <button className="btn btn-warning btn-small" onClick={() => openCheckout(b)}>
                               <span className="material-icons" style={{ fontSize: '14px' }}>logout</span> Checkout
                             </button>
                             {pend > 0 && <button className="btn btn-primary btn-small" onClick={() => openCollect(b)}>Collect</button>}
                             <button className="btn btn-secondary btn-small" onClick={() => openEditBooking(b)} title="Edit Booking">
                               <span className="material-icons" style={{ fontSize: '14px' }}>edit</span>
+                            </button>
+                            <button className="btn btn-danger btn-small" onClick={() => deleteBooking(b.id)} title="Delete Booking">
+                              <span className="material-icons" style={{ fontSize: '14px' }}>delete</span>
                             </button>
                           </div>
                         </td>
@@ -772,7 +824,7 @@ export default function Dashboard() {
 
       {/* Header Actions */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <button className="btn btn-primary" onClick={() => navigate('/bookings/new')}>
+        <button className="btn btn-primary" onClick={openNewBooking}>
           <span className="material-icons">add</span> New Booking
         </button>
         <button
@@ -901,7 +953,18 @@ export default function Dashboard() {
                       <td><div className="guest-info"><div className="name">{b.guestName}{b.kot === 'Yes' && <span className="badge-kot">KOT</span>}</div>{b.phone && <div className="phone">{b.phone}</div>}</div></td>
                       <td>{b.pax || 1}</td>
                       <td>{b.roomNo ? <strong>{b.roomNo.replace(/,/g, ' / ')}</strong> : <em style={{ color: 'var(--accent-orange)', fontSize: '12px' }}>Not assigned</em>}</td>
-                      <td><span className={`badge ${sourceClass}`}>{b.source}</span>{b.sourceName && <><br /><small style={{ color: 'var(--text-muted)' }}>{b.sourceName}</small></>}</td>
+                      <td>
+                        <span className={`badge ${sourceClass}`}>
+                          {b.source === 'Agent' && (b as any).agentId ?
+                            (() => {
+                              if ((b as any).agentId === 0) return 'AKS Office';
+                              const agent = agents.find(a => a.id === (b as any).agentId);
+                              return agent ? agent.name : b.source;
+                            })()
+                            : b.source}
+                        </span>
+                        {b.sourceName && <><br /><small style={{ color: 'var(--text-muted)' }}>{b.sourceName}</small></>}
+                      </td>
                       <td>{formatDate(b.checkIn)}</td>
                       <td><strong>{formatDate(b.checkOut)}</strong>{b.rescheduledFrom && <><br /><small style={{ color: 'var(--text-muted)' }}>was {formatDate(b.rescheduledFrom)}</small></>}</td>
                       <td><strong>{calculateNights(b.checkIn, b.checkOut)}</strong></td>
@@ -917,8 +980,9 @@ export default function Dashboard() {
                           flexDirection: 'row !important' as any,
                           gap: '6px',
                           alignItems: 'center',
-                          flexWrap: 'wrap',
+                          flexWrap: 'nowrap',
                           justifyContent: 'flex-start',
+                          overflowX: 'auto',
                         }}>
                           {!isCR && pend > 0 && (
                             <button
@@ -1076,11 +1140,21 @@ export default function Dashboard() {
                 <option value="Walk-in">Walk-in</option>
                 <option value="OTA">OTA (MakeMyTrip, Goibibo, etc.)</option>
                 <option value="Agent">Agent</option>
-                <option value="AKS Office">AKS Office</option>
               </select>
             </div>
-            {(form.source === 'OTA' || form.source === 'Agent') && (
-              <div className="form-group"><label>{form.source} Name</label><input value={form.sourceName || ''} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder={form.source === 'Agent' ? 'Agent name' : 'OTA platform name'} /></div>
+            {form.source === 'OTA' && (
+              <div className="form-group"><label>OTA Platform</label><input value={form.sourceName || ''} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder="OTA platform name" /></div>
+            )}
+            {form.source === 'Agent' && (
+              <div className="form-group"><label>Select Agent</label>
+                <select value={form.agentId || ''} onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })}>
+                  <option value="">Select Agent</option>
+                  <option value="0">AKS Office</option>
+                  {agents.map(agent => (
+                    <option key={agent.id} value={agent.id}>{agent.name}</option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
         </div>
@@ -1091,7 +1165,7 @@ export default function Dashboard() {
             <span className="material-icons" style={{ fontSize: '20px' }}>payments</span>
             Pricing & Add-ons
           </h3>
-          <div className="form-group"><label>Base Room Rent</label><input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal }); }} placeholder="Enter room rent" /></div>
+          <div className="form-group"><label>Base Room Rent</label><input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); const total = rent + addOnsTotal; setForm({ ...form, actualRoomRent: rent, totalAmount: total, hotelShare: total }); }} placeholder="Enter room rent" /></div>
 
           {/* Add-ons Section */}
           <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(249, 115, 22, 0.08)', borderRadius: '8px', border: '1px dashed rgba(249, 115, 22, 0.25)' }}>
@@ -1101,15 +1175,15 @@ export default function Dashboard() {
             </label>
             {bookingAddOns.map((ao, i) => (
               <div key={i} style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
-                <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ flex: 1, padding: '10px', border: '1px solid var(--input-border)', borderRadius: '8px', fontSize: '14px' }}>
+                <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); const total = form.actualRoomRent + addOnsTotal; setForm({ ...form, totalAmount: total, hotelShare: total }); }} style={{ flex: 1, padding: '10px', border: '1px solid var(--input-border)', borderRadius: '8px', fontSize: '14px' }}>
                   <option value="">Select Add-on</option>
                   <option value="Honeymoon">🌹 Honeymoon Package</option>
                   <option value="Candle Night Dinner">🕯️ Candle Night Dinner</option>
                   <option value="Heater">🔥 Heater</option>
                   <option value="Other">Other</option>
                 </select>
-                <input type="number" placeholder="₹ Amount" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ width: '140px', padding: '10px', border: '1px solid var(--input-border)', borderRadius: '8px', fontSize: '14px' }} />
-                <button onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <input type="number" placeholder="₹ Amount" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); const total = form.actualRoomRent + addOnsTotal; setForm({ ...form, totalAmount: total, hotelShare: total }); }} style={{ width: '140px', padding: '10px', border: '1px solid var(--input-border)', borderRadius: '8px', fontSize: '14px' }} />
+                <button onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); const total = form.actualRoomRent + addOnsTotal; setForm({ ...form, totalAmount: total, hotelShare: total }); }} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span className="material-icons" style={{ fontSize: '18px', color: 'var(--accent-red)' }}>close</span>
                 </button>
               </div>
@@ -1142,38 +1216,63 @@ export default function Dashboard() {
             Payment Details
           </h3>
           <div className="form-row">
-            <div className="form-group"><label>Payment Type</label>
-              <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })}>
-                <option value="Postpaid">Postpaid (Pay at checkout)</option>
-                <option value="Prepaid">Prepaid (Paid in advance)</option>
-                <option value="Ledger">Ledger (Agent account)</option>
-              </select>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group"><label>Advance Received</label><input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} placeholder="0" /></div>
             <div className="form-group"><label>Payment Mode</label>
-              <select value={form.paymentMode} onChange={(e) => { setForm({ ...form, paymentMode: e.target.value }); if (e.target.value !== 'AKS Office') setPaymentSubCategory(''); }}>
-                <option value="">Select Mode</option>
-                <option value="Cash">💵 Cash</option>
-                <option value="Card">💳 Card</option>
-                <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
-                <option value="AKS Office">🏢 AKS Office</option>
+              <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })}>
+                <option value="Postpaid">Postpaid (Ledger Account)</option>
+                <option value="Pay at Check-in">Pay at Check-in</option>
+                <option value="Pay at Check-out">Pay at Check-out</option>
+                <option value="Advance">Advance</option>
               </select>
             </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group"><label>Collection Amount</label><input type="number" value={form.collectionAmount || ''} onChange={(e) => setForm({ ...form, collectionAmount: Number(e.target.value) })} placeholder="Amount collected" /></div>
-            <div className="form-group"><label>Assign to Agent</label>
-              <select value={form.agentId || ''} onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })}>
-                <option value="">No Agent</option>
-                {users.filter(u => u.role === 'admin' || u.role === 'staff').map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
-                ))}
-              </select>
+            <div className="form-group">
+              <label>Collection Amount</label>
+              <input type="number" value={form.collectionAmount || ''} onChange={(e) => setForm({ ...form, collectionAmount: Number(e.target.value) })} placeholder="Amount agent will pay (can be >, <, or = hotel share)" />
+              <small style={{ display: 'block', marginTop: '4px', color: '#64748b', fontSize: '11px' }}>
+                Hotel Share: {formatCurrency(form.hotelShare || 0)} | Balance: {formatCurrency((form.hotelShare || 0) - (form.collectionAmount || 0))}
+              </small>
             </div>
           </div>
-          {form.paymentMode === 'AKS Office' && (
+          {form.paymentType === 'Advance' && (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Advance Amount</label>
+                  <input type="number" value={form.advanceReceived || ''} onChange={(e) => setForm({ ...form, advanceReceived: Number(e.target.value) })} placeholder="Amount collected as advance" />
+                </div>
+                <div className="form-group">
+                  <label>Advance Collection Date</label>
+                  <input type="date" value={form.advanceDate || getToday()} onChange={(e) => setForm({ ...form, advanceDate: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Payment Mode</label>
+                  <select value={form.paymentMode || ''} onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}>
+                    <option value="">Select Payment Mode</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="SBI Neelkanth">SBI Neelkanth</option>
+                    <option value="Office">Office</option>
+                  </select>
+                </div>
+                {form.paymentMode === 'Office' && (
+                  <div className="form-group">
+                    <label>Office Sub-Category</label>
+                    <select value={paymentSubCategory} onChange={(e) => setPaymentSubCategory(e.target.value)}>
+                      <option value="">Select Sub-Category</option>
+                      <option value="Rajat">Rajat</option>
+                      <option value="Happy">Happy</option>
+                      <option value="Vishal">Vishal</option>
+                      <option value="Gateway">Gateway</option>
+                      <option value="Fyra">Fyra</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          {false && (
             <div className="form-group" style={{ marginTop: '12px' }}>
               <label>AKS Office Sub-Category</label>
               <select value={paymentSubCategory} onChange={(e) => setPaymentSubCategory(e.target.value)}>
@@ -1480,7 +1579,7 @@ export default function Dashboard() {
               <button className="btn btn-secondary btn-small" onClick={() => setCheckinAddOns([...checkinAddOns, { type: '', amount: 0 }])} style={{ marginTop: '8px' }}>+ Add Charge</button>
             </div>
 
-            {/* Collect Payment at Check-in */}
+            {/* Collect Payment at Check-in (Optional) */}
             {checkinCollectAmount > 0 && (
               <div style={{ marginTop: '20px', padding: '16px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.15)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '12px', fontWeight: '600', color: '#059669' }}>
@@ -1496,13 +1595,13 @@ export default function Dashboard() {
                         <option value="">Select Mode</option>
                         <option value="Cash">💵 Cash</option>
                         <option value="Card">💳 Card</option>
-                        <option value="Bank Transfer">🏦 Bank Transfer (SBI Neelkanth)</option>
-                        <option value="AKS Office">🏢 AKS Office</option>
+                        <option value="SBI Neelkanth">🏦 SBI Neelkanth</option>
+                        <option value="Office">🏢 Office</option>
                       </select>
                     </div>
-                    {checkinPaymentMode === 'AKS Office' && (
+                    {checkinPaymentMode === 'Office' && (
                       <div className="form-group">
-                        <label>AKS Office Sub-Category</label>
+                        <label>Office Sub-Category</label>
                         <select value={checkinSubCategory} onChange={(e) => setCheckinSubCategory(e.target.value)}>
                           <option value="">Select Person</option>
                           <option value="Rajat">Rajat</option>
@@ -1510,11 +1609,7 @@ export default function Dashboard() {
                           <option value="Vishal">Vishal</option>
                           <option value="Fyra">Fyra</option>
                           <option value="Gateway">Gateway</option>
-                          <option value="Other">Other (Manual Entry)</option>
                         </select>
-                        {checkinSubCategory === 'Other' && (
-                          <input type="text" placeholder="Enter name manually" style={{ marginTop: '12px' }} onChange={(e) => setCheckinSubCategory(e.target.value)} />
-                        )}
                       </div>
                     )}
                   </>

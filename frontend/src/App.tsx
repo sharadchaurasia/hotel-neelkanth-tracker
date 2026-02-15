@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import NewBooking from './pages/NewBooking';
+// import NewBooking from './pages/NewBooking';
 import Inventory from './pages/Inventory';
 import Ledger from './pages/Ledger';
 import AgentLedger from './pages/AgentLedger';
@@ -48,8 +48,8 @@ export default function App() {
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/new-booking" element={<NewBooking />} />
-          <Route path="/bookings/new" element={<NewBooking />} />
+          {/* <Route path="/new-booking" element={<NewBooking />} /> */}
+          {/* <Route path="/bookings/new" element={<NewBooking />} /> */}
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/ledger" element={<Ledger />} />
           <Route path="/agent-ledger" element={<AgentLedger />} />

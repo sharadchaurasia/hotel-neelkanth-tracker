@@ -1,0 +1,27 @@
+-- Add all agents to the agents table
+INSERT INTO agents (name, status, commission_percentage) VALUES
+('Ultimate', 'ACTIVE', 0),
+('Minto', 'ACTIVE', 0),
+('Jatin TA', 'ACTIVE', 0),
+('Royal Sunshine', 'ACTIVE', 0),
+('Gyanrachanatour', 'ACTIVE', 0),
+('My Vacation', 'ACTIVE', 0),
+('MIH', 'ACTIVE', 0),
+('Focus', 'ACTIVE', 0),
+('Global', 'ACTIVE', 0),
+('Globe India', 'ACTIVE', 0),
+('Holiday7', 'ACTIVE', 0),
+('Himalayan Queen', 'ACTIVE', 0),
+('MMT', 'ACTIVE', 0),
+('Self', 'ACTIVE', 0),
+('Walking', 'ACTIVE', 0),
+('AKS', 'ACTIVE', 0),
+('Raisooone', 'ACTIVE', 0),
+('Legendyatri', 'ACTIVE', 0),
+('WCT', 'ACTIVE', 0),
+('Travbull', 'ACTIVE', 0),
+('Mauzee', 'ACTIVE', 0),
+('Xplore rahi', 'ACTIVE', 0),
+('Gateway', 'ACTIVE', 0),
+('HTC', 'ACTIVE', 0)
+ON CONFLICT (name) DO NOTHING;

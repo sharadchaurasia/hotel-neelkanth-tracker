@@ -26,7 +26,6 @@ const navigationItems: NavItem[] = [
     label: 'Bookings',
     icon: 'calendar_month',
     dropdown: [
-      { path: '/new-booking', label: 'New Booking', icon: 'add_circle' },
       { path: '/inventory', label: 'Inventory', icon: 'meeting_room' },
     ],
   },
@@ -35,7 +34,7 @@ const navigationItems: NavItem[] = [
     icon: 'account_balance_wallet',
     dropdown: [
       { path: '/ledger', label: 'Ledger', icon: 'account_balance' },
-      { path: '/aks-office', label: 'AKS Office', icon: 'business_center' },
+      { path: '/aks-office', label: 'Office', icon: 'business_center' },
       { path: '/daybook', label: 'Day Book', icon: 'menu_book' },
     ],
   },
@@ -111,11 +110,11 @@ export default function Layout() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#1a2332' }}>
       {/* Top Header Bar */}
       <header style={{
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+        background: 'linear-gradient(135deg, #c9a35f 0%, #a67c52 100%)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
         position: 'relative',
         zIndex: 1000,
       }}>
@@ -130,12 +129,12 @@ export default function Layout() {
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{
-              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+              background: 'white',
               borderRadius: '12px',
               padding: '12px',
-              boxShadow: '0 4px 12px rgba(251, 191, 36, 0.4)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
             }}>
-              <span className="material-icons" style={{ fontSize: '32px', color: 'white' }}>hotel</span>
+              <span className="material-icons" style={{ fontSize: '32px', color: '#c9a35f' }}>hotel</span>
             </div>
             <div>
               <h1 style={{
@@ -189,7 +188,7 @@ export default function Layout() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                background: '#1a2332',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -282,7 +281,7 @@ export default function Layout() {
                     fontSize: '14px',
                     fontWeight: '600',
                     textDecoration: 'none',
-                    borderBottom: isActive ? '3px solid #fbbf24' : '3px solid transparent',
+                    borderBottom: isActive ? '3px solid white' : '3px solid transparent',
                     background: isActive ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap',
@@ -328,7 +327,7 @@ export default function Layout() {
                       ? 'rgba(255, 255, 255, 0.15)'
                       : 'transparent',
                     border: 'none',
-                    borderBottom: isActive ? '3px solid #fbbf24' : '3px solid transparent',
+                    borderBottom: isActive ? '3px solid white' : '3px solid transparent',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap',
