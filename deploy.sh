@@ -7,7 +7,7 @@ echo "🚀 Starting deployment..."
 
 # Check if server is reachable
 echo "📡 Checking server connection..."
-if ! ssh -o ConnectTimeout=10 ubuntu@13.201.111.154 "echo 'Server reachable'" 2>/dev/null; then
+if ! ssh -i ~/.ssh/hotel-neelkanth.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@65.1.252.58 "echo 'Server reachable'" 2>/dev/null; then
     echo "❌ Server is not reachable. Please check:"
     echo "   - AWS EC2 instance is running"
     echo "   - Security group allows SSH from your IP"
@@ -19,11 +19,11 @@ echo "✅ Server is reachable"
 
 # Deploy frontend
 echo "📦 Deploying frontend to production..."
-rsync -avz --delete localhost/ ubuntu@13.201.111.154:/var/www/hotel-neelkanth
+rsync -avz --delete -e "ssh -i ~/.ssh/hotel-neelkanth.pem -o StrictHostKeyChecking=no" localhost/ ubuntu@65.1.252.58:/var/www/hotel-neelkanth/frontend
 
 if [ $? -eq 0 ]; then
     echo "✅ Deployment successful!"
-    echo "🌐 Frontend deployed to: http://13.201.111.154"
+    echo "🌐 Frontend deployed to: http://65.1.252.58"
 else
     echo "❌ Deployment failed"
     exit 1

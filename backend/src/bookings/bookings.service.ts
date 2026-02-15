@@ -356,7 +356,7 @@ export class BookingsService {
         totalAmount: dto.totalAmount ?? booking.totalAmount,
         paymentType: dto.paymentType ?? booking.paymentType,
         advanceReceived: dto.advanceReceived ?? booking.advanceReceived,
-        advanceDate: dto.advanceDate ?? booking.advanceDate,
+        advanceDate: dto.advanceDate === '' ? null : (dto.advanceDate ?? booking.advanceDate),
         paymentMode: dto.paymentMode ?? booking.paymentMode,
         remarks: dto.remarks ?? booking.remarks,
         collectionAmount: dto.collectionAmount ?? booking.collectionAmount,
