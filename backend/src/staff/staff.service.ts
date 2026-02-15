@@ -57,7 +57,7 @@ export class StaffService {
     if (!staff) throw new NotFoundException('Staff not found');
 
     staff.status = 'left';
-    staff.lastWorkingDate = dto.lastWorkingDate;
+    staff.lastWorkingDate = dto.lastWorkingDate && dto.lastWorkingDate.trim() !== '' ? dto.lastWorkingDate : new Date().toISOString().split('T')[0];
 
     // Mark all pending advances as deducted
     await this.advanceRepo
@@ -80,9 +80,12 @@ export class StaffService {
   }
 
   async markAbsent(dto: CreateAttendanceDto): Promise<Attendance> {
+    // Sanitize date field
+    const sanitizedDate = dto.date && dto.date.trim() !== '' ? dto.date : new Date().toISOString().split('T')[0];
+
     // Check if already exists
     const existing = await this.attendanceRepo.findOne({
-      where: { staffId: dto.staffId, date: dto.date },
+      where: { staffId: dto.staffId, date: sanitizedDate },
     });
     if (existing) {
       existing.absent = dto.absent ?? true;
@@ -91,7 +94,7 @@ export class StaffService {
     }
     const attendance = this.attendanceRepo.create({
       staffId: dto.staffId,
-      date: dto.date,
+      date: sanitizedDate,
       absent: dto.absent ?? true,
       remark: dto.remark,
     });
@@ -114,8 +117,8 @@ export class StaffService {
     const advance = this.advanceRepo.create({
       staffId: dto.staffId,
       amount: dto.amount,
-      date: dto.date,
-      deductMonth: dto.deductMonth,
+      date: dto.date && dto.date.trim() !== '' ? dto.date : new Date().toISOString().split('T')[0],
+      deductMonth: (dto.deductMonth && dto.deductMonth.trim() !== '') ? dto.deductMonth : undefined,
       remarks: dto.remarks,
       deducted: false,
     });

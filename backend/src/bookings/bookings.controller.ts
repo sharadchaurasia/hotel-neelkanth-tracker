@@ -40,6 +40,12 @@ export class BookingsController {
     return this.bookingsService.getDashboardStats();
   }
 
+  @Get('analytics')
+  @RequirePermissions('dashboard', 'view')
+  getAnalytics(@Query('period') period?: string) {
+    return this.bookingsService.getAnalytics(period || '30days');
+  }
+
   @Get()
   @RequirePermissions('bookings', 'view')
   findAll(

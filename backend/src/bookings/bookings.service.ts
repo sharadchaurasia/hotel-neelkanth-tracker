@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Between } from 'typeorm';
 import { Booking } from './booking.entity';
 import { BookingAddon } from './booking-addon.entity';
 import { AksOfficePayment } from './aks-office-payment.entity';
@@ -625,16 +625,29 @@ export class BookingsService {
     booking.checkedInTime = new Date();
     booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
+    // Update status based on payment received
+    const totalReceived = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
+    const pending = Number(booking.collectionAmount || booking.totalAmount || 0) - totalReceived;
+    if (pending <= 0) {
+      booking.status = 'COLLECTED';
+    } else if (totalReceived > 0) {
+      booking.status = 'PARTIAL';
+    } else {
+      booking.status = 'PENDING';
+    }
+
     // Handle add-ons if provided
     if (dto.addOns && dto.addOns.length > 0) {
       const validAddOns = dto.addOns.filter(a => a.type && a.amount > 0);
       if (validAddOns.length > 0) {
-        // Clear existing add-ons
-        await this.addonRepo.delete({ booking: { id: booking.id } });
+        // IMPORTANT: DO NOT delete existing add-ons - only add new ones
+        // Get existing add-ons total
+        const existingAddOns = await this.addonRepo.find({ where: { booking: { id: booking.id } } });
+        const existingTotal = existingAddOns.reduce((sum, a) => sum + Number(a.amount || 0), 0);
 
-        // Add new add-ons
-        const totalAddOnAmount = validAddOns.reduce((sum, a) => sum + Number(a.amount || 0), 0);
-        booking.addOnAmount = totalAddOnAmount;
+        // Add new add-ons (append, don't replace)
+        const newAddOnAmount = validAddOns.reduce((sum, a) => sum + Number(a.amount || 0), 0);
+        booking.addOnAmount = existingTotal + newAddOnAmount;
 
         // Save add-ons to BookingAddon table
         for (const addon of validAddOns) {
@@ -655,7 +668,7 @@ export class BookingsService {
   }
 
   async checkout(id: number, dto: CheckoutDto, userName?: string): Promise<Booking> {
-    let booking;
+    let booking: Booking | undefined;
     try {
       booking = await this.findOne(id);
       if (booking.checkedOut) {
@@ -668,18 +681,29 @@ export class BookingsService {
     booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
     // Handle add-ons
-    if (dto.addOns && dto.addOns.length > 0) {
-      // Remove old add-ons
-      await this.addonRepo.delete({ booking: { id: booking.id } });
-      booking.addOns = dto.addOns.map(ao => {
+    if (dto.addOns && dto.addOns.length > 0 && booking) {
+      // IMPORTANT: DO NOT delete existing add-ons - only add new ones at checkout
+      // Get existing add-ons to append
+      const existingAddOns = await this.addonRepo.find({ where: { booking: { id: booking.id } } });
+
+      // Add new add-ons (append to existing)
+      const newAddOns = dto.addOns.map(ao => {
         const addon = new BookingAddon();
         addon.type = ao.type;
         addon.amount = ao.amount;
+        addon.booking = booking!; // Non-null assertion since we checked above
         return addon;
       });
+
+      // Save new add-ons
+      await this.addonRepo.save(newAddOns);
+
+      // Update booking.addOns with combined list
+      booking.addOns = [...existingAddOns, ...newAddOns];
     }
 
-    const addOnTotal = (dto.addOns || []).reduce((sum, ao) => sum + (ao.amount || 0), 0);
+    // Calculate total including both existing and new add-ons
+    const addOnTotal = booking.addOns ? booking.addOns.reduce((sum, ao) => sum + (Number(ao.amount) || 0), 0) : 0;
     const origTotal = Number(booking.totalAmount || 0);
     const newTotal = origTotal + kotAmt + addOnTotal;
     booking.totalAmount = newTotal;
@@ -855,7 +879,7 @@ export class BookingsService {
       // Create daybook expense entry for refund
       if (dto.refundAmount > 0) {
         const refundEntry = this.daybookRepo.create({
-          date: dto.refundDate,
+          date: dto.refundDate && dto.refundDate.trim() !== '' ? dto.refundDate : new Date().toISOString().split('T')[0],
           type: 'expense',
           category: 'Refund',
           description: `Refund - ${booking.guestName} (${booking.bookingId})`,
@@ -945,7 +969,7 @@ export class BookingsService {
         agentName: dto.agentName,
         amount: dto.amount,
         paymentMode: dto.paymentMode || 'Bank Transfer',
-        date: dto.date,
+        date: dto.date && dto.date.trim() !== '' ? dto.date : new Date().toISOString().split('T')[0],
         reference: dto.reference,
         createdBy: userName,
       });
@@ -1018,12 +1042,12 @@ export class BookingsService {
       // AKS Office COLLECTED bookings have zero pending (paid via AKS Office)
       if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
-      // Today Check-in: Not checked in yet OR checked in but payment pending
-      if (b.checkIn === today && (!b.checkedIn || (b.checkedIn && b.status === 'PENDING'))) {
+      // Today Check-in: Not checked in yet (only guests who haven't checked in physically)
+      if (b.checkIn === today && !b.checkedIn) {
         checkinGuests.push(b);
       }
-      // In-house: Checked in AND payment collected (PARTIAL or COLLECTED status)
-      if (b.checkedIn && !b.checkedOut && (b.status === 'PARTIAL' || b.status === 'COLLECTED')) {
+      // In-house: Checked in but not checked out (all guests physically in hotel)
+      if (b.checkedIn && !b.checkedOut) {
         inhouseGuests.push(b);
       }
       // Checkout guest list: always based on checkout date
@@ -1072,6 +1096,119 @@ export class BookingsService {
       todayPendingAmt,
       ledgerDueAmt,
       ledgerByAgent,
+    };
+  }
+
+  async getAnalytics(period: string): Promise<any> {
+    const endDate = new Date();
+    const startDate = new Date();
+
+    // Calculate date range based on period
+    if (period === '7days') {
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (period === '30days') {
+      startDate.setDate(startDate.getDate() - 30);
+    } else if (period === '90days') {
+      startDate.setDate(startDate.getDate() - 90);
+    } else if (period === 'year') {
+      startDate.setFullYear(startDate.getFullYear() - 1);
+    }
+
+    const allBookings = await this.bookingRepo.find({
+      relations: ['agent'],
+      where: {
+        createdAt: Between(startDate, endDate)
+      }
+    });
+
+    // Revenue Trends (grouped by date)
+    const revenueTrends: Record<string, number> = {};
+    const occupancyByDate: Record<string, { occupied: number; total: number }> = {};
+    const paymentModes: Record<string, number> = { Cash: 0, Card: 0, 'Bank Transfer': 0, 'AKS Office': 0 };
+    const agentRevenue: Record<string, number> = {};
+
+    let totalRevenue = 0;
+    let totalBookings = 0;
+    let collectedAmount = 0;
+    let pendingAmount = 0;
+
+    for (const booking of allBookings) {
+      if (booking.status === 'CANCELLED' || booking.status === 'DELETED') continue;
+
+      totalBookings++;
+      const revenue = Number(booking.totalAmount || 0);
+      totalRevenue += revenue;
+
+      const received = (Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0));
+      collectedAmount += received;
+      pendingAmount += Math.max(0, revenue - received);
+
+      // Revenue by date
+      const dateKey = booking.checkIn;
+      revenueTrends[dateKey] = (revenueTrends[dateKey] || 0) + revenue;
+
+      // Occupancy tracking
+      if (!occupancyByDate[dateKey]) {
+        occupancyByDate[dateKey] = { occupied: 0, total: 20 }; // Assuming 20 total rooms
+      }
+      occupancyByDate[dateKey].occupied += (booking.pax || 1);
+
+      // Payment modes (from collections)
+      if (booking.paymentMode) {
+        const mode = booking.paymentMode === 'Bank Transfer' ? 'Bank Transfer' : booking.paymentMode;
+        paymentModes[mode] = (paymentModes[mode] || 0) + Number(booking.advanceReceived || 0);
+      }
+      if (booking.balancePaymentMode) {
+        const mode = booking.balancePaymentMode === 'Bank Transfer' ? 'Bank Transfer' : booking.balancePaymentMode;
+        paymentModes[mode] = (paymentModes[mode] || 0) + Number(booking.balanceReceived || 0);
+      }
+
+      // Agent revenue
+      if (booking.source === 'Agent' && booking.sourceName) {
+        const agentName = booking.sourceName;
+        agentRevenue[agentName] = (agentRevenue[agentName] || 0) + revenue;
+      }
+    }
+
+    // Format revenue trends for chart
+    const revenueTrendData = Object.entries(revenueTrends)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, revenue]) => ({ date, revenue }));
+
+    // Format occupancy for chart
+    const occupancyData = Object.entries(occupancyByDate)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, { occupied, total }]) => ({
+        date,
+        occupancy: ((occupied / total) * 100).toFixed(1),
+        occupied,
+        total
+      }));
+
+    // Top agents
+    const topAgents = Object.entries(agentRevenue)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, revenue]) => ({ name, revenue }));
+
+    // Payment mode breakdown
+    const paymentModeData = Object.entries(paymentModes)
+      .map(([mode, amount]) => ({ mode, amount }))
+      .filter(({ amount }) => amount > 0);
+
+    return {
+      summary: {
+        totalRevenue,
+        totalBookings,
+        collectedAmount,
+        pendingAmount,
+        averageBookingValue: totalBookings > 0 ? Math.round(totalRevenue / totalBookings) : 0,
+        collectionRate: totalRevenue > 0 ? ((collectedAmount / totalRevenue) * 100).toFixed(1) : 0
+      },
+      revenueTrends: revenueTrendData,
+      occupancy: occupancyData,
+      topAgents,
+      paymentModes: paymentModeData
     };
   }
 }

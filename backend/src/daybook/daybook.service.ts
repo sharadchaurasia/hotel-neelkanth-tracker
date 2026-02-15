@@ -145,6 +145,10 @@ export class DaybookService {
         await this.validateDateAccess(userId, role, dto.date);
       }
       const { linkToAksOffice, aksSubCategory, ...entryData } = dto;
+      // Sanitize date field - convert empty string to today's date
+      if (entryData.date === '' || !entryData.date) {
+        entryData.date = new Date().toISOString().split('T')[0];
+      }
       const entry = this.entryRepo.create(entryData);
       const saved = await this.entryRepo.save(entry);
 
@@ -155,7 +159,7 @@ export class DaybookService {
           guestName: dto.description || dto.category || 'Expense',
           amount: dto.amount,
           subCategory: aksSubCategory || undefined,
-          date: dto.date,
+          date: entryData.date, // Use sanitized date from above
           context: 'expense',
           createdBy: userName || 'System',
         });

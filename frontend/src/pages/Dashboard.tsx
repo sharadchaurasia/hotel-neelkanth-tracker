@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import type { Booking, DashboardStats } from '../types';
 import { ALL_ROOMS, ROOM_TYPE } from '../types';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { formatCurrency, formatDate, getToday, getCurrentMonth, calculateNights } from '../hooks/useApi';
 import StatCard from '../components/StatCard';
 import Modal from '../components/Modal';
@@ -26,6 +28,7 @@ export default function Dashboard() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSource, setFilterSource] = useState('');
   const [filterAgent, setFilterAgent] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Summary
   const [summaryStart, setSummaryStart] = useState(getCurrentMonth() + '-01');
@@ -75,6 +78,11 @@ export default function Dashboard() {
   // Loading states to prevent double-click
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isCollecting, setIsCollecting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isSubmittingKot, setIsSubmittingKot] = useState(false);
 
   // KOT Modal
   const [kotModal, setKotModal] = useState(false);
@@ -114,6 +122,18 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => { fetchDashboard(); fetchBookings(); fetchAgents(); }, [fetchDashboard, fetchBookings, fetchAgents]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        if (e.key === 'n') { e.preventDefault(); openNewBooking(); }
+        else if (e.key === 'k') { e.preventDefault(); setKotModal(true); }
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   // Check for openKOT query parameter
   useEffect(() => {
@@ -176,6 +196,8 @@ export default function Dashboard() {
   };
 
   const saveBooking = async () => {
+    if (isSaving) return; // Prevent double-click
+
     if (!form.guestName || !form.checkIn || !form.checkOut || !form.totalAmount) {
       toast.error('Please fill all required fields');
       return;
@@ -199,6 +221,8 @@ export default function Dashboard() {
         return;
       }
     }
+
+    setIsSaving(true);
     try {
       const payload = {
         ...form,
@@ -214,16 +238,27 @@ export default function Dashboard() {
       }
       setBookingModal(false);
       refreshAll();
-    } catch { toast.error('Error saving booking'); }
+    } catch {
+      toast.error('Error saving booking');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const deleteBooking = async (id: number) => {
+    if (isDeleting) return; // Prevent double-click
     if (!confirm('Permanently delete this booking?')) return;
+
+    setIsDeleting(true);
     try {
       await api.delete(`/bookings/${id}`);
       toast.success('Booking deleted');
       refreshAll();
-    } catch { toast.error('Error deleting booking'); }
+    } catch {
+      toast.error('Error deleting booking');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Collect
@@ -261,7 +296,7 @@ export default function Dashboard() {
   };
 
   const doCollect = async () => {
-    if (!collectBooking) return;
+    if (isCollecting || !collectBooking) return; // Prevent double-click
 
     if (collectSplitPayment) {
       // Split payment validation
@@ -297,6 +332,7 @@ export default function Dashboard() {
       }
     }
 
+    setIsCollecting(true);
     try {
       const payload: any = collectSplitPayment ? {
         splitPayment: true,
@@ -324,7 +360,11 @@ export default function Dashboard() {
       setCollectTransferToAgent(false);
       setCollectAmountFromGuest(0);
       refreshAll();
-    } catch { toast.error('Error collecting payment'); }
+    } catch {
+      toast.error('Error collecting payment');
+    } finally {
+      setIsCollecting(false);
+    }
   };
 
   // Cancel/Reschedule
@@ -336,19 +376,29 @@ export default function Dashboard() {
   };
 
   const doCancel = async () => {
-    if (!cancelBooking) return;
+    if (isCancelling || !cancelBooking) return; // Prevent double-click
+
+    if (cancelAction === 'reschedule' && !rescheduleDate) {
+      toast.error('Select new date');
+      return;
+    }
+
+    setIsCancelling(true);
     try {
       if (cancelAction === 'cancel') {
         await api.post(`/bookings/${cancelBooking.id}/cancel`);
         toast.success('Booking cancelled');
       } else {
-        if (!rescheduleDate) { toast.error('Select new date'); return; }
         await api.post(`/bookings/${cancelBooking.id}/reschedule`, { newCheckOut: rescheduleDate });
         toast.success('Booking rescheduled');
       }
       setCancelModal(false);
       refreshAll();
-    } catch { toast.error('Error'); }
+    } catch {
+      toast.error('Error');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   // Check-in
@@ -559,6 +609,8 @@ export default function Dashboard() {
   };
 
   const submitKotOrder = async () => {
+    if (isSubmittingKot) return; // Prevent double-click
+
     const validItems = kotItems.filter(i => i.itemName && i.quantity > 0 && i.rate > 0);
     if (validItems.length === 0) {
       toast.error('Please add at least one item');
@@ -575,6 +627,7 @@ export default function Dashboard() {
       return;
     }
 
+    setIsSubmittingKot(true);
     try {
       const payload: any = {
         items: validItems,
@@ -611,6 +664,8 @@ export default function Dashboard() {
       refreshAll();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create KOT order');
+    } finally {
+      setIsSubmittingKot(false);
     }
   };
 
@@ -689,15 +744,54 @@ export default function Dashboard() {
     return { origTotal, grandTotal, received, balance: Math.max(grandTotal - received, 0) };
   };
 
+  // Filter guests based on search query
+  const filterGuests = (guests: Booking[]) => {
+    if (!searchQuery) return guests;
+    const query = searchQuery.toLowerCase();
+    return guests.filter(b =>
+      b.guestName?.toLowerCase().includes(query) ||
+      b.phone?.toLowerCase().includes(query) ||
+      b.roomNo?.toLowerCase().includes(query)
+    );
+  };
+
+  // Export to Excel
+  const exportToExcel = () => {
+    if (!stats) return;
+    const allGuests = [...stats.checkinGuests, ...stats.inhouseGuests, ...stats.checkoutGuests];
+    const data = allGuests.map(b => ({
+      'Guest Name': b.guestName,
+      'Phone': b.phone || '',
+      'Room': b.roomNo || '',
+      'Check-in': b.checkIn,
+      'Check-out': b.checkOut,
+      'Source': b.source,
+      'Collection': b.collectionAmount || 0,
+      'Received': (Number(b.advanceReceived || 0) + Number(b.balanceReceived || 0)),
+      'Pending': (Number(b.collectionAmount || 0) - (Number(b.advanceReceived || 0) + Number(b.balanceReceived || 0))),
+      'Status': b.status
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bookings');
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `bookings-${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success('Excel file downloaded!');
+  };
+
   const renderGuestTable = (title: string, guests: Booking[], type: 'checkin' | 'inhouse' | 'checkout') => {
+    const filteredGuests = filterGuests(guests);
     return (
       <div className={`guest-list-section ${type === 'checkin' ? 'checkin-section' : type === 'inhouse' ? 'inhouse-section' : 'checkout-section'}`}>
         <div className="section-title">
           <span className="material-icons">{type === 'checkin' ? 'login' : type === 'inhouse' ? 'hotel' : 'logout'}</span>
-          {title} ({guests.length})
+          {title} ({filteredGuests.length}{searchQuery && ` of ${guests.length}`})
         </div>
-        {guests.length === 0 ? (
-          <div className="guest-list-empty">No {type === 'checkin' ? 'check-ins' : type === 'inhouse' ? 'in-house guests' : 'check-outs'} today</div>
+        {filteredGuests.length === 0 ? (
+          <div className="guest-list-empty">
+            {searchQuery ? `No results found for "${searchQuery}"` : `No ${type === 'checkin' ? 'check-ins' : type === 'inhouse' ? 'in-house guests' : 'check-outs'} today`}
+          </div>
         ) : (
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table className="guest-list-table" style={{ minWidth: '1000px' }}>
@@ -709,19 +803,8 @@ export default function Dashboard() {
                 <th>Actions</th>
               </tr></thead>
               <tbody>
-                {guests.map((b) => {
-                  // Debug logging
-                  if (b.guestName?.includes('Shubhasis') || b.guestName?.includes('shubhasis')) {
-                    console.log('DEBUG - Shubhasis booking:', {
-                      guestName: b.guestName,
-                      paymentType: b.paymentType,
-                      paymentMode: b.paymentMode,
-                      totalAmount: b.totalAmount,
-                      collectionAmount: b.collectionAmount,
-                      hotelShare: b.hotelShare,
-                      advanceReceived: b.advanceReceived
-                    });
-                  }
+                {filteredGuests.map((b) => {
+                  // Debug console.log removed for production security
 
                   // Always use collectionAmount (MEMORY.md rule)
                   const collAmt = Number(b.collectionAmount) || 0;
@@ -766,8 +849,13 @@ export default function Dashboard() {
                         </td>
                       )}
                       {type === 'inhouse' && (
-                        <td style={{ minWidth: '250px' }}>
+                        <td style={{ minWidth: '300px' }}>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+                            {pend > 0 && (
+                              <button className="btn btn-success btn-small" onClick={() => openCollect(b)}>
+                                <span className="material-icons" style={{ fontSize: '14px' }}>payments</span> Collect
+                              </button>
+                            )}
                             <button
                               className="btn btn-primary btn-small"
                               onClick={() => navigate('/kot')}
@@ -833,6 +921,33 @@ export default function Dashboard() {
           style={{ background: 'var(--accent-blue)' }}
         >
           <span className="material-icons">restaurant</span> New KOT Order
+        </button>
+      </div>
+
+      {/* Quick Search & Export */}
+      <div style={{ marginBottom: '20px', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid var(--glass-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1', minWidth: '300px', maxWidth: '500px' }}>
+          <span className="material-icons" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '20px' }}>search</span>
+          <input
+            type="text"
+            placeholder="Search by guest name, phone, or room number..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: '100%', padding: '12px 14px 12px 45px', fontSize: '14px', border: '2px solid var(--input-border)', borderRadius: '8px', transition: 'all 0.2s ease' }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--input-border)'}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}
+            >
+              <span className="material-icons" style={{ fontSize: '20px' }}>close</span>
+            </button>
+          )}
+        </div>
+        <button className="btn btn-success btn-small" onClick={exportToExcel} style={{ whiteSpace: 'nowrap' }}>
+          <span className="material-icons" style={{ fontSize: '16px' }}>download</span> Export to Excel
         </button>
       </div>
 
@@ -1060,7 +1175,7 @@ export default function Dashboard() {
 
       {/* Booking Modal */}
       <Modal open={bookingModal} onClose={() => setBookingModal(false)} title={editId ? 'Edit Booking' : 'New Booking'}
-        footer={<><button className="btn btn-secondary" onClick={() => setBookingModal(false)}>Cancel</button><button className="btn btn-primary" onClick={saveBooking}><span className="material-icons">save</span> Save Booking</button></>}>
+        footer={<><button className="btn btn-secondary" onClick={() => setBookingModal(false)} disabled={isSaving}>Cancel</button><button className="btn btn-primary" onClick={saveBooking} disabled={isSaving}><span className="material-icons">{isSaving ? 'hourglass_empty' : 'save'}</span> {isSaving ? 'Saving...' : 'Save Booking'}</button></>}>
 
         {/* Guest Information */}
         <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.08), rgba(0, 102, 204, 0.04))', borderRadius: '12px', border: '1px solid rgba(0, 102, 204, 0.15)' }}>
@@ -1300,7 +1415,7 @@ export default function Dashboard() {
 
       {/* Collect Modal */}
       <Modal open={collectModal} onClose={() => setCollectModal(false)} title="💰 Collect Payment"
-        footer={<><button className="btn btn-secondary" onClick={() => setCollectModal(false)}>Cancel</button><button className="btn btn-primary" onClick={doCollect}><span className="material-icons">check_circle</span> Collect Payment</button></>}>
+        footer={<><button className="btn btn-secondary" onClick={() => setCollectModal(false)} disabled={isCollecting}>Cancel</button><button className="btn btn-primary" onClick={doCollect} disabled={isCollecting}><span className="material-icons">{isCollecting ? 'hourglass_empty' : 'check_circle'}</span> {isCollecting ? 'Processing...' : 'Collect Payment'}</button></>}>
         {collectBooking && (
           <>
             {/* Payment Breakdown */}
@@ -1474,10 +1589,10 @@ export default function Dashboard() {
 
       {/* Cancel/Reschedule Modal */}
       <Modal open={cancelModal} onClose={() => setCancelModal(false)} title={cancelAction === 'cancel' ? '🚫 Cancel Booking' : '📅 Reschedule Booking'}
-        footer={<><button className="btn btn-secondary" onClick={() => setCancelModal(false)}>Close</button>
-          <button className={cancelAction === 'cancel' ? 'btn btn-danger' : 'btn btn-warning'} onClick={doCancel}>
-            <span className="material-icons">{cancelAction === 'cancel' ? 'cancel' : 'event'}</span>
-            {cancelAction === 'cancel' ? 'Cancel Booking' : 'Reschedule'}
+        footer={<><button className="btn btn-secondary" onClick={() => setCancelModal(false)} disabled={isCancelling}>Close</button>
+          <button className={cancelAction === 'cancel' ? 'btn btn-danger' : 'btn btn-warning'} onClick={doCancel} disabled={isCancelling}>
+            <span className="material-icons">{isCancelling ? 'hourglass_empty' : (cancelAction === 'cancel' ? 'cancel' : 'event')}</span>
+            {isCancelling ? 'Processing...' : (cancelAction === 'cancel' ? 'Cancel Booking' : 'Reschedule')}
           </button></>}>
         {cancelBooking && (
           <>
@@ -1812,9 +1927,9 @@ export default function Dashboard() {
       <Modal open={kotModal} onClose={() => setKotModal(false)} title="Create KOT Order" wide
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setKotModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={submitKotOrder} style={{ background: '#6b7b93' }}>
-              <span className="material-icons">restaurant</span> Create Order
+            <button className="btn btn-secondary" onClick={() => setKotModal(false)} disabled={isSubmittingKot}>Cancel</button>
+            <button className="btn btn-primary" onClick={submitKotOrder} disabled={isSubmittingKot} style={{ background: '#6b7b93' }}>
+              <span className="material-icons">{isSubmittingKot ? 'hourglass_empty' : 'restaurant'}</span> {isSubmittingKot ? 'Creating...' : 'Create Order'}
             </button>
           </>
         }>

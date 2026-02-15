@@ -54,7 +54,7 @@ export class AuthService implements OnModuleInit {
         permissions: {},
       });
       await this.userRepo.save(admin);
-      console.log('Default admin created. Email:', admin.email, 'Default PIN: 1234');
+      // Default admin created - PIN logging removed for security
     }
   }
 
@@ -145,7 +145,7 @@ export class AuthService implements OnModuleInit {
       }
     }
 
-    console.log(`OTP for user ${user.email}: ${code}`);
+    // SECURITY: OTP codes should NEVER be logged - removed for production security
     return { success: true };
   }
 

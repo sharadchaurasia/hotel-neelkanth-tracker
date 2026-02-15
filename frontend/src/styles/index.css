@@ -382,24 +382,42 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent-slate);
+  background: linear-gradient(135deg, #6b7b93 0%, #5a6a80 100%);
   color: white;
   font-weight: 600;
   padding: 12px 20px;
   border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(107,123,147,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(107,123,147,0.25);
+  position: relative;
+  overflow: hidden;
 }
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
 .btn-primary:hover {
-  background: #5a6a80;
-  box-shadow: 0 4px 8px rgba(107,123,147,0.3);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #5a6a80 0%, #4a5a70 100%);
+  box-shadow: 0 8px 20px rgba(107,123,147,0.35);
+  transform: translateY(-2px);
 }
 .btn-primary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(107,123,147,0.2);
+  box-shadow: 0 2px 8px rgba(107,123,147,0.2);
 }
 
 .btn-secondary {
@@ -676,14 +694,32 @@ input[type="month"]::-moz-calendar-picker-indicator {
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 3px solid transparent;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--accent-blue);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(59,130,246,0.1);
+  border-left-color: var(--accent-blue);
+  border-color: rgba(59,130,246,0.2);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-green), var(--accent-orange));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
 }
 
 .stat-card .stat-label {
@@ -780,6 +816,27 @@ input[type="month"]::-moz-calendar-picker-indicator {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-content {
@@ -788,8 +845,9 @@ input[type="month"]::-moz-calendar-picker-indicator {
   max-width: 900px;
   width: 100%;
   margin: 40px auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(201,163,95,0.1);
   border: none;
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-header {
@@ -1078,27 +1136,31 @@ select:focus {
 }
 
 .badge-confirmed {
-  background: #d1fae5;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
   color: #065f46;
   border: 1px solid #6ee7b7;
+  box-shadow: 0 2px 4px rgba(16,185,129,0.15);
 }
 
 .badge-checked-in {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1e40af;
   border: 1px solid #93c5fd;
+  box-shadow: 0 2px 4px rgba(59,130,246,0.15);
 }
 
 .badge-checked-out {
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   color: #374151;
   border: 1px solid #d1d5db;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 .badge-cancelled {
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #991b1b;
   border: 1px solid #fca5a5;
+  box-shadow: 0 2px 4px rgba(239,68,68,0.15);
 }
 
 /* ---------- Table Card (like guest-list-section) ---------- */
@@ -1324,8 +1386,19 @@ select:focus {
   color: var(--text-primary);
 }
 
+.guest-list-table tbody tr:nth-child(even) {
+  background: rgba(248,250,252,0.5);
+}
+
 .guest-list-table tbody tr:hover {
-  background: rgba(201,163,95,0.04);
+  background: linear-gradient(90deg, rgba(201,163,95,0.08), rgba(201,163,95,0.04));
+  transform: scale(1.001);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.2s ease;
+}
+
+.guest-list-table tbody tr {
+  transition: all 0.2s ease;
 }
 
 .guest-list-table tbody tr:last-child td {

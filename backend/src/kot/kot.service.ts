@@ -86,7 +86,7 @@ export class KotService {
 
     const order = new KotOrder();
     order.kotId = kotId;
-    order.orderDate = dto.orderDate || today;
+    order.orderDate = (dto.orderDate && dto.orderDate.trim() !== '') ? dto.orderDate : today;
     order.customerName = dto.customerName || '';
     order.description = description;
     order.amount = totalAmount || dto.amount || 0;
@@ -114,7 +114,7 @@ export class KotService {
       if (paymentMode !== 'AKS Office' && amt > 0) {
         const receivedIn = paymentMode === 'Cash' ? 'Cash' : (paymentMode === 'Card' ? 'Card' : 'Bank Transfer');
         const entry = this.daybookRepo.create({
-          date: dto.orderDate || today,
+          date: (dto.orderDate && dto.orderDate.trim() !== '') ? dto.orderDate : today,
           type: 'income',
           category: 'KOT',
           incomeSource: dto.bookingId ? 'KOT' : 'Walk-in KOT',

@@ -23,6 +23,11 @@ const navigationItems: NavItem[] = [
     path: '/',
   },
   {
+    label: 'Analytics',
+    icon: 'analytics',
+    path: '/analytics',
+  },
+  {
     label: 'Bookings',
     icon: 'calendar_month',
     dropdown: [

@@ -37,6 +37,9 @@ export default function NewBooking() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent double submission
+    if (loading) return;
+
     if (!form.guestName || !form.checkIn || !form.checkOut || !form.totalAmount) {
       toast.error('Please fill all required fields');
       return;
