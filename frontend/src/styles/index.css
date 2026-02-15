@@ -1747,7 +1747,7 @@ select:focus {
     font-size: 20px;
   }
 
-  .dashboard {
+  .dashboard, .stats-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1756,7 +1756,44 @@ select:focus {
   }
 
   .modal-content {
-    margin: 20px auto;
+    margin: 10px;
+    max-width: 100%;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .page-container {
+    padding: 12px;
+  }
+
+  .section-box {
+    padding: 16px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .guest-list-table th,
+  .guest-list-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .action-buttons-row {
+    flex-wrap: wrap;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 

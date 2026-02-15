@@ -755,6 +755,15 @@ export default function Dashboard() {
     );
   };
 
+  // Copy to clipboard
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${label} copied!`);
+    }).catch(() => {
+      toast.error('Failed to copy');
+    });
+  };
+
   // Export to Excel
   const exportToExcel = () => {
     if (!stats) return;
@@ -813,7 +822,24 @@ export default function Dashboard() {
                   const statusClass = b.status === 'COLLECTED' ? 'badge-collected' : b.status === 'PARTIAL' ? 'badge-partial' : 'badge-pending';
                   return (
                     <tr key={b.id}>
-                      <td><strong>{b.guestName}</strong>{b.phone && <><br /><small style={{ color: 'var(--text-muted)' }}>{b.phone}</small></>}</td>
+                      <td>
+                        <strong>{b.guestName}</strong>
+                        {b.phone && (
+                          <>
+                            <br />
+                            <small style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {b.phone}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(b.phone!, 'Phone'); }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--accent-blue)' }}
+                                title="Copy phone number"
+                              >
+                                <span className="material-icons" style={{ fontSize: '14px' }}>content_copy</span>
+                              </button>
+                            </small>
+                          </>
+                        )}
+                      </td>
                       <td>{b.pax || 1}</td>
                       <td>{b.roomNo ? <strong>{b.roomNo.replace(/,/g, ' / ')}</strong> : <em style={{ color: 'var(--accent-orange)', fontSize: '12px' }}>Not assigned</em>}</td>
                       <td>
@@ -923,6 +949,42 @@ export default function Dashboard() {
           <span className="material-icons">restaurant</span> New KOT Order
         </button>
       </div>
+
+      {/* Alerts Panel */}
+      {stats && (
+        <div style={{ marginBottom: '20px' }}>
+          {stats.todayPendingAmt > 0 && (
+            <div className="alert-box alert-orange">
+              <span className="material-icons">notifications_active</span>
+              <div className="alert-content">
+                <div className="alert-title">Pending Collections Today</div>
+                <div>₹{stats.todayPendingAmt.toLocaleString('en-IN')} pending collection</div>
+              </div>
+              <div className="alert-count">₹{stats.todayPendingAmt.toLocaleString('en-IN')}</div>
+            </div>
+          )}
+          {stats.checkinGuests.length > 0 && (
+            <div className="alert-box alert-blue">
+              <span className="material-icons">login</span>
+              <div className="alert-content">
+                <div className="alert-title">Check-ins Today</div>
+                <div>{stats.checkinGuests.length} guest{stats.checkinGuests.length > 1 ? 's' : ''} expected to check in</div>
+              </div>
+              <div className="alert-count">{stats.checkinGuests.length}</div>
+            </div>
+          )}
+          {stats.checkoutGuests.length > 0 && (
+            <div className="alert-box alert-purple">
+              <span className="material-icons">logout</span>
+              <div className="alert-content">
+                <div className="alert-title">Checkouts Today</div>
+                <div>{stats.checkoutGuests.length} guest{stats.checkoutGuests.length > 1 ? 's' : ''} checking out</div>
+              </div>
+              <div className="alert-count">{stats.checkoutGuests.length}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Search & Export */}
       <div style={{ marginBottom: '20px', padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid var(--glass-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
