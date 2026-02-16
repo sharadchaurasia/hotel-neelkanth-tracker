@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
+import Calendar from './pages/Calendar';
 // import NewBooking from './pages/NewBooking';
 import Inventory from './pages/Inventory';
 import Ledger from './pages/Ledger';
@@ -50,6 +51,7 @@ export default function App() {
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/calendar" element={<Calendar />} />
           {/* <Route path="/new-booking" element={<NewBooking />} /> */}
           {/* <Route path="/bookings/new" element={<NewBooking />} /> */}
           <Route path="/inventory" element={<Inventory />} />

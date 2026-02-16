@@ -31,6 +31,7 @@ const navigationItems: NavItem[] = [
     label: 'Bookings',
     icon: 'calendar_month',
     dropdown: [
+      { path: '/calendar', label: 'Calendar View', icon: 'calendar_today' },
       { path: '/inventory', label: 'Inventory', icon: 'meeting_room' },
     ],
   },
