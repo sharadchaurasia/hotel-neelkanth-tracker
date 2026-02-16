@@ -1046,9 +1046,9 @@ export class BookingsService {
       if (b.checkIn === today && !b.checkedIn) {
         checkinGuests.push(b);
       }
-      // In-house: Either manually checked in OR check-in date has passed and not checked out yet
-      // This includes new bookings with today's/past check-in date that haven't been manually checked in
-      if ((b.checkedIn && !b.checkedOut) || (b.checkIn <= today && b.checkOut >= today && !b.checkedOut)) {
+      // In-house: Check-in date has passed, checkout date is FUTURE (not today or past), not checked out
+      // This ensures guests whose checkout date has passed are removed from in-house
+      if (b.checkIn <= today && b.checkOut > today && !b.checkedOut) {
         inhouseGuests.push(b);
       }
       // Checkout guest list: always based on checkout date
