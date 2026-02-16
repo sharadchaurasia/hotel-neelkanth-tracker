@@ -672,7 +672,9 @@ export default function Dashboard() {
   // Checkout
   const openCheckout = async (b: Booking) => {
     setCheckoutBooking(b);
-    setAddOns(b.addOns?.map(a => ({ type: a.type, amount: Number(a.amount) })) || []);
+    // Don't pre-populate with existing add-ons - they're already in totalAmount
+    // Only allow NEW add-ons to be added at checkout
+    setAddOns([]);
     setCheckoutPayMode('');
 
     // Fetch unpaid KOT orders for this booking
