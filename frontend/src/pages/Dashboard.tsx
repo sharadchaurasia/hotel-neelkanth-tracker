@@ -1923,15 +1923,19 @@ export default function Dashboard() {
                 ))}
                 <button className="btn btn-secondary btn-small" style={{ marginTop: '8px' }} onClick={() => setAddOns([...addOns, { type: '', amount: 0 }])}>+ Add Charge</button>
               </div>
-              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span>Original Total</span><strong>{formatCurrency(t.origTotal)}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span>KOT</span><strong>{formatCurrency(kotAmount)}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span>Add-Ons</span><strong>{formatCurrency(addOns.reduce((s, a) => s + (a.amount || 0), 0))}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700, fontSize: '16px', borderTop: '2px solid var(--accent-cyan)', paddingTop: '8px' }}><span>Grand Total</span><strong>{formatCurrency(t.grandTotal)}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--accent-green)' }}><span>Received</span><strong>{formatCurrency(t.received)}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent-red)', fontWeight: 700 }}><span>Balance</span><strong>{formatCurrency(t.balance)}</strong></div>
-              </div>
-              <div className="form-group" style={{ marginTop: '16px' }}><label>Collect Balance Via</label>
+
+              {/* Payment Summary - Only show if there's something to collect OR new charges added */}
+              {(t.balance > 0 || kotAmount > 0 || addOns.some(a => a.amount > 0)) ? (
+                <>
+                  <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span>Original Total</span><strong>{formatCurrency(t.origTotal)}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span>KOT</span><strong>{formatCurrency(kotAmount)}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span>Add-Ons</span><strong>{formatCurrency(addOns.reduce((s, a) => s + (a.amount || 0), 0))}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700, fontSize: '16px', borderTop: '2px solid var(--accent-cyan)', paddingTop: '8px' }}><span>Grand Total</span><strong>{formatCurrency(t.grandTotal)}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--accent-green)' }}><span>Received</span><strong>{formatCurrency(t.received)}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent-red)', fontWeight: 700 }}><span>Balance</span><strong>{formatCurrency(t.balance)}</strong></div>
+                  </div>
+                  <div className="form-group" style={{ marginTop: '16px' }}><label>Collect Balance Via</label>
                 <select value={checkoutPayMode} onChange={(e) => { setCheckoutPayMode(e.target.value); setCheckoutSubCategory(''); }}>
                   <option value="">Don't collect now</option>
                   <option value="Cash">💵 Cash</option>
@@ -1978,6 +1982,14 @@ export default function Dashboard() {
                       </small>
                     </div>
                   )}
+                </div>
+              )}
+                </>
+              ) : (
+                <div style={{ marginTop: '16px', padding: '20px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600', color: '#15803d' }}>All Payments Received</h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#16a34a' }}>No pending balance. Ready to checkout!</p>
                 </div>
               )}
             </>
