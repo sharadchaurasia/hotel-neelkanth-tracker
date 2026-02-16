@@ -682,9 +682,9 @@ export class ReportsService {
         'b.agent_id as "agentId"',
         'u.name as "agentName"',
         'COUNT(b.id) as "bookingCount"',
-        'SUM(b.total_amount) as "totalBookingAmount"',
+        'SUM(b.hotel_share) as "totalBookingAmount"',
         'SUM(b.advance_received + b.balance_received) as "totalCollection"',
-        'SUM(b.total_amount - (b.advance_received + b.balance_received)) as "pendingAmount"',
+        'SUM(b.hotel_share - (b.advance_received + b.balance_received)) as "pendingAmount"',
       ])
       .where('b.agent_id IS NOT NULL')
       .andWhere("b.status != 'CANCELLED'");
