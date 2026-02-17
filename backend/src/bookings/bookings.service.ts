@@ -1026,6 +1026,14 @@ export class BookingsService {
     const today = new Date().toISOString().split('T')[0];
     const allBookings = await this.bookingRepo.find({ relations: ['addOns', 'agent'] });
 
+    // Helper to normalize date to string format for comparison
+    const toDateString = (date: any): string => {
+      if (!date) return '';
+      if (typeof date === 'string') return date;
+      if (date instanceof Date) return date.toISOString().split('T')[0];
+      return String(date);
+    };
+
     const checkinGuests: Booking[] = [];
     const inhouseGuests: Booking[] = [];
     const checkoutGuests: Booking[] = [];
@@ -1042,34 +1050,38 @@ export class BookingsService {
       // AKS Office COLLECTED bookings have zero pending (paid via AKS Office)
       if (b.status === 'COLLECTED' && pending > 0) pending = 0;
 
+      // Normalize dates for comparison
+      const checkInDate = toDateString(b.checkIn);
+      const checkOutDate = toDateString(b.checkOut);
+
       // Today Check-in: Not checked in yet (only guests who haven't checked in physically)
-      if (b.checkIn === today && !b.checkedIn) {
+      if (checkInDate === today && !b.checkedIn) {
         checkinGuests.push(b);
       }
       // In-house: Check-in date has passed, checkout date is FUTURE (not today or past), not checked out
       // This ensures guests whose checkout date has passed are removed from in-house
       // IMPORTANT: Only show guests who have been physically checked in (b.checkedIn = true)
-      if (b.checkIn <= today && b.checkOut > today && !b.checkedOut && b.checkedIn) {
+      if (checkInDate <= today && checkOutDate > today && !b.checkedOut && b.checkedIn) {
         inhouseGuests.push(b);
       }
       // Checkout guest list: always based on checkout date
-      if (b.checkOut === today && !b.checkedOut) {
+      if (checkOutDate === today && !b.checkedOut) {
         checkoutGuests.push(b);
       }
 
       // Today Collection stats: based on paymentType
       let showInTodayCollection = false;
       if (b.paymentType === 'Pay at Check-in') {
-        showInTodayCollection = (b.checkIn === today);
+        showInTodayCollection = (checkInDate === today);
       } else if (b.paymentType === 'Postpaid') {
-        showInTodayCollection = (b.checkOut === today && !b.checkedOut);
+        showInTodayCollection = (checkOutDate === today && !b.checkedOut);
       } else if (b.paymentType === 'Prepaid') {
-        showInTodayCollection = (b.advanceDate === today);
+        showInTodayCollection = (toDateString(b.advanceDate) === today);
       } else if (b.paymentType === 'Ledger') {
-        showInTodayCollection = (b.checkOut === today && !b.checkedOut);
+        showInTodayCollection = (checkOutDate === today && !b.checkedOut);
       } else {
         // Fallback for old bookings without paymentType
-        showInTodayCollection = (b.checkOut === today && !b.checkedOut);
+        showInTodayCollection = (checkOutDate === today && !b.checkedOut);
       }
 
       if (showInTodayCollection) {
