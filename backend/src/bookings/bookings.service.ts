@@ -1048,7 +1048,8 @@ export class BookingsService {
       }
       // In-house: Check-in date has passed, checkout date is FUTURE (not today or past), not checked out
       // This ensures guests whose checkout date has passed are removed from in-house
-      if (b.checkIn <= today && b.checkOut > today && !b.checkedOut) {
+      // IMPORTANT: Only show guests who have been physically checked in (b.checkedIn = true)
+      if (b.checkIn <= today && b.checkOut > today && !b.checkedOut && b.checkedIn) {
         inhouseGuests.push(b);
       }
       // Checkout guest list: always based on checkout date
