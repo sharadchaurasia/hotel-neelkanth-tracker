@@ -187,13 +187,17 @@ export default function Users() {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingUser ? 'Edit User' : 'Add User'}</h3>
-              <button onClick={() => setShowModal(false)} className="btn-icon">
+              <h3>
+                <span className="material-icons">{editingUser ? 'edit' : 'person_add'}</span>
+                {editingUser ? 'Edit User' : 'Add User'}
+              </h3>
+              <button onClick={() => setShowModal(false)} className="modal-close">
                 <span className="material-icons">close</span>
               </button>
             </div>
+            <div className="modal-body">
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Name *</label>
@@ -244,15 +248,16 @@ export default function Users() {
                   />
                 </div>
               )}
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingUser ? 'Update' : 'Create'}
-                </button>
-              </div>
             </form>
+            </div>
+            <div className="modal-footer">
+              <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
+                Cancel
+              </button>
+              <button type="submit" onClick={(e) => { e.preventDefault(); handleSubmit(e as any); }} className="btn-primary">
+                {editingUser ? 'Update' : 'Create'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -13,10 +13,13 @@ export default function Modal({ open, onClose, title, children, footer, wide }: 
   if (!open) return null;
 
   return (
-    <div className="modal-overlay active" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal" style={wide ? { maxWidth: '800px' } : undefined}>
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-content" style={wide ? { maxWidth: '1000px' } : undefined}>
         <div className="modal-header">
-          <h3>{title}</h3>
+          <h3>
+            <span className="material-icons">info</span>
+            {title}
+          </h3>
           <button className="modal-close" onClick={onClose}>
             <span className="material-icons">close</span>
           </button>

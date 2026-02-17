@@ -552,12 +552,17 @@ export default function Ledger() {
       {/* Edit Booking Modal */}
       {editModal && editingBooking && (
         <div className="modal-overlay" onClick={() => setEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <h3>Edit Booking - {editingBooking.bookingId}</h3>
-              <button onClick={() => setEditModal(false)} className="modal-close">×</button>
+              <h3>
+                <span className="material-icons">edit_note</span>
+                Edit Booking - {editingBooking.bookingId}
+              </h3>
+              <button onClick={() => setEditModal(false)} className="modal-close">
+                <span className="material-icons">close</span>
+              </button>
             </div>
-            <div className="modal-body" style={{ padding: '24px' }}>
+            <div className="modal-body">
               {/* Current Status Info */}
               <div style={{
                 background: '#eff6ff',

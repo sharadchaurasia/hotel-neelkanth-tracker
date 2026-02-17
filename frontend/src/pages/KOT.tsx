@@ -215,64 +215,28 @@ export default function KOT() {
       </div>
 
       {/* Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        borderBottom: '2px solid #e5e7eb',
-        marginBottom: '24px',
-      }}>
+      <div className="tabs-container">
         <button
           onClick={() => setActiveTab('inhouse')}
-          style={{
-            padding: '12px 24px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'inhouse' ? '3px solid #6b7b93' : 'none',
-            color: activeTab === 'inhouse' ? '#1a2332' : '#6b7280',
-            fontWeight: activeTab === 'inhouse' ? '600' : '500',
-            cursor: 'pointer',
-            fontSize: '15px',
-          }}
+          className={`tab-button ${activeTab === 'inhouse' ? 'tab-active' : ''}`}
         >
-          <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '6px' }}>
-            hotel
-          </span>
-          In-House Guests ({checkedInBookings.length})
+          <span className="material-icons">hotel</span>
+          In-House Guests
+          <span className="tab-badge">{checkedInBookings.length}</span>
         </button>
         <button
           onClick={() => setActiveTab('orders')}
-          style={{
-            padding: '12px 24px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'orders' ? '3px solid #6b7b93' : 'none',
-            color: activeTab === 'orders' ? '#1a2332' : '#6b7280',
-            fontWeight: activeTab === 'orders' ? '600' : '500',
-            cursor: 'pointer',
-            fontSize: '15px',
-          }}
+          className={`tab-button ${activeTab === 'orders' ? 'tab-active' : ''}`}
         >
-          <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '6px' }}>
-            receipt_long
-          </span>
-          All Orders ({orders.length})
+          <span className="material-icons">receipt_long</span>
+          All Orders
+          <span className="tab-badge">{orders.length}</span>
         </button>
         <button
           onClick={() => setActiveTab('walkin')}
-          style={{
-            padding: '12px 24px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'walkin' ? '3px solid #6b7b93' : 'none',
-            color: activeTab === 'walkin' ? '#1a2332' : '#6b7280',
-            fontWeight: activeTab === 'walkin' ? '600' : '500',
-            cursor: 'pointer',
-            fontSize: '15px',
-          }}
+          className={`tab-button ${activeTab === 'walkin' ? 'tab-active' : ''}`}
         >
-          <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '6px' }}>
-            person_add
-          </span>
+          <span className="material-icons">person_add</span>
           Walk-in Order
         </button>
       </div>

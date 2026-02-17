@@ -1258,8 +1258,8 @@ export default function Dashboard() {
         </div>
 
         {/* Room Details */}
-        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(201, 163, 95, 0.08), rgba(201, 163, 95, 0.04))', borderRadius: '12px', border: '1px solid rgba(201, 163, 95, 0.15)' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#c9a35f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ marginBottom: '24px', padding: '16px', background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(212, 175, 55, 0.04))', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#D4AF37', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="material-icons" style={{ fontSize: '20px' }}>meeting_room</span>
             Room Details
           </h3>
@@ -1710,8 +1710,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(201, 163, 95, 0.08), rgba(201, 163, 95, 0.04))', borderRadius: '12px', border: '1px solid rgba(201, 163, 95, 0.15)' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#c9a35f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(212, 175, 55, 0.04))', borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: '#D4AF37', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="material-icons" style={{ fontSize: '20px' }}>meeting_room</span>
                 Assign Rooms
               </h3>

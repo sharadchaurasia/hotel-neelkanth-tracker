@@ -116,10 +116,10 @@ export default function Layout() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#1a2332' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#1E1917' }}>
       {/* Top Header Bar */}
       <header style={{
-        background: 'linear-gradient(135deg, #c9a35f 0%, #a67c52 100%)',
+        background: '#1E1917',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
         position: 'relative',
         zIndex: 1000,
@@ -140,7 +140,7 @@ export default function Layout() {
               padding: '12px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
             }}>
-              <span className="material-icons" style={{ fontSize: '32px', color: '#c9a35f' }}>hotel</span>
+              <span className="material-icons" style={{ fontSize: '32px', color: '#D4AF37' }}>hotel</span>
             </div>
             <div>
               <h1 style={{
@@ -194,7 +194,7 @@ export default function Layout() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                background: '#1a2332',
+                background: '#D4AF37',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -283,19 +283,19 @@ export default function Layout() {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '14px 20px',
-                    color: isActive ? 'white' : 'rgba(255, 255, 255, 0.85)',
+                    color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.85)',
                     fontSize: '14px',
                     fontWeight: '600',
                     textDecoration: 'none',
-                    borderBottom: isActive ? '3px solid white' : '3px solid transparent',
-                    background: isActive ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                    borderBottom: isActive ? '3px solid #D4AF37' : '3px solid transparent',
+                    background: isActive ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap',
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.color = 'white';
+                      e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                      e.currentTarget.style.color = '#D4AF37';
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -324,16 +324,20 @@ export default function Layout() {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '14px 20px',
-                    color: isActive ? 'white' : 'rgba(255, 255, 255, 0.85)',
+                    color: item.highlight
+                      ? '#FFFFFF'
+                      : isActive
+                      ? '#D4AF37'
+                      : 'rgba(255, 255, 255, 0.85)',
                     fontSize: '14px',
                     fontWeight: '600',
                     background: item.highlight
-                      ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
+                      ? '#D4AF37'
                       : isActive
-                      ? 'rgba(255, 255, 255, 0.15)'
+                      ? 'rgba(212, 175, 55, 0.15)'
                       : 'transparent',
                     border: 'none',
-                    borderBottom: isActive ? '3px solid white' : '3px solid transparent',
+                    borderBottom: isActive ? '3px solid #D4AF37' : '3px solid transparent',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap',
@@ -341,8 +345,8 @@ export default function Layout() {
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive && !item.highlight) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.color = 'white';
+                      e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                      e.currentTarget.style.color = '#D4AF37';
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -387,7 +391,7 @@ export default function Layout() {
                           fontWeight: '500',
                           textDecoration: 'none',
                           background: location.pathname === dropItem.path ? '#f1f5f9' : 'transparent',
-                          borderLeft: location.pathname === dropItem.path ? '3px solid #3b82f6' : '3px solid transparent',
+                          borderLeft: location.pathname === dropItem.path ? '3px solid #D4AF37' : '3px solid transparent',
                           transition: 'all 0.2s ease',
                         }}
                         onMouseEnter={(e) => {
@@ -399,7 +403,7 @@ export default function Layout() {
                           e.currentTarget.style.paddingLeft = '18px';
                         }}
                       >
-                        <span className="material-icons" style={{ fontSize: '18px', color: '#3b82f6' }}>
+                        <span className="material-icons" style={{ fontSize: '18px', color: '#D4AF37' }}>
                           {dropItem.icon}
                         </span>
                         {dropItem.label}
@@ -415,14 +419,14 @@ export default function Layout() {
         {/* Professional Submenu Bar */}
         {activeDropdown && navigationItems.find(i => i.label === activeDropdown)?.dropdown && (
           <div style={{
-            background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+            background: '#D4AF37',
             padding: '16px 32px',
             display: 'flex',
             gap: '12px',
-            borderTop: '2px solid rgba(251, 191, 36, 0.3)',
+            borderTop: '2px solid rgba(212, 175, 55, 0.3)',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             flexWrap: 'wrap',
-            animation: 'slideDown 0.3s ease',
+            animation: 'slideDown 0.2s ease',
           }}>
             {navigationItems.find(i => i.label === activeDropdown)?.dropdown?.map((subItem) => (
               <NavLink
@@ -434,40 +438,37 @@ export default function Layout() {
                   alignItems: 'center',
                   gap: '10px',
                   padding: '12px 20px',
-                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)',
-                  border: '2px solid rgba(251, 191, 36, 0.3)',
-                  borderRadius: '10px',
+                  background: 'rgba(212, 175, 55, 0.15)',
+                  border: '2px solid rgba(212, 175, 55, 0.3)',
+                  borderRadius: '8px',
                   color: 'white',
                   textDecoration: 'none',
                   fontSize: '14px',
                   fontWeight: '600',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 0.2s ease',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                  backdropFilter: 'blur(10px)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.15) 100%)';
-                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.3)';
-                  e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.5)';
+                  e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)';
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+                  e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.3)';
                 }}
               >
                 <div style={{
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  background: 'rgba(251, 191, 36, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                  <span className="material-icons" style={{ fontSize: '18px', color: '#fbbf24' }}>{subItem.icon}</span>
+                  <span className="material-icons" style={{ fontSize: '18px', color: '#FFFFFF' }}>{subItem.icon}</span>
                 </div>
                 {subItem.label}
               </NavLink>
@@ -480,7 +481,7 @@ export default function Layout() {
       <main style={{
         flex: 1,
         overflowY: 'auto',
-        background: '#f8fafc',
+        background: '#F5F5F5',
         marginTop: '10px',
       }}>
         <Outlet />
