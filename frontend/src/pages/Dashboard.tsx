@@ -47,6 +47,8 @@ export default function Dashboard() {
   const [collectSubCategory, setCollectSubCategory] = useState('');
   const [collectKotAmount, setCollectKotAmount] = useState(0);
   const [collectSplitPayment, setCollectSplitPayment] = useState(false);
+  const [collectMultiPayments, setCollectMultiPayments] = useState<{amount: number; mode: string; subCategory?: string}[]>([{amount: 0, mode: ''}]);
+  const [useMultiCollect, setUseMultiCollect] = useState(false);
   const [collectBookingAmount, setCollectBookingAmount] = useState(0);
   const [collectBookingMode, setCollectBookingMode] = useState('');
   const [collectBookingSubCategory, setCollectBookingSubCategory] = useState('');
@@ -296,6 +298,8 @@ export default function Dashboard() {
     setCollectBookingMode('');
     setCollectKotMode('');
     setCollectSplitPayment(false);
+      setUseMultiCollect(false);
+      setCollectMultiPayments([{amount: 0, mode: ''}]);
     setCollectSubCategory('');
     setCollectBookingSubCategory('');
     setCollectTransferToAgent(false);
