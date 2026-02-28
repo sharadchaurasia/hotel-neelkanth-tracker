@@ -103,6 +103,7 @@ export interface SalaryAdvance {
 
 export interface DashboardStats {
   checkinGuests: Booking[];
+  pendingCheckinGuests: Booking[];
   inhouseGuests: Booking[];
   checkoutGuests: Booking[];
   todayCollectionAmt: number;

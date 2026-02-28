@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import toast from 'react-hot-toast';
@@ -27,6 +27,14 @@ const emptyBooking = {
   agentId: undefined as number | undefined,
 };
 
+interface Agent {
+  id: number;
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  status: string;
+}
+
 export default function NewBooking() {
   const navigate = useNavigate();
   const [form, setForm] = useState(emptyBooking);
@@ -34,14 +42,74 @@ export default function NewBooking() {
   const [paymentSubCategory, setPaymentSubCategory] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Agent state
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>(''); // 'new' | agent id
+  const [newAgentName, setNewAgentName] = useState('');
+  const [creatingAgent, setCreatingAgent] = useState(false);
+
+  // Fetch agents when source is 'Agent'
+  useEffect(() => {
+    if (form.source === 'Agent' && agents.length === 0) {
+      setAgentsLoading(true);
+      api.get('/agents')
+        .then((res) => {
+          setAgents(res.data.filter((a: Agent) => a.status === 'ACTIVE'));
+        })
+        .catch(() => toast.error('Failed to load agents'))
+        .finally(() => setAgentsLoading(false));
+    }
+  }, [form.source]);
+
+  const handleAgentSelect = (value: string) => {
+    setSelectedAgentId(value);
+    setNewAgentName('');
+    if (value === 'new') {
+      setForm({ ...form, sourceName: '', agentId: undefined });
+    } else if (value) {
+      const agent = agents.find((a) => String(a.id) === value);
+      if (agent) {
+        setForm({ ...form, sourceName: agent.name, agentId: agent.id });
+      }
+    } else {
+      setForm({ ...form, sourceName: '', agentId: undefined });
+    }
+  };
+
+  const handleCreateAgent = async () => {
+    if (!newAgentName.trim()) {
+      toast.error('Please enter an agent name');
+      return;
+    }
+    setCreatingAgent(true);
+    try {
+      const res = await api.post('/agents', { name: newAgentName.trim() });
+      const newAgent: Agent = res.data;
+      setAgents((prev) => [...prev, newAgent]);
+      setSelectedAgentId(String(newAgent.id));
+      setForm({ ...form, sourceName: newAgent.name, agentId: newAgent.id });
+      setNewAgentName('');
+      toast.success(`Agent "${newAgent.name}" created!`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create agent');
+    } finally {
+      setCreatingAgent(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prevent double submission
     if (loading) return;
 
     if (!form.guestName || !form.checkIn || !form.checkOut || !form.totalAmount) {
       toast.error('Please fill all required fields');
+      return;
+    }
+
+    if (form.source === 'Agent' && !form.agentId && !form.sourceName) {
+      toast.error('Please select or create an agent');
       return;
     }
 
@@ -50,8 +118,8 @@ export default function NewBooking() {
     try {
       const payload = {
         ...form,
-        roomNo: '', // Will be assigned at check-in
-        kot: '', // Not needed during booking
+        roomNo: '',
+        kot: '',
         addOns: bookingAddOns.filter((a) => a.type && a.amount > 0),
         paymentSubCategory: form.paymentMode === 'AKS Office' ? paymentSubCategory : undefined,
       };
@@ -101,7 +169,7 @@ export default function NewBooking() {
         </p>
       </div>
 
-      {/* Small Friendly Form */}
+      {/* Form */}
       <div style={{ maxWidth: '500px', margin: '0 auto', background: THEME.colors.cardBg, borderRadius: '12px', padding: '24px 20px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
         <form onSubmit={handleSubmit}>
 
@@ -214,17 +282,21 @@ export default function NewBooking() {
             <h3 style={{ fontSize: '14px', fontWeight: '600', color: THEME.colors.textDark, marginBottom: '10px', paddingBottom: '6px', borderBottom: `1px solid ${THEME.colors.border}` }}>
               Booking Source
             </h3>
-            <div>
+            <div style={{ marginBottom: form.source === 'Agent' ? '10px' : '0' }}>
               <label style={labelStyleLocal}>Source</label>
               <select
                 value={form.source}
                 onChange={(e) => {
                   const newSource = e.target.value;
+                  // Reset agent selection when changing source
+                  setSelectedAgentId('');
+                  setNewAgentName('');
                   setForm({
                     ...form,
                     source: newSource,
-                    // Auto-set payment type to Ledger for agents and OTAs
-                    paymentType: (newSource !== 'Walk-in') ? 'Ledger' : 'Postpaid'
+                    sourceName: '',
+                    agentId: undefined,
+                    paymentType: (newSource !== 'Walk-in') ? 'Ledger' : 'Postpaid',
                   });
                 }}
                 style={{ ...inputStyleLocal, cursor: 'pointer' }}
@@ -233,21 +305,7 @@ export default function NewBooking() {
                 <option disabled>──────────</option>
                 <option value="AKS Office">AKS Office</option>
                 <option value="Self">Self</option>
-                <option value="Ultimate">Ultimate</option>
-                <option value="Minto">Minto</option>
-                <option value="Jatin TA">Jatin TA</option>
-                <option value="Royal Sunshine">Royal Sunshine</option>
-                <option value="Gyanrachanatour">Gyanrachanatour</option>
-                <option value="My Vacation">My Vacation</option>
-                <option value="MIH">MIH</option>
-                <option value="Focus">Focus</option>
-                <option value="Global">Global</option>
-                <option value="Globe India">Globe India</option>
-                <option value="Holiday7">Holiday7</option>
-                <option value="Himalayan Queen">Himalayan Queen</option>
-                <option value="Raisooone">Raisooone</option>
-                <option value="Legendyatri">Legendyatri</option>
-                <option value="WCT">WCT</option>
+                <option value="Agent">Agent</option>
                 <option disabled>──────────</option>
                 <option value="MMT">MMT</option>
                 <option value="Goibibo">Goibibo</option>
@@ -255,6 +313,77 @@ export default function NewBooking() {
                 <option value="Booking.com">Booking.com</option>
               </select>
             </div>
+
+            {/* Agent Selection - shown when source is 'Agent' */}
+            {form.source === 'Agent' && (
+              <div>
+                <label style={labelStyleLocal}>Select Agent</label>
+                {agentsLoading ? (
+                  <div style={{ ...inputStyleLocal, color: THEME.colors.textLight, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    ⏳ Loading agents...
+                  </div>
+                ) : (
+                  <select
+                    value={selectedAgentId}
+                    onChange={(e) => handleAgentSelect(e.target.value)}
+                    style={{ ...inputStyleLocal, cursor: 'pointer' }}
+                  >
+                    <option value="">-- Select Agent --</option>
+                    {agents.map((agent) => (
+                      <option key={agent.id} value={String(agent.id)}>
+                        {agent.name}
+                      </option>
+                    ))}
+                    <option value="new">➕ Add New Agent...</option>
+                  </select>
+                )}
+
+                {/* New Agent Input */}
+                {selectedAgentId === 'new' && (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                    <input
+                      type="text"
+                      value={newAgentName}
+                      onChange={(e) => setNewAgentName(e.target.value)}
+                      placeholder="Enter new agent name"
+                      style={{ ...inputStyleLocal, flex: 1 }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCreateAgent();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateAgent}
+                      disabled={creatingAgent || !newAgentName.trim()}
+                      style={{
+                        padding: '10px 14px',
+                        background: THEME.colors.primary,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: creatingAgent ? 'not-allowed' : 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        whiteSpace: 'nowrap',
+                        opacity: creatingAgent || !newAgentName.trim() ? 0.6 : 1,
+                      }}
+                    >
+                      {creatingAgent ? '...' : '✓ Save'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Show selected agent info */}
+                {form.agentId && form.sourceName && (
+                  <div style={{ marginTop: '6px', padding: '6px 10px', background: `${THEME.colors.primary}10`, borderRadius: '6px', fontSize: '12px', color: THEME.colors.primary, fontWeight: '500' }}>
+                    ✓ Agent: {form.sourceName}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pricing */}
@@ -264,7 +393,23 @@ export default function NewBooking() {
             </h3>
             <div style={{ marginBottom: '10px' }}>
               <label style={labelStyleLocal}>Room Rent *</label>
-              <input type="number" value={form.actualRoomRent || ''} onChange={(e) => { const rent = Number(e.target.value); const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, actualRoomRent: rent, totalAmount: rent + addOnsTotal }); }} placeholder="₹ 0" style={inputStyleLocal} />
+              <input
+                type="number"
+                value={form.actualRoomRent || ''}
+                onChange={(e) => {
+                  const rent = Number(e.target.value);
+                  const addOnsTotal = bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0);
+                  setForm({
+                    ...form,
+                    actualRoomRent: rent,
+                    totalAmount: rent + addOnsTotal,
+                    // collectionAmount = room rent only (add-ons tracked separately)
+                    collectionAmount: rent,
+                  });
+                }}
+                placeholder="₹ 0"
+                style={inputStyleLocal}
+              />
             </div>
 
             {/* Add-ons */}
@@ -273,31 +418,86 @@ export default function NewBooking() {
                 <label style={{ ...labelStyleLocal, marginBottom: '6px' }}>Add Ons</label>
                 {bookingAddOns.map((ao, i) => (
                   <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '5px' }}>
-                    <select value={ao.type} onChange={(e) => { const na = [...bookingAddOns]; na[i].type = e.target.value; setBookingAddOns(na); }} style={{ ...inputStyleLocal, flex: 2, cursor: 'pointer' }}>
+                    <select
+                      value={ao.type}
+                      onChange={(e) => {
+                        const na = [...bookingAddOns];
+                        na[i].type = e.target.value;
+                        setBookingAddOns(na);
+                      }}
+                      style={{ ...inputStyleLocal, flex: 2, cursor: 'pointer' }}
+                    >
                       <option value="">Select</option>
                       <option value="Honeymoon">Honeymoon</option>
                       <option value="Candle Night Dinner">Candle Dinner</option>
                       <option value="Heater">Heater</option>
                       <option value="Other">Other</option>
                     </select>
-                    <input type="number" placeholder="₹" value={ao.amount || ''} onChange={(e) => { const na = [...bookingAddOns]; na[i].amount = Number(e.target.value); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ ...inputStyleLocal, width: '90px' }} />
-                    <button type="button" onClick={() => { const na = bookingAddOns.filter((_, j) => j !== i); setBookingAddOns(na); const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0); setForm({ ...form, totalAmount: form.actualRoomRent + addOnsTotal }); }} style={{ padding: '8px 10px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', cursor: 'pointer', color: '#c00', fontSize: '16px' }}>×</button>
+                    <input
+                      type="number"
+                      placeholder="₹"
+                      value={ao.amount || ''}
+                      onChange={(e) => {
+                        const na = [...bookingAddOns];
+                        na[i].amount = Number(e.target.value);
+                        setBookingAddOns(na);
+                        const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0);
+                        // totalAmount includes add-ons for display; collectionAmount stays as room rent only
+                        setForm({
+                          ...form,
+                          totalAmount: form.actualRoomRent + addOnsTotal,
+                          // collectionAmount stays as actualRoomRent
+                        });
+                      }}
+                      style={{ ...inputStyleLocal, width: '90px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const na = bookingAddOns.filter((_, j) => j !== i);
+                        setBookingAddOns(na);
+                        const addOnsTotal = na.reduce((s, a) => s + (a.amount || 0), 0);
+                        setForm({
+                          ...form,
+                          totalAmount: form.actualRoomRent + addOnsTotal,
+                          // collectionAmount stays as actualRoomRent
+                        });
+                      }}
+                      style={{ padding: '8px 10px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', cursor: 'pointer', color: '#c00', fontSize: '16px' }}
+                    >×</button>
                   </div>
                 ))}
               </div>
             )}
-            <button type="button" onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])} style={{ marginBottom: '10px', padding: '7px 12px', background: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: THEME.colors.textDark, fontWeight: '500' }}>+ Add On</button>
+            <button
+              type="button"
+              onClick={() => setBookingAddOns([...bookingAddOns, { type: '', amount: 0 }])}
+              style={{ marginBottom: '10px', padding: '7px 12px', background: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: THEME.colors.textDark, fontWeight: '500' }}
+            >+ Add On</button>
 
+            {/* Summary Box */}
             <div style={{ padding: '10px 12px', background: `${THEME.colors.primary}10`, borderRadius: '8px', border: `1px solid ${THEME.colors.primary}`, marginBottom: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: THEME.colors.textDark }}>Hotel Share</span>
-                <span style={{ fontSize: '20px', fontWeight: '700', color: THEME.colors.primary }}>₹{form.totalAmount.toLocaleString()}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: bookingAddOns.some(a => a.amount > 0) ? '4px' : '0' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: THEME.colors.textDark }}>Room Rent</span>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: THEME.colors.primary }}>₹{(form.actualRoomRent || 0).toLocaleString()}</span>
               </div>
+              {bookingAddOns.some(a => a.amount > 0) && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '12px', color: THEME.colors.textLight }}>Add-ons</span>
+                    <span style={{ fontSize: '14px', color: THEME.colors.textLight }}>₹{bookingAddOns.reduce((s, a) => s + (a.amount || 0), 0).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${THEME.colors.border}`, paddingTop: '4px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: THEME.colors.textDark }}>Total (incl. add-ons)</span>
+                    <span style={{ fontSize: '16px', fontWeight: '700', color: THEME.colors.textDark }}>₹{form.totalAmount.toLocaleString()}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {(form.source !== 'Walk-in') && (
               <div>
-                <label style={labelStyleLocal}>Total Collection</label>
+                <label style={labelStyleLocal}>Total Collection (Agent/OTA)</label>
                 <input type="number" value={form.hotelShare || ''} onChange={(e) => setForm({ ...form, hotelShare: Number(e.target.value) })} placeholder="₹ 0" style={inputStyleLocal} />
               </div>
             )}

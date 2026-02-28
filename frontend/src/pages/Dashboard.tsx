@@ -63,8 +63,9 @@ export default function Dashboard() {
   const [checkinAddOns, setCheckinAddOns] = useState<{type: string; amount: number}[]>([]);
   const [checkinCollectNow, setCheckinCollectNow] = useState(false);
   const [checkinCollectAmount, setCheckinCollectAmount] = useState(0);
-  const [checkinPaymentMode, setCheckinPaymentMode] = useState('');
-  const [checkinSubCategory, setCheckinSubCategory] = useState('');
+  const [checkinPaymentMode, setCheckinPaymentMode] = useState(''); void checkinPaymentMode;
+  const [checkinSubCategory, setCheckinSubCategory] = useState(''); void checkinSubCategory;
+  const [checkinPayments, setCheckinPayments] = useState<{amount: number; mode: string; subCategory?: string}[]>([{amount: 0, mode: ''}]);
   const [checkoutModal, setCheckoutModal] = useState(false);
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   const [kotAmount, setKotAmount] = useState(0);
@@ -93,6 +94,13 @@ export default function Dashboard() {
     { itemName: '', quantity: 1, rate: 0 }
   ]);
   const [kotPaymentMode, setKotPaymentMode] = useState('Cash');
+
+  // New Agent Modal
+  const [newAgentModal, setNewAgentModal] = useState(false);
+  const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentPhone, setNewAgentPhone] = useState('');
+  const [newAgentEmail, setNewAgentEmail] = useState('');
+  const [isCreatingAgent, setIsCreatingAgent] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -414,6 +422,7 @@ export default function Dashboard() {
     }
     setCheckinAddOns([]);
     setCheckinCollectNow(false);
+    setCheckinPayments([{amount: 0, mode: ''}]);
     const recv = (Number(b.advanceReceived) || 0) + (Number(b.balanceReceived) || 0);
     const pending = Number(b.collectionAmount || 0) - recv;
     setCheckinCollectAmount(pending > 0 ? pending : 0);
@@ -428,12 +437,12 @@ export default function Dashboard() {
     if (rooms.length === 0) { toast.error('Select at least one room'); return; }
 
     // Payment collection is OPTIONAL - only if user checks the box
-    if (checkinCollectNow && !checkinPaymentMode) {
+    if (checkinCollectNow && checkinPayments.some(p => p.amount > 0 && !p.mode)) {
       toast.error('Please select payment mode for collection');
       return;
     }
 
-    if (checkinCollectNow && checkinPaymentMode === 'Office' && !checkinSubCategory) {
+    if (checkinCollectNow && checkinPayments.some(p => p.mode === 'Office' && !p.subCategory)) {
       toast.error('Please select Office sub-category');
       return;
     }
@@ -447,13 +456,16 @@ export default function Dashboard() {
         addOns: checkinAddOns.filter(a => a.type && a.amount > 0)
       });
 
-      // Then collect payment if user requested
-      if (checkinCollectNow && checkinCollectAmount > 0) {
-        await api.post(`/bookings/${checkinBooking.id}/collect`, {
-          amount: checkinCollectAmount,
-          paymentMode: checkinPaymentMode === 'Office' ? 'AKS Office' : checkinPaymentMode,
-          subCategory: checkinPaymentMode === 'Office' ? checkinSubCategory : undefined
-        });
+      // Then collect split payments if user requested
+      if (checkinCollectNow) {
+        const validPayments = checkinPayments.filter(p => p.amount > 0 && p.mode);
+        for (const payment of validPayments) {
+          await api.post(`/bookings/${checkinBooking.id}/collect`, {
+            amount: payment.amount,
+            paymentMode: payment.mode === 'Office' ? 'AKS Office' : payment.mode,
+            subCategory: payment.mode === 'Office' ? payment.subCategory : undefined
+          });
+        }
       }
 
       toast.success(`${checkinBooking.guestName} checked in${checkinCollectNow ? ' and payment collected' : ''}!`);
@@ -1018,6 +1030,7 @@ export default function Dashboard() {
       {/* Guest Lists */}
       <div className="guest-lists">
         {stats && renderGuestTable('Today Check-in', stats.checkinGuests, 'checkin')}
+        {stats && stats.pendingCheckinGuests && stats.pendingCheckinGuests.length > 0 && renderGuestTable('⚠️ Pending Check-in', stats.pendingCheckinGuests, 'checkin')}
         {stats && renderGuestTable('In-House Guests', stats.inhouseGuests, 'inhouse')}
         {stats && renderGuestTable('Today Check-out', stats.checkoutGuests, 'checkout')}
       </div>
@@ -1325,7 +1338,30 @@ export default function Dashboard() {
               <div className="form-group"><label>OTA Platform</label><input value={form.sourceName || ''} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder="OTA platform name" /></div>
             )}
             {form.source === 'Agent' && (
-              <div className="form-group"><label>Select Agent</label>
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Select Agent</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewAgentModal(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #D4AF37, #B8941E)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '4px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span className="material-icons" style={{ fontSize: '16px' }}>add</span>
+                    Add New Agent
+                  </button>
+                </label>
                 <select value={form.agentId || ''} onChange={(e) => setForm({ ...form, agentId: e.target.value ? Number(e.target.value) : undefined })}>
                   <option value="">Select Agent</option>
                   <option value="0">AKS Office</option>
@@ -1768,29 +1804,39 @@ export default function Dashboard() {
                 </label>
                 {checkinCollectNow && (
                   <>
-                    <div className="form-group" style={{ marginBottom: '12px' }}>
-                      <label>Payment Mode</label>
-                      <select value={checkinPaymentMode} onChange={(e) => { setCheckinPaymentMode(e.target.value); setCheckinSubCategory(''); }}>
-                        <option value="">Select Mode</option>
-                        <option value="Cash">💵 Cash</option>
-                        <option value="Card">💳 Card</option>
-                        <option value="SBI Neelkanth">🏦 SBI Neelkanth</option>
-                        <option value="Office">🏢 Office</option>
-                      </select>
-                    </div>
-                    {checkinPaymentMode === 'Office' && (
-                      <div className="form-group">
-                        <label>Office Sub-Category</label>
-                        <select value={checkinSubCategory} onChange={(e) => setCheckinSubCategory(e.target.value)}>
-                          <option value="">Select Person</option>
-                          <option value="Rajat">Rajat</option>
-                          <option value="Happy">Happy</option>
-                          <option value="Vishal">Vishal</option>
-                          <option value="Fyra">Fyra</option>
-                          <option value="Gateway">Gateway</option>
+                    {checkinPayments.map((p, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input type="number" placeholder="₹ Amount" value={p.amount || ''} onChange={(e) => { const np = [...checkinPayments]; np[i] = {...np[i], amount: Number(e.target.value)}; setCheckinPayments(np); }} style={{ width: '120px', padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px' }} />
+                        <select value={p.mode} onChange={(e) => { const np = [...checkinPayments]; np[i] = {...np[i], mode: e.target.value, subCategory: ''}; setCheckinPayments(np); }} style={{ flex: 1, padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px', minWidth: '140px' }}>
+                          <option value="">Select Mode</option>
+                          <option value="Cash">💵 Cash</option>
+                          <option value="Card">💳 Card</option>
+                          <option value="SBI Neelkanth">🏦 SBI Neelkanth</option>
+                          <option value="Office">🏢 Office</option>
                         </select>
+                        {p.mode === 'Office' && (
+                          <select value={p.subCategory || ''} onChange={(e) => { const np = [...checkinPayments]; np[i] = {...np[i], subCategory: e.target.value}; setCheckinPayments(np); }} style={{ padding: '8px', border: '1px solid var(--input-border)', borderRadius: '8px', minWidth: '120px' }}>
+                            <option value="">Person</option>
+                            <option value="Rajat">Rajat</option>
+                            <option value="Happy">Happy</option>
+                            <option value="Vishal">Vishal</option>
+                            <option value="Fyra">Fyra</option>
+                            <option value="Gateway">Gateway</option>
+                          </select>
+                        )}
+                        {checkinPayments.length > 1 && (
+                          <button onClick={() => setCheckinPayments(checkinPayments.filter((_, j) => j !== i))} style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span className="material-icons" style={{ fontSize: '16px', color: 'var(--accent-red)' }}>close</span>
+                          </button>
+                        )}
                       </div>
-                    )}
+                    ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                      <button className="btn btn-secondary btn-small" onClick={() => setCheckinPayments([...checkinPayments, {amount: 0, mode: ''}])} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="material-icons" style={{ fontSize: '16px' }}>add</span> Split Payment
+                      </button>
+                      <strong style={{ color: '#059669' }}>Total: {formatCurrency(checkinPayments.reduce((s, p) => s + (p.amount || 0), 0))}</strong>
+                    </div>
                   </>
                 )}
               </div>
@@ -2235,6 +2281,86 @@ export default function Dashboard() {
             <strong>✓ Payment collected:</strong> ₹{calculateKotTotal().toFixed(2)} via {kotPaymentMode}
           </div>
         )}
+      </Modal>
+
+      {/* New Agent Modal */}
+      <Modal open={newAgentModal} onClose={() => { setNewAgentModal(false); setNewAgentName(''); setNewAgentPhone(''); setNewAgentEmail(''); }} title="Add New Agent">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="form-group">
+            <label>Agent Name *</label>
+            <input
+              type="text"
+              value={newAgentName}
+              onChange={(e) => setNewAgentName(e.target.value)}
+              placeholder="Enter agent name"
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input
+              type="tel"
+              value={newAgentPhone}
+              onChange={(e) => setNewAgentPhone(e.target.value)}
+              placeholder="Enter phone number"
+            />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              value={newAgentEmail}
+              onChange={(e) => setNewAgentEmail(e.target.value)}
+              placeholder="Enter email address"
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+            <button
+              onClick={() => { setNewAgentModal(false); setNewAgentName(''); setNewAgentPhone(''); setNewAgentEmail(''); }}
+              className="btn btn-secondary"
+              disabled={isCreatingAgent}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!newAgentName.trim()) {
+                  toast.error('Please enter agent name');
+                  return;
+                }
+                setIsCreatingAgent(true);
+                try {
+                  const res = await api.post('/agents', {
+                    name: newAgentName.trim(),
+                    phone: newAgentPhone.trim() || null,
+                    email: newAgentEmail.trim() || null,
+                  });
+                  toast.success('Agent added successfully!');
+                  // Refresh agents list
+                  const agentsRes = await api.get('/agents');
+                  setAgents(agentsRes.data);
+                  // Auto-select the newly created agent
+                  setForm({ ...form, agentId: res.data.id });
+                  // Close modal and reset
+                  setNewAgentModal(false);
+                  setNewAgentName('');
+                  setNewAgentPhone('');
+                  setNewAgentEmail('');
+                } catch (error) {
+                  toast.error('Failed to add agent');
+                  console.error(error);
+                } finally {
+                  setIsCreatingAgent(false);
+                }
+              }}
+              className={`btn btn-primary ${isCreatingAgent ? 'loading' : ''}`}
+              disabled={isCreatingAgent}
+            >
+              <span className="material-icons">add</span>
+              Add Agent
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

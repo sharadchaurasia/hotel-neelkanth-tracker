@@ -681,6 +681,7 @@ export class BookingsService {
     booking.lastModifiedBy = userName || booking.lastModifiedBy;
 
     // Handle add-ons
+    let newCheckoutAddOnsTotal = 0; // Track only NEW add-ons added at checkout
     if (dto.addOns && dto.addOns.length > 0 && booking) {
       // IMPORTANT: DO NOT delete existing add-ons - only add new ones at checkout
       // Get existing add-ons to append
@@ -694,6 +695,9 @@ export class BookingsService {
         addon.booking = booking!; // Non-null assertion since we checked above
         return addon;
       });
+
+      // Calculate total of NEW checkout add-ons only
+      newCheckoutAddOnsTotal = newAddOns.reduce((sum, ao) => sum + (Number(ao.amount) || 0), 0);
 
       // Save new add-ons
       await this.addonRepo.save(newAddOns);
@@ -710,10 +714,10 @@ export class BookingsService {
 
     const received = Number(booking.advanceReceived || 0) + Number(booking.balanceReceived || 0);
 
-    // If collection amount already collected (PARTIAL/COLLECTED status), only collect KOT/add-ons
+    // If collection amount already collected (PARTIAL/COLLECTED status), only collect KOT/NEW add-ons
     // Otherwise, collect full balance
     const collectionAlreadyDone = (booking.status === 'PARTIAL' || booking.status === 'COLLECTED');
-    const balance = collectionAlreadyDone ? (kotAmt + addOnTotal) : (newTotal - received);
+    const balance = collectionAlreadyDone ? (kotAmt + newCheckoutAddOnsTotal) : (newTotal - received);
     const today = new Date().toISOString().split('T')[0];
     const isAksOffice = dto.paymentMode === 'AKS Office';
 
@@ -740,11 +744,11 @@ export class BookingsService {
           `[₹${ledgerAmt} transferred to ${booking.sourceName || 'Agent'} ledger by ${userName || 'unknown'} on ${today}]`;
       }
     } else if (dto.paymentMode && balance > 0) {
-      // If collection already done, don't add to balanceReceived (KOT/add-ons only go to DayBook)
+      // If collection already done, don't add to balanceReceived (KOT/NEW add-ons only go to DayBook)
       // Otherwise, add full balance to balanceReceived
       if (!collectionAlreadyDone) {
         booking.balanceReceived = Number(booking.balanceReceived || 0) + balance;
-        const roomRentPortion = balance - kotAmt - addOnTotal;
+        const roomRentPortion = balance - kotAmt - newCheckoutAddOnsTotal;
         if (roomRentPortion > 0 || !booking.balancePaymentMode || !booking.balancePaymentMode.startsWith('AKS Office')) {
           booking.balancePaymentMode = dto.paymentMode;
         }
@@ -770,7 +774,7 @@ export class BookingsService {
       const actualCollected = (dto.transferToAgentLedger && dto.collectAmount !== undefined)
         ? Math.min(Math.max(0, dto.collectAmount), balance)
         : balance;
-      const roomRentPortion = actualCollected - kotAmt - addOnTotal;
+      const roomRentPortion = actualCollected - kotAmt - newCheckoutAddOnsTotal;
       if (roomRentPortion > 0) {
         await this.createDaybookEntry({
           date: today,
@@ -825,15 +829,15 @@ export class BookingsService {
       });
     }
 
-    // Add-on entries (always created, even for AKS Office — real income)
-    if (addOnTotal > 0) {
+    // Add-on entries: ONLY for NEW checkout add-ons (booking-time add-ons already in hotelShare)
+    if (newCheckoutAddOnsTotal > 0 && dto.addOns && dto.addOns.length > 0) {
       const addonDesc = (dto.addOns || []).map(a => a.type).join(', ');
       await this.createDaybookEntry({
         date: today,
         category: 'Other',
         incomeSource: 'Add-On',
         description: `Add-On (${addonDesc}) - ${booking.guestName}`,
-        amount: addOnTotal,
+        amount: newCheckoutAddOnsTotal,
         paymentMode: kotMode,
         refBookingId: booking.bookingId,
         guestName: booking.guestName,
